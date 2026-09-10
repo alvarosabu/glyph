@@ -95,6 +95,9 @@ sources:
   - id: react
     resource: ../../../packages/glyph/src/react.ts
     title: React Three Fiber adapter
+  - id: vue
+    resource: ../../../packages/glyph/src/vue.ts
+    title: TresJS Vue adapter
   - id: core-api-reference
     resource: ../planning/core-api.md
     title: Glyph integration API reference
@@ -135,6 +138,7 @@ The package owns six runtime layers:
 | Three.js integration     | `@pmndrs/glyph/three`                                                           | Compile Codec programs, resolve font/material resources, apply command-buffer deltas, upload dirty ranges, and maintain draw proxies. |
 | TypeGPU Three experiment | `@pmndrs/glyph/three/typegpu`                                                   | Experimental Three config and shader adapters backed by `/shaders/typegpu`; shares scene and lifecycle classes with `/three`.         |
 | `@pmndrs/glyph/react`    | Reconcile React values into the same imperative `Text` and `TextGroup` objects. |
+| `@pmndrs/glyph/vue`      | Reconcile Vue values into the same imperative `Text` and `TextGroup` objects through TresJS. |
 
 Runtime Rust and all shared Rust code remain `no_std + alloc` compatible with the package allocator contract. The optional
 font-baker Wasm alone enables a feature-gated `std` adapter for Fontations subsetting; the same crate continues to
@@ -198,6 +202,8 @@ config helpers.
 | `@pmndrs/glyph/core` | Renderer-neutral construction helpers, built-in schemas/codecs, and format interpretation helpers. |
 | `@pmndrs/glyph/three` | Three configuration, retained text objects, materials, and renderer registration using native TSL shaders. |
 | `@pmndrs/glyph/react` | React provider, text components, and font-loading hooks. |
+| `@pmndrs/glyph/vue` | Vue provider, text components, and reactive font-loading composables for TresJS. |
+| `@pmndrs/glyph/vue/*` | Typed Bitmap, MSDF, and Slug Vue composables. |
 | `@pmndrs/glyph/typegpu` | Direct TypeGPU configuration, retained text, and drawing into caller-owned passes. |
 | `@pmndrs/glyph/three/typegpu` | Experimental Three integration using TypeGPU-backed shader adapters. |
 | `@pmndrs/glyph/shaders/tsl` | Standalone native TSL raster shaders. |
@@ -321,6 +327,17 @@ Text; `useFont` and the typed `useBitmap`/`useMsdf`/`useSlug` leaves own hook-cr
 leases; and `GlyphProvider.fontFaces` supplies optional subtree-local string aliases from sources, `{ src, format? }`, or
 caller-owned FontFaces. All three use the same Glyph resource graph. `suspend-react` retains only stable Promise/error
 identity across React retries, and is not a semantic font cache. See [React font loading](../guides/react.md).
+
+The Vue adapter mirrors that contract for TresJS. Its `Text` and `TextGroup` are `defineComponent` render functions
+that construct the same retained Three classes through the Tres catalogue under private tag names; applications never
+use those tags. Nested `<Text>` slots flatten into inline spans without mounting, constructor `args` stay
+referentially stable for the life of a node because Tres rebuilds an instance when they change, and a root or
+`pixelSnapping` change remounts through the element key. One default Glyph root exists per `TresCanvas`, retained by
+reference count with a one-microtask grace period, because a root may not span two Scenes. Vue has no render-phase
+suspension: a paragraph mounts nothing until every FontFace selection is loaded, starts missing loads together, and
+keeps the current paragraph while a later selection loads. `useFont` returns `{ font, error, ready }` shallow refs
+plus a promise for async setup; the format leaves compose it exactly like the React hooks. See
+[Vue and TresJS font loading](../guides/vue.md).
 
 The public `ThreeRoot` contract stops at that retained scene API: identity and disposal, Text/TextGroup construction,
 counts, and mutable material presentation. The renderer draw object, discovered Three Scene, root services, command
