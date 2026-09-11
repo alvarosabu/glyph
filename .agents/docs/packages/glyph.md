@@ -330,14 +330,16 @@ identity across React retries, and is not a semantic font cache. See [React font
 
 The Vue adapter mirrors that contract for TresJS. Its `Text` and `TextGroup` are `defineComponent` render functions
 that construct the same retained Three classes through the Tres catalogue under private tag names; applications never
-use those tags. Nested `<Text>` slots flatten into inline spans without mounting, constructor `args` stay
-referentially stable for the life of a node because Tres rebuilds an instance when they change, and a root or
-`pixelSnapping` change remounts through the element key. One default Glyph root exists per `TresCanvas`, retained by
-reference count with a one-microtask grace period, because a root may not span two Scenes. Vue has no render-phase
-suspension: a paragraph mounts nothing until every FontFace selection is loaded, starts missing loads together, and
-keeps the current paragraph while a later selection loads. `useFont` returns `{ font, error, ready }` shallow refs
-plus a promise for async setup; the format leaves compose it exactly like the React hooks. See
-[Vue and TresJS font loading](../guides/vue.md).
+use those tags. The paragraph style list is the `textStyle` prop rather than `style`, because Vue normalizes any
+array-valued `style` prop into one merged object while creating the vnode, before setup can observe the list; `layout`
+and `constraints` keep their names because Vue leaves them untouched. Nested `<Text>` slots flatten into inline spans
+without mounting, constructor `args` stay referentially stable for the life of a node because Tres rebuilds an instance
+when they change, and a root or `pixelSnapping` change remounts through the element key. One default Glyph root exists
+per `TresCanvas`, retained by reference count with a one-microtask grace period, because a root may not span two
+Scenes. Vue has no render-phase suspension: a paragraph mounts nothing until every FontFace selection is loaded, starts
+missing loads together, and keeps the current paragraph while a later selection loads. `useFont` returns
+`{ font, error, ready }` shallow refs plus a promise for async setup; the format leaves compose it exactly like the
+React hooks. See [Vue and TresJS font loading](../guides/vue.md).
 
 The public `ThreeRoot` contract stops at that retained scene API: identity and disposal, Text/TextGroup construction,
 counts, and mutable material presentation. The renderer draw object, discovered Three Scene, root services, command
