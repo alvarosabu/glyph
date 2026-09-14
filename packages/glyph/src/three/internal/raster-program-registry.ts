@@ -1,10 +1,12 @@
-import { createRasterCodecProgram, type RasterCodec } from '../../config/raster.js';
+import type { RasterCodec } from '../../config/raster.js';
+import { createHostRasterCodecProgram } from '../../config/raster-host.js';
 import type { CodecIdFactory, CodecProgram } from '../../config/codec.js';
 import type { TechniqueSchemaMetadata } from '../../config/schema.js';
 import type { RasterFormatMetadata } from '../../config/raster-format.js';
 import { threeCodecCapabilitySet, threeSystemBuffers } from '../codec.js';
 import type { ThreeRasterMaterialContext } from '../raster-program.js';
 import type { NodeMaterial } from 'three/webgpu';
+import { slugSchema } from '../../raster/slug.js';
 
 export interface RuntimeThreeRasterVariant {
   readonly id: string;
@@ -108,15 +110,28 @@ function compileProgram<Format extends RasterFormatMetadata, Schema extends Tech
   identities: CodecIdFactory,
   transformMode: 'indexed' | 'direct',
 ): CompiledThreeRasterProgram {
-  const system = transformMode === 'indexed' ? threeSystemBuffers : { stableGlyphId: threeSystemBuffers.stableGlyphId };
-  const codec = createRasterCodecProgram(portable, {
+  const system =
+    transformMode === 'indexed'
+      ? threeSystemBuffers
+      : {
+          stableGlyphId: threeSystemBuffers.stableGlyphId,
+          placementSlot: threeSystemBuffers.placementSlot,
+        };
+  const options = {
     namespace: 'three',
     system,
     capabilitySet: threeCodecCapabilitySet(),
     transformMode,
-    allocationMode: 'ordered',
     ids: identities,
-  });
+  } as const;
+  const slugOptions = {
+    ...options,
+    placementSlotTarget: { buffer: slugSchema.buffers.bandCounts.id, lane: 2 },
+  } as const;
+  const codec = createHostRasterCodecProgram(
+    portable,
+    (portable.schema as TechniqueSchemaMetadata) === slugSchema ? slugOptions : options,
+  );
   return {
     raster: portable.raster,
     schema: portable.schema,

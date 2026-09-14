@@ -92,7 +92,7 @@ export interface RenderPlanReader {
   bytes(offset: number, byteLength: number): Uint8Array;
 }
 
-/** A synchronous view into engine-owned A/B memory. */
+/** A synchronous view into engine-owned result memory. */
 export interface BorrowedRenderPlan extends RenderPlanReader {
   readonly delivery: 'borrowed';
 }
@@ -176,11 +176,14 @@ export type RetainedTextRegionInput = Omit<
   PlannerRegion,
   'id' | 'geometryRevision' | 'transformIndex' | 'exclusionStart' | 'exclusionCount'
 > & {
+  readonly key: string;
   readonly transform: HandleTransformBinding;
 };
 
 /** An exclusion authored relative to its containing flow region. */
-export type RetainedTextExclusionInput = Omit<PlannerExclusion, 'id' | 'regionId' | 'geometryRevision'>;
+export type RetainedTextExclusionInput = Omit<PlannerExclusion, 'id' | 'regionId' | 'geometryRevision'> & {
+  readonly key: string;
+};
 
 /** One flow region and its exclusions. */
 export interface RetainedTextFlowRegionInput {
@@ -336,6 +339,10 @@ interface RetainedTextState {
   publishedText: string;
   publishedStyleCount: number;
   geometryRevision: number;
+  committedFlowRegions: Map<string, CommittedFlowRegion>;
+  committedFlowExclusions: Map<string, CommittedFlowExclusion>;
+  pendingFlowRegions: Map<string, CommittedFlowRegion>;
+  pendingFlowExclusions: Map<string, CommittedFlowExclusion>;
   published: boolean;
   dirty: boolean;
   semanticDirty: boolean;
@@ -351,6 +358,17 @@ interface RetainedTextState {
   committed: ResolvedTextOptions | undefined;
   measurement: ParagraphLayoutSummary | undefined;
   inspection: GlyphLayoutInspection | undefined;
+}
+
+interface CommittedFlowRegion {
+  readonly input: RetainedTextRegionInput;
+  readonly transformHandle: number;
+  readonly revision: number;
+}
+
+interface CommittedFlowExclusion {
+  readonly input: RetainedTextExclusionInput;
+  readonly revision: number;
 }
 
 interface RetainedTextMetrics {
@@ -542,6 +560,10 @@ class RenderPlannerImpl {
       publishedText: '',
       publishedStyleCount: 0,
       geometryRevision: 0,
+      committedFlowRegions: new Map(),
+      committedFlowExclusions: new Map(),
+      pendingFlowRegions: new Map(),
+      pendingFlowExclusions: new Map(),
       published: false,
       dirty: true,
       semanticDirty: true,
@@ -1016,6 +1038,7 @@ class RenderPlannerImpl {
       }
       if (state.geometryDirty) {
         const geometry = compileGeometry(this.#handleState, state, regions.length, exclusions.length);
+        prepareFlowEntityRevisions(state, geometry.regions, geometry.exclusions);
         constraints.push(geometry.constraint);
         regions.push(...geometry.regions);
         exclusions.push(...geometry.exclusions);
@@ -1135,6 +1158,7 @@ class RenderPlannerImpl {
     this.#removed.clear();
     for (const state of this.#texts) {
       if (!state.dirty) continue;
+      if (state.geometryDirty) commitFlowEntityRevisions(state);
       if (state.committed !== state.desired) {
         retainResolvedText(state.desired);
         if (state.committed !== undefined) releaseResolvedText(state.committed);
@@ -1902,21 +1926,35 @@ function compileGeometry(
   for (const [regionIndex, input] of flow.regions.entries()) {
     const transform = state.desired.flowTransforms[regionIndex]!;
     const firstExclusion = exclusionStart + exclusions.length;
-    const regionId = handleState.id('region', `paragraph/${state.paragraphId}/flow/${regionIndex}`);
+    const { key: regionKey, ...region } = input.region;
+    const regionId = handleState.id('region', keyedFlowIdentity(state.paragraphId, 'region', regionKey));
+    const committedRegion = state.committedFlowRegions.get(regionKey);
+    const regionRevision =
+      committedRegion !== undefined &&
+      committedRegion.transformHandle === transform.handle &&
+      sameFlowRegion(committedRegion.input, input.region)
+        ? committedRegion.revision
+        : revision;
     regions.push({
-      ...input.region,
+      ...region,
       id: regionId,
-      geometryRevision: revision,
+      geometryRevision: regionRevision,
       transformIndex: transform.handle,
       exclusionStart: firstExclusion,
       exclusionCount: input.exclusions?.length ?? 0,
     });
-    for (const [index, exclusion] of (input.exclusions ?? []).entries()) {
+    for (const exclusion of input.exclusions ?? []) {
+      const { key: exclusionKey, ...record } = exclusion;
+      const entityKey = flowExclusionIdentity(regionKey, exclusionKey);
+      const committedExclusion = state.committedFlowExclusions.get(entityKey);
       exclusions.push({
-        ...exclusion,
-        id: handleState.id('exclusion', `paragraph/${state.paragraphId}/flow/${regionIndex}/exclusion/${index}`),
+        ...record,
+        id: handleState.id('exclusion', keyedFlowIdentity(state.paragraphId, 'exclusion', regionKey, exclusionKey)),
         regionId,
-        geometryRevision: revision,
+        geometryRevision:
+          committedExclusion !== undefined && sameFlowExclusion(committedExclusion.input, exclusion)
+            ? committedExclusion.revision
+            : revision,
       });
     }
   }
@@ -1925,6 +1963,109 @@ function compileGeometry(
     regions,
     exclusions,
   };
+}
+
+function prepareFlowEntityRevisions(
+  state: RetainedTextState,
+  compiledRegions: readonly PlannerRegion[],
+  compiledExclusions: readonly PlannerExclusion[],
+): void {
+  const regions = state.pendingFlowRegions;
+  const exclusions = state.pendingFlowExclusions;
+  regions.clear();
+  exclusions.clear();
+  if (state.desired.source.flow === undefined) return;
+  let exclusionIndex = 0;
+  for (const [regionIndex, input] of state.desired.source.flow.regions.entries()) {
+    const compiledRegion = compiledRegions[regionIndex];
+    if (compiledRegion === undefined) throw new Error('compiled flow region count does not match the retained source');
+    const transformHandle = state.desired.flowTransforms[regionIndex]!.handle;
+    regions.set(input.region.key, {
+      input: input.region,
+      transformHandle,
+      revision: compiledRegion.geometryRevision,
+    });
+    for (const exclusion of input.exclusions ?? []) {
+      const key = flowExclusionIdentity(input.region.key, exclusion.key);
+      const compiledExclusion = compiledExclusions[exclusionIndex];
+      if (compiledExclusion === undefined) {
+        throw new Error('compiled flow exclusion count does not match the retained source');
+      }
+      exclusions.set(key, {
+        input: exclusion,
+        revision: compiledExclusion.geometryRevision,
+      });
+      exclusionIndex += 1;
+    }
+  }
+  if (compiledRegions.length !== regions.size || compiledExclusions.length !== exclusionIndex) {
+    throw new Error('compiled flow geometry does not match the retained source');
+  }
+}
+
+function commitFlowEntityRevisions(state: RetainedTextState): void {
+  const regions = state.pendingFlowRegions;
+  const exclusions = state.pendingFlowExclusions;
+  [state.committedFlowRegions, state.pendingFlowRegions] = [regions, state.committedFlowRegions];
+  [state.committedFlowExclusions, state.pendingFlowExclusions] = [exclusions, state.committedFlowExclusions];
+}
+
+function sameFlowRegion(left: RetainedTextRegionInput, right: RetainedTextRegionInput): boolean {
+  return (
+    left.shape === right.shape &&
+    left.writingMode === right.writingMode &&
+    left.textOrientation === right.textOrientation &&
+    Object.is(left.inlineStart, right.inlineStart) &&
+    Object.is(left.blockStart, right.blockStart) &&
+    Object.is(left.inlineEnd, right.inlineEnd) &&
+    Object.is(left.blockEnd, right.blockEnd) &&
+    Object.is(left.clipInlineStart, right.clipInlineStart) &&
+    Object.is(left.clipBlockStart, right.clipBlockStart) &&
+    Object.is(left.clipInlineEnd, right.clipInlineEnd) &&
+    Object.is(left.clipBlockEnd, right.clipBlockEnd) &&
+    sameFlowVertices(left.vertices, right.vertices)
+  );
+}
+
+function sameFlowExclusion(left: RetainedTextExclusionInput, right: RetainedTextExclusionInput): boolean {
+  return (
+    left.shape === right.shape &&
+    left.wrapSide === right.wrapSide &&
+    Object.is(left.inlineStart, right.inlineStart) &&
+    Object.is(left.blockStart, right.blockStart) &&
+    Object.is(left.inlineEnd, right.inlineEnd) &&
+    Object.is(left.blockEnd, right.blockEnd) &&
+    Object.is(left.marginInline, right.marginInline) &&
+    Object.is(left.marginBlock, right.marginBlock) &&
+    sameFlowVertices(left.vertices, right.vertices)
+  );
+}
+
+function sameFlowVertices(
+  left: readonly { readonly inline: number; readonly block: number }[] | undefined,
+  right: readonly { readonly inline: number; readonly block: number }[] | undefined,
+): boolean {
+  if (left === right) return true;
+  if (left === undefined || right === undefined || left.length !== right.length) return false;
+  return left.every(
+    (vertex, index) => Object.is(vertex.inline, right[index]!.inline) && Object.is(vertex.block, right[index]!.block),
+  );
+}
+
+function keyedFlowIdentity(
+  paragraphId: number,
+  kind: 'region' | 'exclusion',
+  regionKey: string,
+  exclusionKey?: string,
+): string {
+  const region = `${regionKey.length}:${regionKey}`;
+  return exclusionKey === undefined
+    ? `paragraph/${paragraphId}/flow/${kind}/${region}`
+    : `paragraph/${paragraphId}/flow/${kind}/${region}/${exclusionKey.length}:${exclusionKey}`;
+}
+
+function flowExclusionIdentity(regionKey: string, exclusionKey: string): string {
+  return `${regionKey.length}:${regionKey}/${exclusionKey.length}:${exclusionKey}`;
 }
 
 function compileInlineObjects(handleState: GlyphHandleState, state: RetainedTextState): readonly PlannerInlineObject[] {

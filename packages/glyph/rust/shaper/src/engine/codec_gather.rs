@@ -9,12 +9,17 @@ use super::{
         SEMANTIC_F32_BLOCK_ORIGIN, SEMANTIC_F32_FOREGROUND_ALPHA, SEMANTIC_F32_FOREGROUND_BLUE,
         SEMANTIC_F32_FOREGROUND_GREEN, SEMANTIC_F32_FOREGROUND_RED, SEMANTIC_F32_INLINE_ORIGIN,
         SEMANTIC_F32_INVERSE_FONT_SIZE, SEMANTIC_F32_OUTLINE_WIDTH_EM,
-        SEMANTIC_F32_SHADOW_OFFSET_X_EM, SEMANTIC_F32_SHADOW_OFFSET_Y_EM, SEMANTIC_U32_CLUSTER_ID,
-        SEMANTIC_U32_FOREGROUND_RGBA, SEMANTIC_U32_OUTLINE_RGBA, SEMANTIC_U32_SHADOW_RGBA,
+        SEMANTIC_F32_SHADOW_OFFSET_X_EM, SEMANTIC_F32_SHADOW_OFFSET_Y_EM,
+        SEMANTIC_U32_FOREGROUND_RGBA, SEMANTIC_U32_OUTLINE_RGBA, SEMANTIC_U32_PLACEMENT_SLOT,
+        SEMANTIC_U32_SHADOW_RGBA,
     },
+    placement_state::SegmentTranslation,
     plan_input::{PlanGlyph, PlanInput},
-    positioning::{ALL_SEMANTIC_CHANGES, SemanticGlyph},
+    positioning::{ALL_SEMANTIC_CHANGES, PositionedSemanticGlyph, SEMANTIC_PLACEMENT_SLOT_CHANGE},
 };
+
+const POSITION_ONLY_CHANGES: u16 =
+    (1 << 0) | (1 << 1) | (1 << 6) | (1 << 7) | SEMANTIC_PLACEMENT_SLOT_CHANGE;
 
 // Exact Float32 results of the IEC 61966-2-1 sRGB transfer for every byte value.
 // Foreground colors stay one compact u32 per glyph while codec output reproduces
@@ -66,6 +71,7 @@ pub const PAINT_LAYER_OVER_DECORATION: u32 = 2;
 pub struct LayoutGlyph {
     pub stable_id: u32,
     pub content_revision: u32,
+    pub placement_slot: u32,
     pub semantic_glyph_index: u32,
     pub binding_handle: u32,
     pub font_handle: u32,
@@ -85,7 +91,8 @@ pub struct LayoutGlyph {
 pub struct LayoutPlanInput<'a> {
     pub transform_id: u32,
     pub glyphs: &'a [LayoutGlyph],
-    pub(crate) semantic_glyphs: &'a [SemanticGlyph],
+    pub(crate) semantic_glyphs: &'a [PositionedSemanticGlyph],
+    pub(crate) placement_translations: &'a [SegmentTranslation],
     pub semantic_change_masks: &'a [u16],
     pub semantic_f32: &'a [&'a [f32]],
     pub semantic_u32: &'a [&'a [u32]],
@@ -168,6 +175,7 @@ fn selection_key(selected: SelectedGlyphBinding) -> u32 {
 #[derive(Default)]
 pub struct CodecGatherWorkspace {
     glyphs: Vec<PlanGlyph>,
+    placement_slots: AlignedField<u32>,
     sources: Vec<GatherSource>,
     semantic_change_masks: Vec<u16>,
     f32_fields: Vec<AlignedField<f32>>,
@@ -188,6 +196,7 @@ struct AlignedField<T> {
 
 pub struct GatheredPlanInput<'a> {
     glyphs: &'a [PlanGlyph],
+    placement_slots: &'a [u32],
     semantic_change_masks: &'a [u16],
     f32_fields: [&'a [f32]; MAX_REGISTERS],
     u32_fields: [&'a [u32]; MAX_REGISTERS],
@@ -198,6 +207,7 @@ pub struct GatheredPlanInput<'a> {
 impl CodecGatherWorkspace {
     pub fn reserve_records(&mut self, record_capacity: usize) -> Result<(), GatherError> {
         reserve(&mut self.glyphs, record_capacity)?;
+        self.placement_slots.reserve(record_capacity)?;
         reserve(&mut self.sources, record_capacity)?;
         reserve(&mut self.semantic_change_masks, record_capacity)
     }
@@ -255,7 +265,8 @@ impl CodecGatherWorkspace {
         self.retained_cursor = 0;
         self.retained_source_cursor = 0;
         let retained_len = self.glyphs.len();
-        Ok(self.semantic_change_masks.len() == retained_len
+        Ok(self.placement_slots.len == retained_len
+            && self.semantic_change_masks.len() == retained_len
             && self
                 .f32_fields
                 .iter()
@@ -322,6 +333,18 @@ impl CodecGatherWorkspace {
                     self.semantic_change_masks[cursor] = 0;
                     cursor += 1;
                 }
+                continue;
+            }
+            if self.update_retained_position_only(
+                codec,
+                capability_set,
+                input,
+                glyph_index,
+                cursor,
+                previous_source,
+                change_mask,
+            )? {
+                cursor += usize::from(previous_source.selected());
                 continue;
             }
             let binding = if cached_font_handle == Some(glyph.binding_handle) {
@@ -407,6 +430,7 @@ impl CodecGatherWorkspace {
                 f32_inputs,
                 u32_inputs,
             )?;
+            self.placement_slots.set(cursor, glyph.placement_slot)?;
             self.glyphs[cursor] = next;
             self.semantic_change_masks[cursor] = change_mask;
             // A substitution retained in place keeps the slot and takes a new identity, so the
@@ -420,13 +444,119 @@ impl CodecGatherWorkspace {
         Ok(RetainedGather::Complete)
     }
 
+    #[allow(clippy::too_many_arguments)]
+    fn update_retained_position_only(
+        &mut self,
+        codec: &ValidatedCodec,
+        capability_set: CapabilitySetId,
+        input: LayoutPlanInput<'_>,
+        glyph_index: usize,
+        output_index: usize,
+        previous_source: GatherSource,
+        change_mask: u16,
+    ) -> Result<bool, GatherError> {
+        if change_mask & !POSITION_ONLY_CHANGES != 0 {
+            return Ok(false);
+        }
+        let glyph = input
+            .glyphs
+            .get(glyph_index)
+            .copied()
+            .ok_or(GatherError::SourceFieldMissing)?;
+        if previous_source.stable_id != glyph.stable_id {
+            return Ok(false);
+        }
+        if !previous_source.selected() {
+            return Ok(true);
+        }
+        let Some(previous) = self.glyphs.get(output_index).copied() else {
+            return Ok(false);
+        };
+        if previous.stable_id != glyph.stable_id
+            || previous.transform_id != input.transform_id
+            || previous.material_id != glyph.material_id
+            || previous.clip_id != glyph.clip_id
+            || previous.depth_key != glyph.depth_key
+            || previous.inline_extent.to_bits() != glyph.inline_extent.to_bits()
+            || previous.block_extent.to_bits() != glyph.block_extent.to_bits()
+        {
+            return Ok(false);
+        }
+        let program = codec
+            .program(capability_set, previous.technique, previous.program_variant)
+            .ok_or(GatherError::ProgramMissing)?;
+        let (f32_inputs, u32_inputs) = codec
+            .input_masks_for_changes(
+                capability_set,
+                previous.technique,
+                previous.program_variant,
+                change_mask,
+                false,
+            )
+            .ok_or(GatherError::ProgramMissing)?;
+        for field in 0..usize::from(program.u32_input_count) {
+            if u32_inputs & (1 << field) == 0 {
+                continue;
+            }
+            let source = program.inputs[usize::from(program.f32_input_count) + field];
+            if source.scope != InputScope::Semantic || source.field != SEMANTIC_U32_PLACEMENT_SLOT {
+                return Ok(false);
+            }
+        }
+        let mut values = [0.0_f32; MAX_REGISTERS];
+        for (field, value) in values
+            .iter_mut()
+            .enumerate()
+            .take(usize::from(program.f32_input_count))
+        {
+            if f32_inputs & (1 << field) == 0 {
+                continue;
+            }
+            let source = program.inputs[field];
+            if source.scope != InputScope::Semantic {
+                return Ok(false);
+            }
+            *value = semantic_f32(source.field, input, glyph_index)?;
+        }
+        let (_, [inline_start, block_start]) = plan_glyph_placement(input, glyph_index)?;
+        for (field, value) in values
+            .iter()
+            .copied()
+            .enumerate()
+            .take(usize::from(program.f32_input_count))
+        {
+            if f32_inputs & (1 << field) != 0 {
+                self.f32_fields[field].set(output_index, value)?;
+            }
+        }
+        for field in 0..usize::from(program.u32_input_count) {
+            if u32_inputs & (1 << field) != 0 {
+                self.u32_fields[field].set(output_index, glyph.placement_slot)?;
+            }
+        }
+        self.glyphs[output_index] = PlanGlyph {
+            content_revision: glyph.content_revision,
+            inline_start,
+            block_start,
+            ..previous
+        };
+        if u32_inputs != 0 {
+            self.placement_slots
+                .set(output_index, glyph.placement_slot)?;
+        }
+        self.semantic_change_masks[output_index] = change_mask;
+        Ok(true)
+    }
+
     pub fn finish_retained(&self) -> bool {
         self.retained_cursor == self.glyphs.len()
+            && self.retained_cursor == self.placement_slots.len
             && self.retained_source_cursor == self.sources.len()
     }
 
     pub fn truncate_to_retained_prefix(&mut self) {
         self.glyphs.truncate(self.retained_cursor);
+        self.placement_slots.truncate(self.retained_cursor);
         self.sources.truncate(self.retained_source_cursor);
         self.semantic_change_masks.truncate(self.retained_cursor);
         for field in &mut self.f32_fields {
@@ -462,6 +592,7 @@ impl CodecGatherWorkspace {
         let required = self.glyphs.len().saturating_add(remaining);
         let source_required = self.sources.len().saturating_add(remaining);
         if self.glyphs.capacity() < required
+            || self.placement_slots.capacity() < required
             || self.sources.capacity() < source_required
             || self.semantic_change_masks.capacity() < required
             || self
@@ -530,6 +661,7 @@ impl CodecGatherWorkspace {
             self.sources
                 .push(GatherSource::new(glyph.stable_id, Some(selected)));
             self.glyphs.push(planned);
+            self.placement_slots.push(glyph.placement_slot)?;
             self.semantic_change_masks.push(
                 input
                     .semantic_change_masks
@@ -541,16 +673,8 @@ impl CodecGatherWorkspace {
         Ok(())
     }
 
-    /// Appends resource-free decoration records around glyph gather. Rows carry the
-    /// decoration program's technique, a dedicated identity namespace (top bit set), and
-    /// a fixed lane convention mirroring the first-party u32 prefix: f32 lanes 0-3 hold
-    /// the decoration rectangle; u32 lanes hold the record's physical transform index,
-    /// stable identity, color,
-    /// then flags with the line style in bits 8-15. `pass` selects CSS paint order:
-    /// underline and overline records append before the paragraph's glyphs and
-    /// line-through records after, so draw order tokens place them under and over the
-    /// text respectively. Returns false when the codec declares no decoration program,
-    /// leaving the gather output untouched.
+    /// Appends resource-free decorations around glyph gather in CSS paint order.
+    /// Rows use the decoration program's declared lanes; false means no decoration program.
     pub fn append_decorations(
         &mut self,
         codec: &ValidatedCodec,
@@ -572,6 +696,7 @@ impl CodecGatherWorkspace {
         }
         let base = self.glyphs.len();
         reserve(&mut self.glyphs, decoration_count)?;
+        self.placement_slots.reserve(decoration_count)?;
         reserve(&mut self.semantic_change_masks, decoration_count)?;
         for field in &mut self.f32_fields {
             field
@@ -632,6 +757,7 @@ impl CodecGatherWorkspace {
                 inline_extent: record.inline_extent,
                 block_extent: record.block_extent,
             });
+            self.placement_slots.push(u32::MAX)?;
             self.semantic_change_masks
                 .push(super::positioning::ALL_SEMANTIC_CHANGES);
         }
@@ -649,6 +775,7 @@ impl CodecGatherWorkspace {
         }
         GatheredPlanInput {
             glyphs: &self.glyphs,
+            placement_slots: self.placement_slots.as_slice(),
             semantic_change_masks: &self.semantic_change_masks,
             f32_fields,
             u32_fields,
@@ -759,6 +886,7 @@ impl CodecGatherWorkspace {
         self.retained_cursor = 0;
         self.retained_source_cursor = 0;
         self.glyphs.clear();
+        self.placement_slots.clear();
         self.sources.clear();
         self.semantic_change_masks.clear();
         for field in &mut self.f32_fields {
@@ -847,6 +975,7 @@ impl GatheredPlanInput<'_> {
     pub fn plan_input(&self) -> PlanInput<'_> {
         PlanInput {
             glyphs: self.glyphs,
+            placement_slots: self.placement_slots,
             semantic_change_masks: self.semantic_change_masks,
             f32_fields: &self.f32_fields[..self.f32_field_count],
             u32_fields: &self.u32_fields[..self.u32_field_count],
@@ -866,16 +995,7 @@ fn plan_glyph(
         .resources()
         .get(usize::try_from(selected.resource).map_err(|_| GatherError::ResourceBindingMissing)?)
         .ok_or(GatherError::ResourceBindingMissing)?;
-    let semantic_id = match input
-        .semantic_u32
-        .get(usize::from(SEMANTIC_U32_CLUSTER_ID))
-        .and_then(|values| values.get(glyph_index))
-        .copied()
-    {
-        Some(value) => value,
-        None if input.semantic_glyphs.is_empty() => glyph.stable_id,
-        None => return Err(GatherError::SourceFieldMissing),
-    };
+    let (semantic_id, [inline_start, block_start]) = plan_glyph_placement(input, glyph_index)?;
     Ok(PlanGlyph {
         stable_id: glyph.stable_id,
         content_revision: glyph.content_revision,
@@ -890,11 +1010,46 @@ fn plan_glyph(
         material_id: glyph.material_id,
         clip_id: glyph.clip_id,
         depth_key: glyph.depth_key,
-        inline_start: glyph.inline_start,
-        block_start: glyph.block_start,
+        inline_start,
+        block_start,
         inline_extent: glyph.inline_extent,
         block_extent: glyph.block_extent,
     })
+}
+
+fn plan_glyph_placement(
+    input: LayoutPlanInput<'_>,
+    glyph_index: usize,
+) -> Result<(u32, [f32; 2]), GatherError> {
+    let glyph = input
+        .glyphs
+        .get(glyph_index)
+        .ok_or(GatherError::SourceFieldMissing)?;
+    let semantic = input
+        .semantic_glyphs
+        .get(
+            usize::try_from(glyph.semantic_glyph_index)
+                .map_err(|_| GatherError::SourceFieldMissing)?,
+        )
+        .ok_or(GatherError::InvalidSemanticShape)?;
+    let translation = input
+        .placement_translations
+        .get(
+            usize::try_from(semantic.placement_segment)
+                .map_err(|_| GatherError::SourceFieldMissing)?,
+        )
+        .ok_or(GatherError::InvalidSemanticShape)?;
+    let inline_start = super::positioning::placed_f32(
+        semantic.ink_inline_start,
+        translation.translation_inline as f32,
+    )
+    .map_err(|_| GatherError::InvalidSemanticShape)?;
+    let block_start = super::positioning::placed_f32(
+        semantic.ink_block_start,
+        translation.translation_block as f32,
+    )
+    .map_err(|_| GatherError::InvalidSemanticShape)?;
+    Ok((semantic.cluster, [inline_start, block_start]))
 }
 
 fn same_storage_topology(previous: PlanGlyph, next: PlanGlyph) -> bool {
@@ -919,17 +1074,7 @@ fn source_f32(
     selected: SelectedGlyphBinding,
 ) -> Result<f32, GatherError> {
     let (table, row) = match scope {
-        InputScope::Semantic => {
-            if let Some(value) = derived_semantic_f32(field, input, glyph_index)? {
-                return Ok(value);
-            }
-            return input
-                .semantic_f32
-                .get(usize::from(field))
-                .and_then(|values| values.get(glyph_index))
-                .copied()
-                .ok_or(GatherError::SourceFieldMissing);
-        }
+        InputScope::Semantic => return semantic_f32(field, input, glyph_index),
         InputScope::Glyph => (
             binding.glyph_f32(),
             binding_row(input.glyphs[glyph_index].glyph_id)?,
@@ -944,25 +1089,36 @@ fn source_f32(
         .ok_or(GatherError::SourceFieldMissing)
 }
 
+fn semantic_f32(
+    field: u8,
+    input: LayoutPlanInput<'_>,
+    glyph_index: usize,
+) -> Result<f32, GatherError> {
+    if let Some(value) = derived_semantic_f32(field, input, glyph_index)? {
+        return Ok(value);
+    }
+    input
+        .semantic_f32
+        .get(usize::from(field))
+        .and_then(|values| values.get(glyph_index))
+        .copied()
+        .ok_or(GatherError::SourceFieldMissing)
+}
+
 fn derived_semantic_f32(
     field: u8,
     input: LayoutPlanInput<'_>,
     glyph_index: usize,
 ) -> Result<Option<f32>, GatherError> {
     if field == SEMANTIC_F32_INLINE_ORIGIN || field == SEMANTIC_F32_BLOCK_ORIGIN {
-        let semantic_index = input
+        let glyph = input
             .glyphs
             .get(glyph_index)
-            .and_then(|glyph| usize::try_from(glyph.semantic_glyph_index).ok())
-            .ok_or(GatherError::SourceFieldMissing)?;
-        let glyph = input
-            .semantic_glyphs
-            .get(semantic_index)
             .ok_or(GatherError::SourceFieldMissing)?;
         return Ok(Some(if field == SEMANTIC_F32_INLINE_ORIGIN {
-            glyph.inline_origin
+            glyph.inline_start
         } else {
-            glyph.block_origin
+            glyph.block_start
         }));
     }
     if field == SEMANTIC_F32_INVERSE_FONT_SIZE {
@@ -1030,6 +1186,13 @@ fn source_u32(
     binding: &FontRenderBinding,
     selected: SelectedGlyphBinding,
 ) -> Result<u32, GatherError> {
+    if scope == InputScope::Semantic && field == SEMANTIC_U32_PLACEMENT_SLOT {
+        return input
+            .glyphs
+            .get(glyph_index)
+            .map(|glyph| glyph.placement_slot)
+            .ok_or(GatherError::SourceFieldMissing);
+    }
     let (table, row) = match scope {
         InputScope::Semantic => {
             let values = input
@@ -1093,9 +1256,8 @@ mod tests {
     use super::*;
     use crate::engine::{
         codec::{
-            ALLOCATION_ORDERED_DIRECT, ALLOCATION_STABLE_INDIRECT, BATCH_ORDER, BATCH_PROGRAM,
-            BATCH_RESOURCE, BATCH_TECHNIQUE, BUFFER_USAGE_COPY_DST, BUFFER_USAGE_STORAGE, BufferId,
-            BufferSchema, CAP_ORDERED_DIRECT, CAP_STABLE_INDIRECT, CAP_STORAGE_BUFFERS,
+            BATCH_ORDER, BATCH_PROGRAM, BATCH_RESOURCE, BATCH_TECHNIQUE, BUFFER_USAGE_COPY_DST,
+            BUFFER_USAGE_STORAGE, BufferId, BufferSchema, CAP_ORDERED_DIRECT, CAP_STORAGE_BUFFERS,
             CapabilitySet, CodecDescriptor, InputSource, Operation, ProgramCapabilities,
             ProgramDescriptor, ProgramId, ScalarType, TechniqueId,
         },
@@ -1106,13 +1268,55 @@ mod tests {
     use alloc::vec;
 
     const CAPABILITY: CapabilitySetId = CapabilitySetId(1);
+    const TEST_POSITIONED_SEMANTICS: [PositionedSemanticGlyph; 2] = [
+        PositionedSemanticGlyph {
+            stable_id: 1,
+            font_handle: 9,
+            cluster: 101,
+            glyph_id: 0,
+            flags: 0,
+            bidi_level: 0,
+            font_size: 16.0,
+            inline_origin: 0.0,
+            block_origin: 0.0,
+            inline_advance: 0.0,
+            ink_inline_start: 0.0,
+            ink_block_start: 0.0,
+            ink_inline_extent: 8.0,
+            ink_block_extent: 16.0,
+            placement_segment: 0,
+        },
+        PositionedSemanticGlyph {
+            stable_id: 2,
+            font_handle: 9,
+            cluster: 102,
+            glyph_id: 1,
+            flags: 0,
+            bidi_level: 0,
+            font_size: 16.0,
+            inline_origin: 10.0,
+            block_origin: 0.0,
+            inline_advance: 0.0,
+            ink_inline_start: 10.0,
+            ink_block_start: 0.0,
+            ink_inline_extent: 8.0,
+            ink_block_extent: 16.0,
+            placement_segment: 0,
+        },
+    ];
+    const TEST_PLACEMENT_TRANSLATIONS: [SegmentTranslation; 1] = [SegmentTranslation {
+        translation_inline: 0.0,
+        translation_block: 0.0,
+    }];
 
     #[test]
-    fn derives_codec_color_channels_and_inverse_font_size_without_retained_arrays() {
+    fn derives_local_geometry_and_direct_occurrence_placement() {
         let mut glyphs = [layout_glyph(1, 0)];
         glyphs[0].semantic_glyph_index = 1;
+        glyphs[0].inline_start = 101.25;
+        glyphs[0].block_start = -202.5;
         let semantic_glyphs = [
-            SemanticGlyph {
+            PositionedSemanticGlyph {
                 stable_id: 99,
                 font_handle: 1,
                 cluster: 0,
@@ -1121,9 +1325,9 @@ mod tests {
                 font_size: 16.0,
                 inline_origin: 500.0,
                 block_origin: 500.0,
-                ..SemanticGlyph::default()
+                ..PositionedSemanticGlyph::default()
             },
-            SemanticGlyph {
+            PositionedSemanticGlyph {
                 stable_id: 1,
                 font_handle: 1,
                 cluster: 0,
@@ -1132,18 +1336,47 @@ mod tests {
                 font_size: 16.0,
                 inline_origin: 12.5,
                 block_origin: -3.25,
-                ..SemanticGlyph::default()
+                ink_inline_start: 2.0,
+                ink_block_start: 3.0,
+                ..PositionedSemanticGlyph::default()
             },
         ];
         let foreground = [0xff20_4080];
+        let placement = [SegmentTranslation {
+            translation_inline: 10.0,
+            translation_block: -20.0,
+        }];
+        let retained_local_ink = [&[900.0][..], &[800.0][..]];
         let input = LayoutPlanInput {
             transform_id: 1,
             glyphs: &glyphs,
             semantic_glyphs: &semantic_glyphs,
+            placement_translations: &placement,
             semantic_change_masks: &[],
-            semantic_f32: &[],
+            semantic_f32: &retained_local_ink,
             semantic_u32: &[&foreground],
         };
+        assert_eq!(plan_glyph_placement(input, 0), Ok((0, [12.0, -17.0])));
+        assert_eq!(
+            plan_glyph_placement(
+                LayoutPlanInput {
+                    semantic_glyphs: &[],
+                    ..input
+                },
+                0,
+            ),
+            Err(GatherError::InvalidSemanticShape)
+        );
+        assert_eq!(
+            plan_glyph_placement(
+                LayoutPlanInput {
+                    placement_translations: &[],
+                    ..input
+                },
+                0,
+            ),
+            Err(GatherError::InvalidSemanticShape)
+        );
         assert_eq!(
             derived_semantic_f32(SEMANTIC_F32_FOREGROUND_RED, input, 0),
             Ok(Some(f32::from_bits(SRGB8_TO_LINEAR_BITS[128])))
@@ -1166,12 +1399,31 @@ mod tests {
         );
         assert_eq!(
             derived_semantic_f32(SEMANTIC_F32_INLINE_ORIGIN, input, 0),
-            Ok(Some(12.5))
+            Ok(Some(101.25))
         );
         assert_eq!(
             derived_semantic_f32(SEMANTIC_F32_BLOCK_ORIGIN, input, 0),
-            Ok(Some(-3.25))
+            Ok(Some(-202.5))
         );
+    }
+
+    #[test]
+    fn positioned_origins_need_no_parallel_vectors() {
+        let binding = binding();
+        let codec = codec();
+        let glyphs = [layout_glyph(1, 0)];
+        let input = LayoutPlanInput {
+            transform_id: 1,
+            glyphs: &glyphs,
+            semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+            placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
+            semantic_change_masks: &[],
+            semantic_f32: &[&[0.0]],
+            semantic_u32: &[&[0]],
+        };
+        CodecGatherWorkspace::default()
+            .gather(&codec, CAPABILITY, input, |_| Some(&binding))
+            .unwrap();
     }
 
     #[test]
@@ -1191,7 +1443,8 @@ mod tests {
                 LayoutPlanInput {
                     transform_id: 1,
                     glyphs: &glyphs,
-                    semantic_glyphs: &[],
+                    semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                    placement_translations: &[SegmentTranslation::default()],
                     semantic_change_masks: &[],
                     semantic_f32: &[&semantic_x],
                     semantic_u32: &[&semantic_kind],
@@ -1261,7 +1514,8 @@ mod tests {
                 LayoutPlanInput {
                     transform_id: 1,
                     glyphs: &glyphs,
-                    semantic_glyphs: &[],
+                    semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                    placement_translations: &[SegmentTranslation::default()],
                     semantic_change_masks: &[],
                     semantic_f32: &[&initial_x],
                     semantic_u32: &[&semantic_kind],
@@ -1286,7 +1540,8 @@ mod tests {
                     LayoutPlanInput {
                         transform_id: 1,
                         glyphs: &changed_glyphs,
-                        semantic_glyphs: &[],
+                        semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                        placement_translations: &[SegmentTranslation::default()],
                         semantic_change_masks: &[0, 1],
                         semantic_f32: &[&changed_x],
                         semantic_u32: &[&semantic_kind],
@@ -1315,7 +1570,8 @@ mod tests {
                     LayoutPlanInput {
                         transform_id: 1,
                         glyphs: &changed_topology,
-                        semantic_glyphs: &[],
+                        semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                        placement_translations: &[SegmentTranslation::default()],
                         semantic_change_masks: &[
                             0,
                             super::super::positioning::ALL_SEMANTIC_CHANGES
@@ -1336,7 +1592,8 @@ mod tests {
                 LayoutPlanInput {
                     transform_id: 1,
                     glyphs: &changed_topology,
-                    semantic_glyphs: &[],
+                    semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                    placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                     semantic_change_masks: &[0, crate::engine::positioning::ALL_SEMANTIC_CHANGES],
                     semantic_f32: &[&changed_x],
                     semantic_u32: &[&semantic_kind],
@@ -1368,7 +1625,8 @@ mod tests {
             LayoutPlanInput {
                 transform_id: 1,
                 glyphs: &first,
-                semantic_glyphs: &[],
+                semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                 semantic_change_masks: &[],
                 semantic_f32: &[&first_x],
                 semantic_u32: &[&first_kind],
@@ -1376,7 +1634,8 @@ mod tests {
             LayoutPlanInput {
                 transform_id: 2,
                 glyphs: &second,
-                semantic_glyphs: &[],
+                semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                 semantic_change_masks: &[],
                 semantic_f32: &[&second_x],
                 semantic_u32: &[&second_kind],
@@ -1430,7 +1689,8 @@ mod tests {
                 LayoutPlanInput {
                     transform_id: 1,
                     glyphs: &glyphs,
-                    semantic_glyphs: &[],
+                    semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                    placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                     semantic_change_masks: &[],
                     semantic_f32: &[&semantic_x],
                     semantic_u32: &[&semantic_kind],
@@ -1451,7 +1711,8 @@ mod tests {
                     LayoutPlanInput {
                         transform_id: 1,
                         glyphs: &revised,
-                        semantic_glyphs: &[],
+                        semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                        placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                         semantic_change_masks: &[0, 1],
                         semantic_f32: &[&moved_x],
                         semantic_u32: &[&semantic_kind],
@@ -1474,6 +1735,94 @@ mod tests {
         assert_eq!(input.u32_fields[1], &[11, 12]);
         assert_eq!(input.u32_fields[2], &[13, 14]);
         assert_eq!(input.u32_fields[3], &[15, 15]);
+    }
+
+    #[test]
+    fn retained_position_only_gather_skips_binding_and_resource_resolution() {
+        let binding = binding();
+        let codec = placement_codec();
+        let mut glyph = layout_glyph(1, 0);
+        glyph.placement_slot = 3;
+        let transform_indices = [17];
+        let stable_glyph_ids = [glyph.stable_id];
+        let semantic_u32 = [
+            &[][..],
+            &[][..],
+            &[][..],
+            &[][..],
+            &transform_indices[..],
+            &stable_glyph_ids[..],
+        ];
+        let before = [PositionedSemanticGlyph {
+            stable_id: 1,
+            inline_origin: 12.5,
+            block_origin: -3.25,
+            ink_inline_start: 11.0,
+            ink_block_start: -5.0,
+            ..PositionedSemanticGlyph::default()
+        }];
+        let mut workspace = CodecGatherWorkspace::default();
+        workspace
+            .gather(
+                &codec,
+                CAPABILITY,
+                LayoutPlanInput {
+                    transform_id: 1,
+                    glyphs: &[glyph],
+                    semantic_glyphs: &before,
+                    placement_translations: &[SegmentTranslation::default()],
+                    semantic_change_masks: &[],
+                    semantic_f32: &[],
+                    semantic_u32: &semantic_u32,
+                },
+                |_| Some(&binding),
+            )
+            .unwrap();
+
+        glyph.content_revision = 2;
+        glyph.placement_slot = 9;
+        let after = [PositionedSemanticGlyph {
+            stable_id: 1,
+            inline_origin: 42.25,
+            block_origin: 9.5,
+            ink_inline_start: 40.0,
+            ink_block_start: 8.0,
+            ..PositionedSemanticGlyph::default()
+        }];
+        assert!(workspace.begin_retained(&codec, 1).unwrap());
+        assert_eq!(
+            workspace
+                .append_retained(
+                    &codec,
+                    CAPABILITY,
+                    LayoutPlanInput {
+                        transform_id: 1,
+                        glyphs: &[glyph],
+                        semantic_glyphs: &after,
+                        placement_translations: &[SegmentTranslation::default()],
+                        semantic_change_masks: &[(1 << 0)
+                            | (1 << 1)
+                            | SEMANTIC_PLACEMENT_SLOT_CHANGE],
+                        semantic_f32: &[],
+                        semantic_u32: &semantic_u32,
+                    },
+                    |_| panic!("position-only gather must not resolve the font binding"),
+                )
+                .unwrap(),
+            RetainedGather::Complete
+        );
+        assert!(workspace.finish_retained());
+        let gathered = workspace.view();
+        let input = gathered.plan_input();
+        assert_eq!(input.placement_slots, [9]);
+        assert_eq!(input.u32_fields[0], [17]);
+        assert_eq!(input.u32_fields[1], [1]);
+        assert_eq!(input.u32_fields[2], [9]);
+        assert_eq!(input.glyphs[0].content_revision, 2);
+        assert_eq!(input.glyphs[0].inline_start, 40.0);
+        assert_eq!(input.glyphs[0].block_start, 8.0);
+        assert_eq!(input.glyphs[0].resource_id, 71);
+        assert_eq!(input.glyphs[0].resource_generation, 3);
     }
 
     #[test]
@@ -1511,7 +1860,8 @@ mod tests {
                 LayoutPlanInput {
                     transform_id: 1,
                     glyphs: &[glyph],
-                    semantic_glyphs: &[],
+                    semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                    placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                     semantic_change_masks: &[],
                     semantic_f32: &[&semantic_x],
                     semantic_u32: &[&semantic_kind],
@@ -1531,7 +1881,8 @@ mod tests {
                     LayoutPlanInput {
                         transform_id: 1,
                         glyphs: &[glyph],
-                        semantic_glyphs: &[],
+                        semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                        placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                         semantic_change_masks: &[1 << 4],
                         semantic_f32: &[&semantic_x],
                         semantic_u32: &[&semantic_kind],
@@ -1560,7 +1911,8 @@ mod tests {
                 LayoutPlanInput {
                     transform_id: 1,
                     glyphs: &glyphs,
-                    semantic_glyphs: &[],
+                    semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                    placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                     semantic_change_masks: &[],
                     semantic_f32: &[],
                     semantic_u32: &[],
@@ -1576,7 +1928,8 @@ mod tests {
                 LayoutPlanInput {
                     transform_id: 1,
                     glyphs: &glyphs,
-                    semantic_glyphs: &[],
+                    semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                    placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                     semantic_change_masks: &[],
                     semantic_f32: &[],
                     semantic_u32: &[],
@@ -1592,7 +1945,8 @@ mod tests {
                 LayoutPlanInput {
                     transform_id: 1,
                     glyphs: &glyphs,
-                    semantic_glyphs: &[],
+                    semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                    placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                     semantic_change_masks: &[],
                     semantic_f32: &[],
                     semantic_u32: &[],
@@ -1624,7 +1978,8 @@ mod tests {
         let initial = LayoutPlanInput {
             transform_id: 1,
             glyphs: before,
-            semantic_glyphs: &[],
+            semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+            placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
             semantic_change_masks: &[],
             semantic_f32: &[&semantic_before],
             semantic_u32: &[&kinds_before],
@@ -1632,7 +1987,8 @@ mod tests {
         let edited = LayoutPlanInput {
             transform_id: 1,
             glyphs: after,
-            semantic_glyphs: &[],
+            semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+            placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
             semantic_change_masks: masks,
             semantic_f32: &[&semantic_after],
             semantic_u32: &[&kinds_after],
@@ -1724,7 +2080,8 @@ mod tests {
             let input = LayoutPlanInput {
                 transform_id: 1,
                 glyphs: &glyphs,
-                semantic_glyphs: &[],
+                semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                 semantic_change_masks: masks,
                 semantic_f32: &semantic_f32,
                 semantic_u32: &semantic_u32,
@@ -1902,7 +2259,8 @@ mod tests {
             let input = LayoutPlanInput {
                 transform_id,
                 glyphs,
-                semantic_glyphs: &[],
+                semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                 semantic_change_masks: masks,
                 semantic_f32: &semantic_f32,
                 semantic_u32: &semantic_u32,
@@ -2116,7 +2474,7 @@ mod tests {
     }
 
     #[test]
-    fn gathered_producer_contract_compiles_fresh_and_retained_for_both_strategies() {
+    fn gathered_producer_contract_compiles_fresh_and_retained() {
         let binding = binding();
         let before_first = [layout_glyph(1, 0), layout_glyph(2, 1)];
         let before_second = [layout_glyph(3, 0)];
@@ -2132,13 +2490,9 @@ mod tests {
             (2, &after_second, &[]),
         ];
 
-        for strategy in [ALLOCATION_ORDERED_DIRECT, ALLOCATION_STABLE_INDIRECT] {
-            let codec = codec_for_strategy(strategy);
-            let label = if strategy == ALLOCATION_ORDERED_DIRECT {
-                "ordered"
-            } else {
-                "stable"
-            };
+        {
+            let codec = codec();
+            let label = "ordered";
             let mut retained = CodecGatherWorkspace::default();
             retained.reserve_codec(&codec, 16).unwrap();
             assert!(!gather_planner(
@@ -2215,6 +2569,7 @@ mod tests {
         LayoutGlyph {
             stable_id,
             content_revision: 1,
+            placement_slot: 0,
             semantic_glyph_index: glyph_id,
             binding_handle: 9,
             font_handle: 9,
@@ -2254,35 +2609,68 @@ mod tests {
         .unwrap()
     }
 
-    fn codec() -> ValidatedCodec {
-        codec_for_strategy(ALLOCATION_ORDERED_DIRECT)
+    fn placement_codec() -> ValidatedCodec {
+        let mut descriptor = base_descriptor();
+        let program = &mut descriptor.programs[0];
+        program.f32_input_count = 0;
+        program.u32_input_count = 3;
+        program.inputs = vec![
+            InputSource::semantic(super::super::frame::SEMANTIC_U32_TRANSFORM_INDEX),
+            InputSource::semantic(super::super::frame::SEMANTIC_U32_STABLE_GLYPH_ID),
+            InputSource::semantic(SEMANTIC_U32_PLACEMENT_SLOT),
+        ];
+        program.buffers = (1..=3)
+            .map(|id| {
+                BufferSchema::packed(
+                    BufferId(id),
+                    ScalarType::U32,
+                    1,
+                    BUFFER_USAGE_STORAGE | BUFFER_USAGE_COPY_DST,
+                    1,
+                )
+            })
+            .collect();
+        program.operations = vec![
+            Operation::LoadU32 {
+                target: 0,
+                field: 0,
+            },
+            Operation::StoreU32 {
+                source: 0,
+                buffer: BufferId(1),
+                lane: 0,
+            },
+            Operation::LoadU32 {
+                target: 1,
+                field: 1,
+            },
+            Operation::StoreU32 {
+                source: 1,
+                buffer: BufferId(2),
+                lane: 0,
+            },
+            Operation::LoadU32 {
+                target: 2,
+                field: 2,
+            },
+            Operation::StoreU32 {
+                source: 2,
+                buffer: BufferId(3),
+                lane: 0,
+            },
+        ];
+        ValidatedCodec::new(descriptor).unwrap()
     }
 
-    fn codec_for_strategy(allocation_strategy: u16) -> ValidatedCodec {
+    fn codec() -> ValidatedCodec {
         let mut descriptor = base_descriptor();
-        descriptor.capability_sets[0].flags = CAP_STORAGE_BUFFERS
-            | if allocation_strategy == ALLOCATION_ORDERED_DIRECT {
-                CAP_ORDERED_DIRECT
-            } else {
-                CAP_STABLE_INDIRECT
-            };
-        descriptor.programs[0].allocation_strategy = allocation_strategy;
+        descriptor.capability_sets[0].flags = CAP_STORAGE_BUFFERS | CAP_ORDERED_DIRECT;
         ValidatedCodec::new(descriptor).unwrap()
     }
 
     fn codec_with_decorations() -> ValidatedCodec {
-        codec_with_decorations_for_strategy(ALLOCATION_ORDERED_DIRECT)
-    }
-
-    fn codec_with_decorations_for_strategy(allocation_strategy: u16) -> ValidatedCodec {
         let mut descriptor = base_descriptor();
-        descriptor.capability_sets[0].flags = CAP_STORAGE_BUFFERS
-            | if allocation_strategy == ALLOCATION_ORDERED_DIRECT {
-                CAP_ORDERED_DIRECT
-            } else {
-                CAP_STABLE_INDIRECT
-            };
-        descriptor.programs[0].allocation_strategy = allocation_strategy;
+        descriptor.capability_sets[0].flags = CAP_STORAGE_BUFFERS | CAP_ORDERED_DIRECT;
         let mut program = descriptor.programs[0].clone();
         program.primitive_kind = 2;
         program.technique = TechniqueId(99);
@@ -2395,7 +2783,7 @@ mod tests {
     }
 
     #[test]
-    fn gathered_decorations_preserve_the_producer_contract_for_both_strategies() {
+    fn gathered_decorations_preserve_the_producer_contract() {
         let binding = binding();
         let underline = crate::engine::positioning::DecorationRecord {
             flags: crate::engine::frame::DECORATION_UNDERLINE,
@@ -2421,13 +2809,9 @@ mod tests {
         let semantic_x = [10.0];
         let semantic_kind = [100];
 
-        for strategy in [ALLOCATION_ORDERED_DIRECT, ALLOCATION_STABLE_INDIRECT] {
-            let codec = codec_with_decorations_for_strategy(strategy);
-            let label = if strategy == ALLOCATION_ORDERED_DIRECT {
-                "ordered decorations"
-            } else {
-                "stable decorations"
-            };
+        {
+            let codec = codec_with_decorations();
+            let label = "ordered decorations";
             let mut workspace = CodecGatherWorkspace::default();
             workspace.begin(&codec, 8).unwrap();
             assert!(
@@ -2449,7 +2833,8 @@ mod tests {
                     LayoutPlanInput {
                         transform_id: 3,
                         glyphs: &glyphs,
-                        semantic_glyphs: &[],
+                        semantic_glyphs: &TEST_POSITIONED_SEMANTICS,
+                        placement_translations: &TEST_PLACEMENT_TRANSLATIONS,
                         semantic_change_masks: &[],
                         semantic_f32: &[&semantic_x],
                         semantic_u32: &[&semantic_kind],
@@ -2534,7 +2919,6 @@ mod tests {
                     | crate::engine::codec::BATCH_DEPTH
                     | BATCH_ORDER
                     | crate::engine::codec::BATCH_TRANSFORM,
-                allocation_strategy: ALLOCATION_ORDERED_DIRECT,
                 f32_input_count: 4,
                 u32_input_count: 4,
                 inputs: vec![

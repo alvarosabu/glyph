@@ -36,6 +36,8 @@ pub mod codec_gather;
 #[cfg_attr(not(any(target_arch = "wasm32", test)), allow(dead_code))]
 pub(crate) mod codec_wire;
 pub mod ordered_plan;
+mod placement_slot_arena;
+mod placement_state;
 mod plan_draw;
 mod plan_error;
 pub mod plan_input;
@@ -44,15 +46,12 @@ mod positioning;
 pub mod render_plan;
 pub mod render_plan_compiler;
 pub(crate) mod render_plan_wire;
+mod run_local;
 pub(crate) mod semantic_view;
 mod semantic_wire;
+mod session_placement;
 pub(crate) mod shaping_state;
 pub(crate) mod sort;
-#[cfg_attr(not(test), allow(dead_code))]
-mod stable_order;
-pub mod stable_plan;
-#[cfg_attr(not(test), allow(dead_code))]
-mod stable_pool;
 mod staged;
 mod style_state;
 

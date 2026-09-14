@@ -3,10 +3,9 @@ use core::mem::{align_of, offset_of, size_of};
 use serde_json::json;
 
 use crate::engine::codec::{
-    ALLOCATION_ORDERED_DIRECT, ALLOCATION_STABLE_INDIRECT, BATCH_CLIP, BATCH_DEPTH, BATCH_MATERIAL,
-    BATCH_ORDER, BATCH_PROGRAM, BATCH_RESOURCE, BATCH_TECHNIQUE, BATCH_TRANSFORM,
-    BUFFER_USAGE_COPY_DST, BUFFER_USAGE_STORAGE, BUFFER_USAGE_VERTEX, CAP_ALIAS_VEC2,
-    CAP_ALIAS_VEC4, CAP_INDIRECT_DRAWS, CAP_ORDERED_DIRECT, CAP_STABLE_INDIRECT,
+    BATCH_CLIP, BATCH_DEPTH, BATCH_MATERIAL, BATCH_ORDER, BATCH_PROGRAM, BATCH_RESOURCE,
+    BATCH_TECHNIQUE, BATCH_TRANSFORM, BUFFER_USAGE_COPY_DST, BUFFER_USAGE_STORAGE,
+    BUFFER_USAGE_VERTEX, CAP_ALIAS_VEC2, CAP_ALIAS_VEC4, CAP_INDIRECT_DRAWS, CAP_ORDERED_DIRECT,
     CAP_STORAGE_BUFFERS, INPUT_GLYPH, INPUT_RESOURCE, INPUT_SEMANTIC, INPUT_STRIKE, OP_ADD_F32,
     OP_CONSTANT_F32, OP_CONSTANT_U32, OP_CONVERT_U32_TO_F32, OP_LESS_THAN_F32, OP_LOAD_F32,
     OP_LOAD_U32, OP_MULTIPLY_F32, OP_SELECT_F32, OP_STORE_F32, OP_STORE_U16, OP_STORE_U32,
@@ -18,35 +17,38 @@ use crate::engine::frame::{
     BASELINE_TEXT_TOP, BLOCK_ALIGN_CENTER, BLOCK_ALIGN_END, BLOCK_ALIGN_START, DECORATION_DASHED,
     DECORATION_DOTTED, DECORATION_DOUBLE, DECORATION_FLAGS_MASK, DECORATION_LINE_THROUGH,
     DECORATION_NONE, DECORATION_OVERLINE, DECORATION_SKIP_INK, DECORATION_SOLID,
-    DECORATION_UNDERLINE, DECORATION_WAVY, DEFAULT_ROOT_TEXT_CAPACITY, EXCLUSION_WRAP_BOTH,
-    EXCLUSION_WRAP_INLINE_END, EXCLUSION_WRAP_INLINE_START, EXCLUSION_WRAP_LARGEST, LAST_LINE_AUTO,
-    LAST_LINE_JUSTIFY, ORIENTATION_MIXED, ORIENTATION_SIDEWAYS, ORIENTATION_UPRIGHT, OVERFLOW_CLIP,
-    OVERFLOW_ELLIPSIS, OVERFLOW_VISIBLE, PARAGRAPH_MUTATION_REMOVE, PARAGRAPH_MUTATION_UPSERT,
-    RESULT_FLAG_CHECKPOINT, SEMANTIC_F32_BLOCK_EXTENT, SEMANTIC_F32_BLOCK_ORIGIN,
-    SEMANTIC_F32_BLOCK_START, SEMANTIC_F32_FONT_SIZE, SEMANTIC_F32_FOREGROUND_ALPHA,
-    SEMANTIC_F32_FOREGROUND_BLUE, SEMANTIC_F32_FOREGROUND_GREEN, SEMANTIC_F32_FOREGROUND_RED,
-    SEMANTIC_F32_INLINE_EXTENT, SEMANTIC_F32_INLINE_ORIGIN, SEMANTIC_F32_INLINE_START,
-    SEMANTIC_F32_INVERSE_FONT_SIZE, SEMANTIC_F32_OUTLINE_WIDTH_EM, SEMANTIC_F32_RASTER_PIXEL_RATIO,
+    DECORATION_UNDERLINE, DECORATION_WAVY, DEFAULT_ROOT_TEXT_CAPACITY, DROP_CAP_ALIGN_BASELINE,
+    DROP_CAP_ALIGN_TEXT_TOP, DROP_CAP_SIDE_INLINE_END, DROP_CAP_SIDE_INLINE_START,
+    EXCLUSION_WRAP_BOTH, EXCLUSION_WRAP_INLINE_END, EXCLUSION_WRAP_INLINE_START,
+    EXCLUSION_WRAP_LARGEST, LAST_LINE_AUTO, LAST_LINE_JUSTIFY, ORIENTATION_MIXED,
+    ORIENTATION_SIDEWAYS, ORIENTATION_UPRIGHT, OVERFLOW_CLIP, OVERFLOW_ELLIPSIS, OVERFLOW_VISIBLE,
+    PARAGRAPH_MUTATION_REMOVE, PARAGRAPH_MUTATION_UPSERT, RESULT_FLAG_CHECKPOINT,
+    SEMANTIC_F32_BLOCK_EXTENT, SEMANTIC_F32_BLOCK_ORIGIN, SEMANTIC_F32_BLOCK_START,
+    SEMANTIC_F32_FONT_SIZE, SEMANTIC_F32_FOREGROUND_ALPHA, SEMANTIC_F32_FOREGROUND_BLUE,
+    SEMANTIC_F32_FOREGROUND_GREEN, SEMANTIC_F32_FOREGROUND_RED, SEMANTIC_F32_INLINE_EXTENT,
+    SEMANTIC_F32_INLINE_ORIGIN, SEMANTIC_F32_INLINE_START, SEMANTIC_F32_INVERSE_FONT_SIZE,
+    SEMANTIC_F32_OUTLINE_WIDTH_EM, SEMANTIC_F32_RASTER_PIXEL_RATIO,
     SEMANTIC_F32_SHADOW_OFFSET_X_EM, SEMANTIC_F32_SHADOW_OFFSET_Y_EM, SEMANTIC_U32_CLUSTER_ID,
     SEMANTIC_U32_FLOW_THREAD_ID, SEMANTIC_U32_FOREGROUND_RGBA, SEMANTIC_U32_OUTLINE_RGBA,
-    SEMANTIC_U32_REGION_ID, SEMANTIC_U32_SHADOW_RGBA, SEMANTIC_U32_STABLE_GLYPH_ID,
-    SEMANTIC_U32_TRANSFORM_INDEX, SEMANTIC_VIEW_BORROWED_LAYOUT, SEMANTIC_VIEW_LAYOUT_INSPECTION,
-    SEMANTIC_VIEW_MEASUREMENT, SHAPE_POLYGON, SHAPE_RECTANGLE, STYLE_FIELD_BASELINE_SHIFT,
-    STYLE_FIELD_DECORATION, STYLE_FIELD_DIRECTION, STYLE_FIELD_FEATURES, STYLE_FIELD_FONT_SIZE,
-    STYLE_FIELD_FONT_STACK, STYLE_FIELD_FOREGROUND, STYLE_FIELD_LANGUAGE,
-    STYLE_FIELD_LETTER_SPACING, STYLE_FIELD_LINE_HEIGHT, STYLE_FIELD_MASK, STYLE_FIELD_MATERIAL,
-    STYLE_FIELD_OPACITY, STYLE_FIELD_OUTLINE, STYLE_FIELD_RASTER_PIXEL_RATIO, STYLE_FIELD_SHADOW,
-    STYLE_FIELD_WORD_SPACING, STYLE_FLAG_ROOT, STYLE_MUTATION_REMOVE, STYLE_MUTATION_UPSERT,
-    TEXT_ENCODING_UTF16_LE, TEXT_MUTATION_REPLACE_UTF16, WRAP_CHARACTER, WRAP_NONE, WRAP_WORD,
-    WRITING_HORIZONTAL_TB, WRITING_VERTICAL_LR, WRITING_VERTICAL_RL,
+    SEMANTIC_U32_PLACEMENT_SLOT, SEMANTIC_U32_REGION_ID, SEMANTIC_U32_SHADOW_RGBA,
+    SEMANTIC_U32_STABLE_GLYPH_ID, SEMANTIC_U32_TRANSFORM_INDEX, SEMANTIC_VIEW_BORROWED_LAYOUT,
+    SEMANTIC_VIEW_LAYOUT_INSPECTION, SEMANTIC_VIEW_MEASUREMENT, SHAPE_POLYGON, SHAPE_RECTANGLE,
+    STYLE_FIELD_BASELINE_SHIFT, STYLE_FIELD_DECORATION, STYLE_FIELD_DIRECTION,
+    STYLE_FIELD_FEATURES, STYLE_FIELD_FONT_SIZE, STYLE_FIELD_FONT_STACK, STYLE_FIELD_FOREGROUND,
+    STYLE_FIELD_LANGUAGE, STYLE_FIELD_LETTER_SPACING, STYLE_FIELD_LINE_HEIGHT, STYLE_FIELD_MASK,
+    STYLE_FIELD_MATERIAL, STYLE_FIELD_OPACITY, STYLE_FIELD_OUTLINE, STYLE_FIELD_RASTER_PIXEL_RATIO,
+    STYLE_FIELD_SHADOW, STYLE_FIELD_WORD_SPACING, STYLE_FLAG_ROOT, STYLE_MUTATION_REMOVE,
+    STYLE_MUTATION_UPSERT, TEXT_ENCODING_UTF16_LE, TEXT_MUTATION_REPLACE_UTF16, WRAP_CHARACTER,
+    WRAP_NONE, WRAP_WORD, WRITING_HORIZONTAL_TB, WRITING_VERTICAL_LR, WRITING_VERTICAL_RL,
 };
 use crate::engine::render_plan::{
-    BUFFER_ORDERED_DIRECT, BUFFER_STABLE_INDIRECT, BufferRecord, CODEC_BUFFER_ORDER,
+    BUFFER_ORDERED_DIRECT, BUFFER_SESSION_SHARED, BufferRecord, CODEC_BUFFER_PLACEMENT,
     DiagnosticRecord, DrawRecord, PATCH_ALLOCATE_OR_RESIZE, PATCH_COPY, PATCH_FILL, PATCH_RETIRE,
     PATCH_WRITE, PRIMITIVE_CLIP, PRIMITIVE_CODEC, PRIMITIVE_DECORATION, PRIMITIVE_GLYPH,
     PRIMITIVE_INLINE_OBJECT, PatchRecord, PrimitiveRecord, RESOURCE_ACTION_CREATE,
     RESOURCE_ACTION_RETAIN, RESOURCE_ACTION_UPDATE, RETIRE_BUFFER, RETIRE_OUTPUT_BYTES,
     RETIRE_RESOURCE, RETIRE_SLOT_RANGE, ResourceRecord, RetirementRecord,
+    SESSION_PLACEMENT_BUFFER_ID,
 };
 use crate::engine::semantic_view::{
     SEMANTIC_CARET, SEMANTIC_CLUSTER, SEMANTIC_FRAGMENT, SEMANTIC_GLYPH, SEMANTIC_INSERTED_GLYPH,
@@ -107,7 +109,7 @@ struct CodecProgramRecord {
     variant: u16,
     buffer_count: u16,
     operation_count: u16,
-    allocation_strategy: u16,
+    reserved0: u16,
     f32_input_count: u8,
     u32_input_count: u8,
     primitive_kind: u16,
@@ -333,8 +335,14 @@ struct EngineConstraintRecord {
     justify_max_word_space_ratio: f32,
     justify_letter_space_expansion: f32,
     last_line: u8,
-    reserved0: u8,
-    reserved1: u16,
+    drop_cap_lines: u8,
+    drop_cap_alignment: u8,
+    drop_cap_side: u8,
+    drop_cap_margin_inline: f32,
+    drop_cap_margin_block: f32,
+    drop_cap_vertices_offset: u32,
+    drop_cap_vertex_count: u16,
+    drop_cap_reserved: u16,
 }
 
 #[repr(C)]
@@ -418,7 +426,6 @@ struct EngineResultHeader {
     revision: u32,
     required_base_revision: u32,
     publication_generation: u32,
-    output_slot: u32,
     request_capacity: u32,
     required_request_capacity: u32,
     result_capacity: u32,
@@ -736,6 +743,7 @@ field_offset!(
 );
 field_offset!(CODEC_PROGRAM_BUFFER_START, CodecProgramRecord, buffer_start);
 field_offset!(CODEC_PROGRAM_BUFFER_COUNT, CodecProgramRecord, buffer_count);
+field_offset!(CODEC_PROGRAM_RESERVED0, CodecProgramRecord, reserved0);
 field_offset!(
     CODEC_PROGRAM_PRIMITIVE_KIND,
     CodecProgramRecord,
@@ -750,11 +758,6 @@ field_offset!(
     CODEC_PROGRAM_OPERATION_COUNT,
     CodecProgramRecord,
     operation_count
-);
-field_offset!(
-    CODEC_PROGRAM_ALLOCATION_STRATEGY,
-    CodecProgramRecord,
-    allocation_strategy
 );
 field_offset!(
     CODEC_PROGRAM_DRAW_KEY_MASK,
@@ -1462,6 +1465,46 @@ field_offset!(
     EngineConstraintRecord,
     last_line
 );
+field_offset!(
+    ENGINE_CONSTRAINT_DROP_CAP_LINES,
+    EngineConstraintRecord,
+    drop_cap_lines
+);
+field_offset!(
+    ENGINE_CONSTRAINT_DROP_CAP_ALIGNMENT,
+    EngineConstraintRecord,
+    drop_cap_alignment
+);
+field_offset!(
+    ENGINE_CONSTRAINT_DROP_CAP_SIDE,
+    EngineConstraintRecord,
+    drop_cap_side
+);
+field_offset!(
+    ENGINE_CONSTRAINT_DROP_CAP_MARGIN_INLINE,
+    EngineConstraintRecord,
+    drop_cap_margin_inline
+);
+field_offset!(
+    ENGINE_CONSTRAINT_DROP_CAP_MARGIN_BLOCK,
+    EngineConstraintRecord,
+    drop_cap_margin_block
+);
+field_offset!(
+    ENGINE_CONSTRAINT_DROP_CAP_VERTICES_OFFSET,
+    EngineConstraintRecord,
+    drop_cap_vertices_offset
+);
+field_offset!(
+    ENGINE_CONSTRAINT_DROP_CAP_VERTEX_COUNT,
+    EngineConstraintRecord,
+    drop_cap_vertex_count
+);
+field_offset!(
+    ENGINE_CONSTRAINT_DROP_CAP_RESERVED,
+    EngineConstraintRecord,
+    drop_cap_reserved
+);
 field_offset!(ENGINE_FLOW_VERTEX_INLINE, EngineFlowVertexRecord, inline);
 field_offset!(ENGINE_FLOW_VERTEX_BLOCK, EngineFlowVertexRecord, block);
 field_offset!(ENGINE_REGION_ID, EngineRegionRecord, id);
@@ -1669,7 +1712,6 @@ field_offset!(
     EngineResultHeader,
     publication_generation
 );
-field_offset!(ENGINE_RESULT_OUTPUT_SLOT, EngineResultHeader, output_slot);
 field_offset!(
     ENGINE_RESULT_REQUEST_CAPACITY,
     EngineResultHeader,
@@ -1880,7 +1922,6 @@ field_offset!(BUFFER_FLAGS, BufferRecord, flags);
 field_offset!(BUFFER_LIVE_RECORDS, BufferRecord, live_records);
 field_offset!(BUFFER_CAPACITY_RECORDS, BufferRecord, capacity_records);
 field_offset!(BUFFER_BYTE_LENGTH, BufferRecord, byte_length);
-field_offset!(BUFFER_ORDER_BUFFER_ID, BufferRecord, order_buffer_id);
 field_offset!(PATCH_OPCODE, PatchRecord, opcode);
 field_offset!(PATCH_FLAGS, PatchRecord, flags);
 field_offset!(PATCH_BUFFER_ID, PatchRecord, buffer_id);
@@ -1928,17 +1969,10 @@ field_offset!(DRAW_BUFFER_COUNT, DrawRecord, buffer_count);
 field_offset!(DRAW_RESOURCE_START, DrawRecord, resource_start);
 field_offset!(DRAW_RESOURCE_COUNT, DrawRecord, resource_count);
 field_offset!(DRAW_ORDER_TOKEN, DrawRecord, order_token);
-field_offset!(DRAW_INDIRECT_BUFFER_ID, DrawRecord, indirect_buffer_id);
-field_offset!(DRAW_INDIRECT_OFFSET, DrawRecord, indirect_offset);
 field_offset!(RETIREMENT_KIND, RetirementRecord, kind);
 field_offset!(RETIREMENT_FLAGS, RetirementRecord, flags);
 field_offset!(RETIREMENT_ID, RetirementRecord, id);
 field_offset!(RETIREMENT_GENERATION, RetirementRecord, generation);
-field_offset!(
-    RETIREMENT_AFTER_PUBLICATION_GENERATION,
-    RetirementRecord,
-    after_publication_generation
-);
 field_offset!(RETIREMENT_BYTE_OFFSET, RetirementRecord, byte_offset);
 field_offset!(RETIREMENT_BYTE_LENGTH, RetirementRecord, byte_length);
 field_offset!(DIAGNOSTIC_CODE, DiagnosticRecord, code);
@@ -2063,7 +2097,7 @@ pub fn json() -> String {
                 "primitiveKind": CODEC_PROGRAM_PRIMITIVE_KIND,
                 "operationStart": CODEC_PROGRAM_OPERATION_START,
                 "operationCount": CODEC_PROGRAM_OPERATION_COUNT,
-                "allocationStrategy": CODEC_PROGRAM_ALLOCATION_STRATEGY,
+                "reserved0": CODEC_PROGRAM_RESERVED0,
                 "inputStart": CODEC_PROGRAM_INPUT_START,
                 "inputCount": CODEC_PROGRAM_INPUT_COUNT,
                 "reserved1": CODEC_PROGRAM_RESERVED1
@@ -2284,7 +2318,15 @@ pub fn json() -> String {
                 "justifyMinWordSpaceRatio": ENGINE_CONSTRAINT_JUSTIFY_MIN_WORD_SPACE_RATIO,
                 "justifyMaxWordSpaceRatio": ENGINE_CONSTRAINT_JUSTIFY_MAX_WORD_SPACE_RATIO,
                 "justifyLetterSpaceExpansion": ENGINE_CONSTRAINT_JUSTIFY_LETTER_SPACE_EXPANSION,
-                "lastLine": ENGINE_CONSTRAINT_LAST_LINE
+                "lastLine": ENGINE_CONSTRAINT_LAST_LINE,
+                "dropCapLines": ENGINE_CONSTRAINT_DROP_CAP_LINES,
+                "dropCapAlignment": ENGINE_CONSTRAINT_DROP_CAP_ALIGNMENT,
+                "dropCapSide": ENGINE_CONSTRAINT_DROP_CAP_SIDE,
+                "dropCapMarginInline": ENGINE_CONSTRAINT_DROP_CAP_MARGIN_INLINE,
+                "dropCapMarginBlock": ENGINE_CONSTRAINT_DROP_CAP_MARGIN_BLOCK,
+                "dropCapVerticesOffset": ENGINE_CONSTRAINT_DROP_CAP_VERTICES_OFFSET,
+                "dropCapVertexCount": ENGINE_CONSTRAINT_DROP_CAP_VERTEX_COUNT,
+                "dropCapReserved": ENGINE_CONSTRAINT_DROP_CAP_RESERVED
             },
             "engineFlowVertex": {
                 "size": ENGINE_FLOW_VERTEX_RECORD_SIZE,
@@ -2368,7 +2410,6 @@ pub fn json() -> String {
                 "revision": ENGINE_RESULT_REVISION,
                 "requiredBaseRevision": ENGINE_RESULT_REQUIRED_BASE_REVISION,
                 "publicationGeneration": ENGINE_RESULT_PUBLICATION_GENERATION,
-                "outputSlot": ENGINE_RESULT_OUTPUT_SLOT,
                 "requestCapacity": ENGINE_RESULT_REQUEST_CAPACITY,
                 "requiredRequestCapacity": ENGINE_RESULT_REQUIRED_REQUEST_CAPACITY,
                 "resultCapacity": ENGINE_RESULT_RESULT_CAPACITY,
@@ -2474,8 +2515,7 @@ pub fn json() -> String {
                 "flags": BUFFER_FLAGS,
                 "liveRecords": BUFFER_LIVE_RECORDS,
                 "capacityRecords": BUFFER_CAPACITY_RECORDS,
-                "byteLength": BUFFER_BYTE_LENGTH,
-                "orderBufferId": BUFFER_ORDER_BUFFER_ID
+                "byteLength": BUFFER_BYTE_LENGTH
             },
             "enginePatch": {
                 "size": PATCH_RECORD_SIZE,
@@ -2530,9 +2570,7 @@ pub fn json() -> String {
                 "bufferCount": DRAW_BUFFER_COUNT,
                 "resourceStart": DRAW_RESOURCE_START,
                 "resourceCount": DRAW_RESOURCE_COUNT,
-                "orderToken": DRAW_ORDER_TOKEN,
-                "indirectBufferId": DRAW_INDIRECT_BUFFER_ID,
-                "indirectOffset": DRAW_INDIRECT_OFFSET
+                "orderToken": DRAW_ORDER_TOKEN
             },
             "engineRetirement": {
                 "size": RETIREMENT_RECORD_SIZE,
@@ -2541,7 +2579,6 @@ pub fn json() -> String {
                 "flags": RETIREMENT_FLAGS,
                 "id": RETIREMENT_ID,
                 "generation": RETIREMENT_GENERATION,
-                "afterPublicationGeneration": RETIREMENT_AFTER_PUBLICATION_GENERATION,
                 "byteOffset": RETIREMENT_BYTE_OFFSET,
                 "byteLength": RETIREMENT_BYTE_LENGTH
             },
@@ -2572,8 +2609,7 @@ pub fn json() -> String {
                 "indirectDraws": CAP_INDIRECT_DRAWS,
                 "aliasVec2": CAP_ALIAS_VEC2,
                 "aliasVec4": CAP_ALIAS_VEC4,
-                "orderedDirect": CAP_ORDERED_DIRECT,
-                "stableIndirect": CAP_STABLE_INDIRECT
+                "orderedDirect": CAP_ORDERED_DIRECT
             },
             "batchFields": {
                 "technique": BATCH_TECHNIQUE,
@@ -2589,10 +2625,6 @@ pub fn json() -> String {
                 "vertex": BUFFER_USAGE_VERTEX,
                 "storage": BUFFER_USAGE_STORAGE,
                 "copyDst": BUFFER_USAGE_COPY_DST
-            },
-            "allocationStrategies": {
-                "orderedDirect": ALLOCATION_ORDERED_DIRECT,
-                "stableIndirect": ALLOCATION_STABLE_INDIRECT
             },
             "scalarTypes": {
                 "f32": ScalarType::F32 as u8,
@@ -2652,7 +2684,8 @@ pub fn json() -> String {
                 "transformIndex": SEMANTIC_U32_TRANSFORM_INDEX,
                 "stableGlyphId": SEMANTIC_U32_STABLE_GLYPH_ID,
                 "outlineRgba": SEMANTIC_U32_OUTLINE_RGBA,
-                "shadowRgba": SEMANTIC_U32_SHADOW_RGBA
+                "shadowRgba": SEMANTIC_U32_SHADOW_RGBA,
+                "placementSlot": SEMANTIC_U32_PLACEMENT_SLOT
             },
             "paragraphMutationOpcodes": {
                 "upsert": PARAGRAPH_MUTATION_UPSERT,
@@ -2739,6 +2772,14 @@ pub fn json() -> String {
                 "auto": LAST_LINE_AUTO,
                 "justify": LAST_LINE_JUSTIFY
             },
+            "dropCapAlignments": {
+                "textTop": DROP_CAP_ALIGN_TEXT_TOP,
+                "baseline": DROP_CAP_ALIGN_BASELINE
+            },
+            "dropCapSides": {
+                "inlineStart": DROP_CAP_SIDE_INLINE_START,
+                "inlineEnd": DROP_CAP_SIDE_INLINE_END
+            },
             "overflowModes": {
                 "visible": OVERFLOW_VISIBLE,
                 "clip": OVERFLOW_CLIP,
@@ -2797,10 +2838,13 @@ pub fn json() -> String {
             },
             "bufferStrategies": {
                 "orderedDirect": BUFFER_ORDERED_DIRECT,
-                "stableIndirect": BUFFER_STABLE_INDIRECT
+                "sessionShared": BUFFER_SESSION_SHARED
             },
             "internalBufferBindings": {
-                "order": CODEC_BUFFER_ORDER
+                "placement": CODEC_BUFFER_PLACEMENT
+            },
+            "internalBufferIds": {
+                "placement": SESSION_PLACEMENT_BUFFER_ID
             },
             "patchOpcodes": {
                 "allocateOrResize": PATCH_ALLOCATE_OR_RESIZE,

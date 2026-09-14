@@ -24,31 +24,22 @@ import {
   type PortableTextureArrayPayload,
   type PortableTexturePayload,
 } from './resources.js';
-import type { CompiledCodecProgramBody, CodecProgramSystemBuffers } from './codec-program.js';
-import { assertTechniqueCodecBody, normalizeCodecProgramSystemBuffers } from '../internal/codec-program-contract.js';
+import { type CompiledCodecProgramBody, type CodecProgramSystemBuffers } from './codec-program.js';
+import { createHostRasterCodecProgram } from './raster-host.js';
 import {
-  schemaCodecBuffers,
   type TechniqueBindingDeclaration,
   type TechniqueResourceDeclaration,
   type TechniqueSchemaMetadata,
 } from './schema.js';
-import {
-  createCodecProgram,
-  normalizeCodecCapabilitySet,
-  type CodecAllocationMode,
-  type CodecBuffer,
-  type CodecCapabilitySet,
-  type CodecProgram,
-  type CodecTransformMode,
-  type CodecIdFactory,
-} from './codec.js';
+import { type CodecCapabilitySet, type CodecProgram, type CodecTransformMode, type CodecIdFactory } from './codec.js';
 import { assertCodecIdFactory, CodecIdScope } from '../internal/render-id.js';
 /** System buffers are owned by the engine and are deliberately absent from a Codec technique schema. */
-export type RasterCodecSystem = CodecProgramSystemBuffers;
+export type RasterCodecSystem = CodecProgramSystemBuffers & {
+  readonly placementSlot: NonNullable<CodecProgramSystemBuffers['placementSlot']>;
+};
 
 /** Renderer-neutral codec body, before an engine assigns program and capability identities. */
 export type RasterCodecBodyFactory<Schema extends TechniqueSchemaMetadata = TechniqueSchemaMetadata> = (
-  system: RasterCodecSystem,
   capabilities: CodecCapabilitySet,
 ) => CompiledCodecProgramBody<Schema>;
 
@@ -152,7 +143,6 @@ export interface RasterCodecProgramOptions {
   readonly system: RasterCodecSystem;
   readonly capabilitySet: CodecCapabilitySet;
   readonly transformMode: CodecTransformMode;
-  readonly allocationMode: CodecAllocationMode;
   readonly ids?: CodecIdFactory;
 }
 
@@ -161,50 +151,10 @@ export function createRasterCodecProgram<Format extends RasterFormatMetadata, Sc
   codec: RasterCodec<Format, Schema>,
   options: RasterCodecProgramOptions,
 ): CodecProgram {
-  if (!isRegisteredRasterCodec(codec)) {
-    throw new TypeError('raster codec assembly needs a registered RasterCodec');
+  if (isRecord(options) && 'placementSlotTarget' in options) {
+    throw new TypeError('placementSlotTarget is package-private renderer packing');
   }
-  if (!isRecord(options)) throw new TypeError('raster codec assembly options need an object');
-  if ('identityRegistry' in options) {
-    throw new TypeError('raster codec identityRegistry was renamed to ids');
-  }
-  if (typeof options.namespace !== 'string' || options.namespace.length === 0) {
-    throw new TypeError('raster codec namespace must be a nonempty string');
-  }
-  if (
-    options.programName !== undefined &&
-    (typeof options.programName !== 'string' || options.programName.length === 0)
-  ) {
-    throw new TypeError('raster codec programName must be a nonempty string');
-  }
-  if (options.transformMode !== 'direct' && options.transformMode !== 'indexed') {
-    throw new TypeError('raster codec transform mode must be "direct" or "indexed"');
-  }
-  if (options.allocationMode !== 'ordered' && options.allocationMode !== 'stable') {
-    throw new TypeError('raster codec allocation mode must be "ordered" or "stable"');
-  }
-  if (options.ids !== undefined) {
-    assertCodecIdFactory(options.ids, 'raster codec ids');
-  }
-  const system = normalizeCodecProgramSystemBuffers(codec.schema.buffers, options.system);
-  const capabilitySet = normalizeCodecCapabilitySet(options.capabilitySet, 'raster codec capability set');
-  const ids = options.ids ?? new CodecIdScope();
-  const compiledTechniqueId = ids.technique(codec.raster);
-  const compiledProgramId = ids.program(codec.raster, options.namespace, options.programName);
-  const body = codec.codecBody(system, capabilitySet);
-  assertTechniqueCodecBody(body, codec.schema, system);
-  return Object.freeze({
-    ...createCodecProgram(
-      compiledTechniqueId,
-      compiledProgramId,
-      body,
-      [...schemaCodecBuffers(codec.schema), ...systemCodecBuffers(system)],
-      options.transformMode,
-      options.allocationMode,
-    ),
-    capabilitySet,
-    variant: codec.programVariant ?? 0,
-  });
+  return createHostRasterCodecProgram(codec, options);
 }
 
 const compiledRasterFonts = new WeakSet<object>();
@@ -639,15 +589,6 @@ function checkedProduct(left: number, right: number, label: string): number {
 
 function isThenable(value: unknown): value is PromiseLike<unknown> {
   return isRecord(value) && typeof value.then === 'function';
-}
-
-function systemCodecBuffers(system: RasterCodecSystem): CodecBuffer[] {
-  return [
-    { id: system.stableGlyphId.id, scalar: 'u32', vectorWidth: 1 },
-    ...(system.transformIndex === undefined
-      ? []
-      : [{ id: system.transformIndex.id, scalar: 'u32' as const, vectorWidth: 1 }]),
-  ];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

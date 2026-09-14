@@ -5,7 +5,7 @@ description: Implements portable font loading, retained Rust shaping and layout,
 resource: ../../../packages/glyph
 workspace_package: '@pmndrs/glyph'
 documentation_type: reference
-source_digest: 'sha256:1a2ad6229047dae54d47277be9cd49c71054b4040c000943c0361e67af1cfa23'
+source_digest: 'sha256:6315a61cc4d56c2080b0a7f076c07fe78a327fe47f482bec21905829ff02ee0d'
 tags: [package, public-api, rust, wasm, threejs, typography]
 sources:
   - id: manifest
@@ -89,9 +89,6 @@ sources:
   - id: react
     resource: ../../../packages/glyph/src/react.ts
     title: React Three Fiber adapter
-  - id: engine-design
-    resource: ../planning/rust-layout-engine.md
-    title: Rust text engine and render-plan design
   - id: core-api-reference
     resource: ../planning/core-api.md
     title: Glyph integration API reference
@@ -103,7 +100,7 @@ sources:
     title: Planner-assisted detached glyph slice
 generated:
   by: openai-codex/gpt-5.6
-  at: '2026-09-04T00:13:53Z'
+  at: '2026-09-13T15:38:33Z'
 ---
 
 # Package reference: `@pmndrs/glyph`
@@ -129,7 +126,7 @@ font-baker Wasm alone enables a feature-gated `std` adapter for Fontations subse
 pass its `wasm32-unknown-unknown --no-default-features` build. The text engine uses the existing compile-time direct-memory mapping
 for font registrations. Ordinary publication enters once through
 `pmndrs_glyph_engine_update_batch(entriesPointer, count)`, whose entries address the already-written request slice and
-existing A/B result storage for each dirty root. Paragraph-scoped semantic queries remain separate synchronous calls.
+one borrowed result arena for each dirty root. Paragraph-scoped semantic queries remain separate synchronous calls.
 TypeScript does not independently shape, lay out, or pack paragraphs.
 
 The root `glyph` runtime initializes one engine idempotently. `glyph.handle(name, config)` creates independent mutable
@@ -371,6 +368,12 @@ glyph into fixed Wasm scratch, then returns one frozen scalar object in O(select
 bulk caller-owned copy. The callback must finish synchronously:
 thenables, engine reentry, and retained-text mutation are rejected, and the indexed view expires on return or throw.
 
+Attached live deformation is accepted as the future D-356 design but is not shipped by either adapter. The current
+`Text` surface has no `transformGlyphs()` or `clearGlyphTransforms()` methods and allocates no attached matrix sidecar.
+A separately scoped follow-up must prove coordinated Three and TypeGPU storage, lifecycle, interaction geometry, and
+performance before exposing that API. Existing detached `Glyphs` transforms and `copyGlyphs()`/`breakApart()` remain
+the owned, already-shaped manipulation path and intentionally stop following the source `Text`.
+
 The FontFace source cache coalesces canonical-equivalent locators before I/O and converges different locators onto one
 parsed main-font node after their complete GLB bytes have the same SHA-256 content identity. Every acquisition base is
 retained on that node, so a relative sidecar may fall back across equivalent acquisitions without using its filename as
@@ -465,6 +468,9 @@ Three's ordinary scene traversal owns world-matrix composition. The root observe
 publishes semantic changes once at its renderer-owned draw node, and patches root-relative transforms through a separate
 engine-free side path. Camera motion does not republish text. Text, nested `TextGroup`, and other ancestor motion,
 visibility, reparenting, and manual matrix changes patch only affected renderer-local slots and do not enter Wasm.
+Calling `TextGroup.updateMatrixWorld()` directly also observes a changed finite group `renderOrder` and publishes that
+presentation change; an unchanged direct traversal remains a no-op. The root-level publication object is a Scene child,
+so this order is compared with sibling Scene draw-mesh order rather than inheriting an authored parent `Group.groupOrder`.
 Within a `TextGroup`, each child `Text.renderOrder` ranks that paragraph's instances in the shared batch while the nearest
 `TextGroup.renderOrder` remains the Three draw-mesh order. Changing only a child rank publishes one transactional
 16-byte `(paragraph_id, scope, rank)` sideband record and lets Rust apply the paragraph permutation without resending
@@ -492,6 +498,9 @@ Rust publishes one revision containing:
 - ordered draw commands with raster-format/program, resource, material, transform, and clip identity;
 - optional semantic measurement or inspection sections only when explicitly demanded.
 
+The root-scoped placement table uses the same capability-selected alignment, coalescing, fragmentation, and whole-buffer
+upload policy as retained Codec buffers; it does not carry a separate fixed range-packing heuristic.
+
 Metric-only style changes refresh retained shaping-run typography before cluster aggregation but reuse the HarfRust glyph
 result. Font size, letter spacing, word spacing, line height, and baseline changes therefore rebuild advances and
 positioning without treating glyph identities as newly shaped content. A public optimized-Wasm regression doubles a
@@ -508,10 +517,62 @@ future deltas. Portable payload bytes are already shared by immutable `Font` val
 root-local. Pooling those immutable device objects above roots is a Three implementation follow-up, not a core scene,
 device, render-pass, or implicit-standalone-batch API.
 
-A paragraph's content box may declare `columns: { count, gap }`, flowing text through side-by-side ordered columns inside
-the exact content-box width. Columns fill in order without balancing, so the final column may run short, and an exact
-`width` is required because the column advance is derived from it. Ordered columns are the only multi-interval flow the
-engine represents; balancing, exclusions, and contour flow remain post-v1.
+A paragraph's public content box may declare `columns: { count, gap }`, flowing text through side-by-side ordered columns
+inside the exact content-box width. Columns fill in order without balancing, so the final column may run short, and an
+exact `width` is required because the column advance is derived from it. Internally, Rust already retains bounded rectangle
+or polygon regions and exclusions, subtracts them into multiple slots, and composes fragments through sequential regions.
+The shared public `TextFlow` surface now admits ordered keyed rectangle or simple-polygon regions, keyed rectangle or
+simple-polygon exclusions, margins, and every existing wrap side in paragraph-local inline/block coordinates. Admission
+normalizes coordinates to their exact finite f32 wire values, rejects duplicate keys, degenerate or self-intersecting
+rings, and freezes normalized state before it reaches the retained planner. Stable keys mint entity IDs independently of
+array order, and unchanged entities retain their own geometry revisions when one sibling moves or the flow order changes.
+The Three integration binds this renderer-neutral description to the paragraph transform; React forwards the same model.
+Exclusion membership is explicitly authored per region. Projection helpers return normalized exclusion values but never
+attach them globally: an application may add one projected object to selected columns, omit it so another column renders
+behind the object, or project separate copies into different Text-local frames.
+The retained Rust geometry authority remains unchanged, zero-exclusion paragraphs allocate no exclusion arena, and the
+first nonempty exclusion set reserves 16 retained entries before ordinary geometric growth. Three's former one-exclusion
+feature cap is removed without coupling entity capacity to the separate slot-output limit.
+
+For retained exact-width, non-ellipsis flow with stable region/exclusion topology, moving any number of exclusions in one
+region now unions their old/new block bounds and margins into one dirty band. Rust retains every preceding line, resumes
+the existing band composer at the retained source cursor, and waits until it crosses the complete future dirty horizon
+before accepting an exact line/fragment/slot suffix certificate. Structural, cross-region, flexible-width, and ellipsis
+changes fall back to the cold authority. Edit-driven and exclusion-driven convergence share one eligibility check, flow and
+drop-cap context builder, retained-suffix publisher, and font-resolution input; their stopping rules remain explicit because
+an edit follows prior line slots while a dirty exclusion must cross its future block horizon. Drop-cap paragraphs use the same
+path: the core rederives the cap from current
+run geometry, reapplies its cut while recomposing the dirty band, realigns baseline-aligned caps from the retained or new
+first body line, and accepts the suffix only when it matches the cold authority. The remaining projected-object and
+drop-cap matrix belongs to
+[Milestone 12's fragment-relative reflow plan](../planning/fragment-relative-reflow.md); balanced columns remain deferred.
+
+The Three subpath exposes `projectTextFlowBounds` and `projectTextFlowSilhouette` for projected-object flow. The bounds
+helper computes the exact convex intersection of a conservative transformed `Box3` with the camera-side text-plane and
+camera-frustum half-spaces. The silhouette helper accepts an ordered finite object-local `Vector3` ring, clips its edges
+through the same half-spaces, and preserves a validated simple concavity when projection inflation is zero. Both helpers
+ray-project their surviving geometry onto paragraph-local inline/block coordinates, clip and f32-normalize the result,
+and return an ordinary keyed `TextFlowExclusion`; declared projection error conservatively expands the result through a
+convex hull. Geometry wholly behind the text plane produces no exclusion. Neither helper reads depth/GPU pixels nor
+claims hidden-surface or material-coverage exactness.
+
+The shared paragraph layout surface also admits a same-source `dropCap` with a bounded line span, cap-height text-top or
+baseline alignment, logical side, inline/block margins, and an optional caller-authored simple contour normalized over
+the generated cap exclusion box. Text-top alignment uses the shaping face's retained OpenType `sCapHeight` against the
+surrounding stack's first available font and synthesizes `.66em` when the metric is absent; line-box leading therefore
+does not lift the initial above the body cap line. Rust selects the first complete extended grapheme and extends through
+the first shaping-safe cluster edge within the bounded search; when no safe edge exists it disables the cap rather than
+splitting shaped content. The selected prefix keeps its authored shaping/style/raster data, is positioned by the same
+glyph authority as the body, and becomes an additional conservative glyph/design-bounds cut before body composition.
+Body flow resumes at the exact retained cluster edge, while measurement, inspection, and Three realization merge the cap
+into the first logical line without duplicating source glyphs. Focused evidence covers a combining-mark cap, RTL logical
+side mapping, safe-edge refusal, an explicit multi-line region with another exclusion, and incremental exclusion movement
+matching a cold rebuild for both text-top and baseline alignment. Same-length edits inside the cap source now rederive
+the cap, recompose through every cap-affected band, and retain the exact cold-equivalent suffix once the line state
+converges. When a contour is present, Rust intersects it with each body-line band and conservatively reduces the result
+to the logical-side inline cut while preserving cap placement and source ownership. The refreshed live Editorial contour
+matrix passes all twelve raster/backend/shader cells with three retained draws; the complete caret/selection interaction
+matrix remains Milestone 12.4 work.
 
 ## Renderer Codec
 
@@ -549,11 +610,10 @@ the nonzero `u16` ABI range; registration and Codec compilation still reject con
 
 The first-party Codec can select indexed transform batching, direct per-draw transforms, or a hybrid. Indexed mode adds a
 stable transform-table ID to each rendered glyph so compatible paragraphs may collapse into one draw. Direct mode splits
-draws by transform for integrations that prefer ordinary object matrices. Codec programs may use ordered-direct or
-stable-indirect physical storage. Stable draws carry one reserved u32 order buffer; Three validates its draw/primitive
-addressing once, then uses the same logical-to-physical mapping for raster-format records, transform indices, explicit origin
-queries, and third-party program material contexts. A paragraph always batches its own spans, so no root policy states
-draw order. Ordered-direct remains the first-party default until stable planning meets the same tail-latency target.
+draws by transform for integrations that prefer ordinary object matrices. Physical glyph records use direct logical order;
+the pre-alpha stable-indirect allocation experiment and its renderer order buffer are retired under D-362. Stable glyph
+identity and placement generations remain independent CPU authorities. A paragraph always batches its own spans, so no
+root policy states draw order.
 
 `materialId` is explicit through the frame ABI and command buffer. Three maps it to a `defineTextMaterial()` factory. Material
 identity may split draws without forcing a second copy of the canonical glyph buffers.
@@ -610,7 +670,7 @@ measurements and inspections remain cached until the next semantic mutation.
 The engine additionally exports `pmndrs_glyph_engine_measure_paragraph`, a paragraph-scoped synchronous query beside
 `pmndrs_glyph_engine_update`. It reuses the update request layout with the queried paragraph as an ABI argument, runs
 validation and speculative preparation for that paragraph only, and writes the header plus semantic table into the
-inactive result slot without publishing: no A/B flip, no publication-generation bump, no revision advance, and no
+borrowed result arena without publishing: no publication-generation bump, no revision advance, and no
 renderer-fence acknowledgment. The host must copy the records out before its next update call (host lease). The query
 terminates leave-committed, so the following ordinary frame proceeds from pre-measure revisions with no checkpoint
 hazard.
@@ -859,20 +919,10 @@ multi-column layouts, and starts with no resume region. The public producer proo
 Text in the same request. Rust no longer pre-scans those relationships before the flow arena consumes the already-bounded
 region table.
 
-A Mori 0.19.1 production-source scan (review profile, same-language threshold 0.85, minimum 40 tokens) corroborated the
-deleted parallel path and identified exact shared planner machinery. Ordered and stable planning now use one retained
-epoch-cleared identity set, one plan-error and result-capacity classifier, one cold physical-buffer allocator, one inline
-draw-span predicate, and one deliberately out-of-line final primitive/draw emitter. The optimized Wasm moved from
-1,160,505 raw / 442,612 gzip / 348,594 Brotli bytes to 1,159,317 / 442,284 / 347,850, saving 1,188 / 328 / 744 bytes.
-
-The remaining similar bodies are not two implementations of one behavior. Ordered-direct compacts physical records in
-draw order; stable-indirect preserves slots, publishes a separate order buffer, and quarantines retirements until renderer
-acknowledgement. A symbol-bearing optimized build attributes 33.3 KiB of function bodies to ordered planning and 50.1 KiB
-to stable planning; those complete strategy totals are upper bounds, not deduplicable byte estimates. Their draw compilers
-resolve different physical address spaces. Normalizing those addresses into another staging array or dispatching through a
-dynamic strategy interface would add hot-path memory traffic or indirect calls, so the audit retains the strategy-local
-loops and shares their exact invariants instead. The 22k-glyph complete Rust benchmark remains within adjacent-run noise;
-a 20-warmup/51-sample cold check measured 15.452 ms median / 15.670 ms p95 at 1.0% RSD.
+A Mori 0.19.1 production-source scan (review profile, same-language threshold 0.85, minimum 40 tokens) first identified
+shared machinery across the former ordered and stable planners. The narrower extraction saved 1,188 raw / 328 gzip / 744
+Brotli bytes, but retained two physical-storage engines. D-362 later retired the unused stable-indirect experiment in full;
+the decision register and append-only log retain its design and benchmark history.
 
 ## Current size and performance evidence
 
@@ -1028,33 +1078,6 @@ identity; the first storage mismatch falls back to complete batch discovery. Thr
 shaper is 1,157,311 raw bytes, a 4,189-byte increase, and retained high-water memory is 79.81 MiB. The repeated median gain
 is established; the roughly 5.74 ms p95 and 81.4–81.6% RSD still fail the tail-latency gate.
 
-The direct benchmark also keeps an independent middle-splice lane. On the current optimized artifact, a sequential
-eight-warmup/31-sample run measures ordered-direct insertion/deletion at 8.452/9.033 ms median/p95 and 511.3 KiB written
-because following physical records move. Stable-indirect reduces that publication to 452 B and measures 9.372/9.583 ms.
-The earlier 51.067 ms figure was the maximum selected as p95 from only 11 samples and did not reproduce. This establishes
-the storage-policy tradeoff without changing the default: stable planning remains optimization/correctness work, and
-chunk-local text storage cannot be claimed as the dominant splice fix while the physical plan has this cost.
-
-Three now consumes stable-indirect plans through one shared record-addressing abstraction rather than raster-format-specific
-branches. A Rust/Three integration regression proves lifecycle reorder mutates only the order table and preserves physical
-glyph bytes and draw objects. A two-record GPU oracle makes slot zero green and slot one red, then renders logical slot zero
-through `order[0] = 1`: forced WebGL2 and hardware WebGPU both return 16/16 exact red pixels and the same readback hash.
-The complete ordered Bitmap/MSDF/Slug/custom-material matrix remains green on both backends. A strict 31-sample stable
-run exposed a quadratic dependency scan: each changed physical range rescanned every slot write. Binary-partitioning the
-sorted writes to the requested range reduces stable font-size from 350.136 to 7.982 ms median and column resize from
-49.636 to 3.767 ms; localized edit is 2.172/6.628 ms and splice is 9.372/9.583 ms median/p95. Stable no-op remains
-1.083 ms versus ordered-direct's 0.001 ms, so stable remains an explicit allocation strategy rather than the first-party default. The
-sequential benchmark high-water marks are 107.56 MiB ordered and 114.25 MiB stable; retained-memory right-sizing remains
-open and neither figure is presented as ordinary application demand.
-
-The first-party Codec declares one allocation strategy for every registered raster format. Rust now resolves that uniform
-strategy once per update instead of looking up a program for every glyph before the selected planner performs its own
-validated compilation. Mixed-strategy Codecs retain the per-glyph discovery path and stop once both strategies are
-observed. A five-warmup/11-sample ordered run measures 6.005 ms font-size, 2.813 ms column-resize, 1.212 ms localized-edit,
-and 8.281 ms middle-splice medians. The adjacent prior medians were 6.178, 2.817, 1.353, and 8.452 ms; these short runs
-show no regression and suggest a small scan reduction, but do not establish a latency win. The same change preserves
-whole-buffer update alignment after dirty-range promotion and costs 182 raw / 42 gzip / 233 Brotli bytes.
-
 Three retains pending attribute upload ranges until its renderer consumes them. Consecutive Rust publications and
 presentation-origin restoration before rendering coalesce overlapping or adjacent ranges instead of clearing earlier
 writes. Paragraph transform identities return to a binding-local free list only after the Rust removal
@@ -1071,18 +1094,28 @@ input leaves a fresh valid transaction usable. This supplements the Rust parser 
 than restoring any deleted `shapeBatch`, `reshapeRanges`, or TypeScript paragraph state machine. The package gate now
 contains 165 Node integration tests plus three deterministic fuzz-smoke tests.
 
-The integer layout-units migration (D-254) moved cluster advances, line fitting, justification, and positioning onto
-F26.6 integers with one rounding contract (`layout_units.rs`: round-half-up as `floor(value * 64 + 1/2)`), landed as
-stacked slices with an interleaved same-run A/B for each — sides alternated in identical order within one process
-session, because this host drifts several percent between sessions. Step deltas, medians at the 22,000-glyph corpus:
+D-254 introduced scale-late F26.6 fixed-point layout decisions, and PR #134 later raised the decision lane to 16
+fractional bits stored in `i64`. The current rounding contract is `floor(value * 65,536 + 1/2)` with caller-derived values
+bounded to ±2^53 integer units. Cluster values, chunk summaries, fitting, and justification use the `i64` lane; the
+authoritative shaped advances and intra-line positioning cursor remain `f64`, and semantic, query, Codec, and renderer
+geometry narrows to the public `f32` contract. The original migration landed as stacked slices with an interleaved
+same-run A/B for each — sides alternated in identical order within one process session because this host drifts several
+percent between sessions. Historical step deltas, medians at the 22,000-glyph corpus:
 
-| Slice                                  | Lane deltas (median, rounds consistent)                                                                                                                          |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Registry flattening (slice 1)          | lane-neutral; shaper −9,433 raw bytes                                                                                                                            |
-| F26.6 fit + chunk-64 kernels (slice 2) | ~2% measure lane, scales with line length; byte-exact break parity                                                                                               |
-| Retained adjacency stream (slice 3)    | column-resize 2.996 → 2.781 ms (−7.2%), measure-query 1.930 → 1.824 ms (−5.5%), both 3/3; suffix +1.3% / splice +2.1% (re-shape scatter, accepted); cold neutral |
-| Metric-only scale refresh (slice 3)    | font-size 6.715 → 5.898 ms (−12.2%, 3/3) — 9.2% below the pre-stream baseline; other lanes neutral                                                               |
-| Integer justification (slice 4)        | lane-neutral 2/2 (the direct lanes do not justify); totals now exact                                                                                             |
+Break admission is inclusive and exact in that integer lane: equal fits, one layout unit below breaks, and one above
+fits, with indexed and scalar word paths pinned to the same result. Measurement sizes, content extents, and intrinsic
+widths round outward at the public f32 boundary whenever nearest rounding would undershoot their retained f64 authority.
+This prevents a raw measure-to-exact feedback loop from presenting less width than the line it just measured without
+adding a floating epsilon or history-dependent hysteresis. Host adapters still round outward to their own point scale
+after padding, border, and layout-engine arithmetic.
+
+| Slice                                             | Lane deltas (median, rounds consistent)                                                                                                                          |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Registry flattening (slice 1)                     | lane-neutral; shaper −9,433 raw bytes                                                                                                                            |
+| F26.6 fit + chunk-64 kernels (historical slice 2) | ~2% measure lane, scales with line length; byte-exact break parity                                                                                               |
+| Retained adjacency stream (slice 3)               | column-resize 2.996 → 2.781 ms (−7.2%), measure-query 1.930 → 1.824 ms (−5.5%), both 3/3; suffix +1.3% / splice +2.1% (re-shape scatter, accepted); cold neutral |
+| Metric-only scale refresh (slice 3)               | font-size 6.715 → 5.898 ms (−12.2%, 3/3) — 9.2% below the pre-stream baseline; other lanes neutral                                                               |
+| Integer justification (slice 4)                   | lane-neutral 2/2 (the direct lanes do not justify); totals now exact                                                                                             |
 
 The stream replaces the glyph permutation with six adjacency-order payload columns scattered at build, so positioning
 walks sequential memory and geometry-only updates reuse the stream untouched; a metrics-only restyle re-derives just the
@@ -1099,10 +1132,14 @@ quantized-boundary re-pins recorded with their commits — one RTL ellipsis exte
 paragraph bidi and CJK contracts (30 and 25 numeric leaves, maxima 0.070 px and 0.101 px, the latter a long Korean
 line's accumulated per-site sub-unit quantization), and the advanced-shaping and rich-text composed hashes, whose
 roughly twenty-five structural pins each — glyph and draw counts, line counts, both first-line break positions — held
-exactly while origins settled on 1/64 boundaries. Integer justification required no re-pin: both contract corpora and
+exactly while the historical F26.6 origins settled on 1/64 boundaries. Integer justification required no re-pin: both contract corpora and
 the sixteen-scenario conformance suite reproduce byte-identically because their justified cases divide evenly. Native
 and Wasm agree bit-for-bit on the contract corpora by construction of the shared rounding contract, and the linux CI
 host reproduces both composed scenario hashes recorded on this darwin host.
+
+PR #134 re-derived the affected deterministic fixtures when the decision lane moved to 1/65,536 units. That refinement
+did not make glyph positioning integer: the `f64` pen remains a deliberate seam, and a future integer-pen change requires
+its own explicit corpus re-derivation.
 
 The review fold that closed the migration replaced the fit's Q16 shrink budget with an exactly-applied f64 ratio —
 one IEEE multiply and one round-half-up per comparison, shared verbatim by justification's growth and compression
@@ -1181,35 +1218,277 @@ candidate/main retained-update medians were 0.665/0.795 and 0.750/0.785 ms, whil
 0.510/0.580 and 0.565/0.605 ms. These machine-local observations establish repeated direction and a lower common-case
 cost; width reflow remains above the sub-1-ms interactive target and is still the last post-shaping performance frontier.
 
-Large `measure()` and `glyphs()` queries also reserve against the smaller of the active slot's cached capacity and the
-required capacity reported by the failing inactive A/B result slot. Each retry must strictly grow the actual failing slot
+The [fragment-relative reflow plan](../planning/fragment-relative-reflow.md) owns that next frontier. It must preserve the
+word sidecar and chunk summaries as fit indexes, retain current shaping and bidi authority, and prove that width or obstacle
+changes patch stable run placement instead of republishing unchanged glyph-local geometry. This paragraph records the
+baseline only; it does not claim that `LayoutRun`, public contour authoring, projected objects, or drop caps are implemented.
+
+Large `measure()` and `glyphs()` queries reserve against the result arena's reported capacity and required watermark.
+Each retry must strictly grow the arena
 or return the typed engine error. This fixes alternating large inspection queries without an arbitrary retry count and
 without changing normal publication or cached-query work.
 
-Two follow-ups from the closing audit are tracked in [the integer layout-units plan](../planning/integer-layout-units.md)
-as slice 6 so they cannot silently lapse: the integer pen (layout decisions resolve in F26.6 while the
-intra-line cursor still accumulates the f64 advance lane — one deliberate seam, deterministic but dual-lane,
-whose closure deletes the f64 advances column and re-pins the visual corpus), and the explicit-state-machine
-consolidation of the engine's prepared/pending flag lattice, which produced one live regression and one
-review finding during the migration and belongs to the first maintainability-review pass together with a
-direct dual-derivation assertion for the glyph-count lanes.
+The [historical integer layout-units record](../planning/integer-layout-units.md) retains the one deliberately open numeric
+seam: decisions resolve in the 16-fraction-bit `i64` lane while the intra-line cursor accumulates and resynchronizes against
+the `f64` advance lane. Fragment-relative reflow keeps those decision and internal-computation domains, but the pre-alpha
+package now deliberately re-pins the final public/render coordinate operation to separately narrowed run-local and
+placement `f32` components followed by one specified `f32` addition. This is not an integer-pen migration. The
+prepared/pending state-machine follow-up is complete under D-258: every stage is a `Staged<T>`, and staging new flow
+invalidates stale positioning by construction.
 
-## Merge gates still open
+## Fragment-relative reflow frontier
 
-Before the foundation stack is publishable:
+PR #161 is merged. Its retained word fitting, line reuse, partial update sections, paragraph ordering, synchronous queries,
+publication lifecycle, and renderer batching are the baseline rather than open merge gates. Milestone 12's proof,
+single-model cutover, renderer integration, and ordered-only cleanup gates are closed. Public contour, projected-object,
+and drop-cap authoring remain later milestones; the placement work does not imply those APIs.
 
-- finish the stale-code and stale-documentation audit;
-- regenerate affected ABI, optimized Wasm, package-size records, and package digests from source;
-- run package checks, strict Rust checks, benchmark conformance, packed consumers, WebGPU and forced-WebGL2 live rendering,
-  and the full repository gate;
-- run the unchanged 25k-glyph comparison with enough samples and report cold, font-size, width, and text-update tables;
-- profile and reduce any path that misses the target without weakening correctness;
-- run a read-only Claude adversarial review if the CLI is available, then address supported findings;
-- commit and push the coherent stack with a clean worktree.
+The M0/M1 harness first derived maximal shaping-compatible `LayoutRun` intervals from retained cluster ownership without
+changing production execution. Production now treats those as post-shaping geometry runs: adjacent shaping runs may
+share one `LayoutRun` after shaping when direction, resolved bidi level, selected font, and layout geometry agree, so a
+Han/kana/punctuation script transition does not manufacture a renderer placement entity. Direction, bidi, fallback-font,
+and shaping/layout-style changes still split the run. `ClusterArena` retains that topology, makes it the sole flow-extents traversal,
+and uses it to hoist font geometry for boundary-free, zero-indent, trivial-order positioning, including justified lines.
+Bidi, boundary replacement, and indented fragments still use the same shared cluster-emission authority without
+run-level hoisting. Maintained benchmark cases isolate justified, mixed-bidi,
+equivalent-width, and dense-CJK reflow and retain raw publication counters. The frozen pre-cutover Bitmap checkpoint
+measured 22k width updates at `1.144 / 3.605 ms` aggregate median/p95 and `1.493 / 3.743 ms` on the active 174,440-byte
+publication subset; measurement-only was `0.192 / 0.226 ms`. Those values remain attribution baselines, not performance
+claims for the production slice.
 
-The query/candidate-adoption API and the two publishing-feature stacks remain follow-on work after this foundation merge.
-They must reuse retained Rust paragraph state and the same render-plan architecture rather than reintroducing a second
-layout path.
+The initial proof consumers establish maximal `(source_run, font_handle)` runs, one-run dense CJK, run-bounded line extents, exact
+visual occurrence ownership, and replacement-run ownership. They also reject plain local-plus-translation arithmetic as a
+legacy-bit-preserving transform: deterministic inline and block counterexamples change final f32 bits, and a 4,111-case
+representation lab finds mismatches in every tested compact candidate. The active-resize benchmark alternates
+420/434-unit widths and fails on any zero-patch sample.
+
+Those counterexamples close the old-bit question for the retained additive placement model. The package is pre-alpha and
+publishes one indexed placement contract without a compatibility branch. Each rendered glyph's semantic row carries an
+engine-owned `placementSlot`; the planner resolves that slot to one root-scoped f32x2 x/y row shared by every compatible
+resource and material batch. Raster Codec authors continue to name semantic and raster values rather than slots, tables,
+bind groups, or physical buffer layouts. Package-private host assembly stores the slot, and each adapter chooses its
+physical packing before applying the same ordered local-plus-placement f32 addition. A 65,536-case finite arithmetic
+regression proves this is the same commutative f32 addition the former Codec-side absolute raster origin used;
+tiny-world, justification, cancellation, retained-update, and browser-pixel evidence still gate milestone completion.
+
+Static local coordinates cannot be anchored to visual slices because width changes move dense-CJK slice boundaries. The
+exact anchor policy remains evidence-gated; an admissible bounded-local form may use fixed, break-independent numeric
+blocks inside one stable `LayoutRun`. Their boundaries may use stable glyph/cluster adjacencies even when the edge is not
+`CLUSTER_SAFE_BEFORE`, because numeric partitioning neither reshapes nor permits a line break. Admission scans the full
+two-dimensional running geometry envelope: direction-canonical glyph cursors, negative advances, cluster
+resynchronization, shaping and baseline offsets, semantic origins, and ink coordinates derived from extents. Placement
+uses stability-aware source-slice/numeric-block/visual-segment intersections. Sparse prose retains safe word-root slots
+from the existing sidecar even when adjacent translations match and splits within a word only at a real displacement or
+boundary change. Dense CJK uses fixed numeric blocks and current visual segments without per-glyph runs or rows. Numeric
+blocks are not run identity, line entities, batch keys, or draws.
+
+The numeric gate measures local narrowing, translation narrowing, and the final ordered f32 add separately. Fixed,
+break-independent numeric blocks bound local geometry; boundary replacement glyphs own distinct replacement `LayoutRun`
+geometry and blocks for their committed topology lifetime rather than borrowing a paragraph-source identity. Warmed width
+updates with unchanged text, font/local geometry, and replacement topology publish no static glyph-local/numeric-block
+bytes.
+
+The visual proof joins independent multi-fragment bidi, per-fragment hanging-space, and justification-site oracles to a
+safe-boundary mapper. It preserves multi-glyph cluster order and glyphless ownership, rejects boundary replacement until
+it has an explicit occurrence model, and keeps 4,096 homogeneous CJK clusters in one retained run. A 166-glyph real
+corpus reconstructs all 332 already-published f32 coordinates exactly from line and observable-slice anchors, but the
+f64 reassociation counterexamples remain authoritative for the future CPU cutover.
+
+Break-independent numeric blocks, compact placement segments, and placement slots are production-owned and populated by
+the single positioning traversal. A LayoutRun's canonical revision and stable source anchor identify its retained local
+geometry; there is no separate run-slot allocator or renderer-visible run handle. Justification, L1/L2, hanging,
+boundary ownership, and exact f64 translation remain in core; the
+renderer receives only a per-glyph u32 slot and the selected f32x2 row. CPU semantic/query rows and renderer placement use
+the same ordered local-plus-placement f32 operation. Run, word, numeric-block, role, bidi, and justification metadata do
+not cross the renderer boundary.
+
+`ClusterArena` prepares one stable u32 placement-segment anchor per cluster after word fitting and LayoutRun topology are
+available. Short, sparse, and overflow word-sidecar modes retain the stable word root; dense break streams retain the
+LayoutRun root, and a glyphless hard break owns its own stable cluster ID. Positioning therefore resolves the segment
+anchor in O(1) instead of searching backward or advancing a sparse-record cursor for every visited cluster. The
+positioned placement arena stores one rendered-instance count per compact segment rather than repeating one segment
+index for every rendered glyph. Retained lines copy those compact counts, and final slot binding walks each contiguous
+segment-owned glyph range once. Word fitting remains independently usable without LayoutRun state; paragraph flow
+prepares placement anchors as an explicit subsequent step.
+
+Retained geometry-only positioning has a matching guarded path for visually trivial, boundary-free, undecorated text. It
+reuses committed glyph-local, raster, and effect rows, copies compact placement metadata, and refreshes clip, region,
+thread, and transform metadata. Internal positioned semantic rows keep local origin and ink coordinates plus their
+placement-segment index; pure placement changes therefore preserve their content revision and do not dirty static Codec
+position inputs. Public borrowed/full glyph queries and CPU/plan ink bounds compose absolute f32 values lazily from the
+authoritative segment translation. Plan gather requires that positioned semantic row and translation and derives semantic
+identity from the same row; malformed internal input is rejected rather than interpreting local coordinates as absolute or
+falling back to a parallel semantic lane. Retained gather resolves only genuinely changed Codec dependencies without repeating
+font selection, raster resource lookup, full `PlanGlyph` construction, or glyph-position arithmetic. Stable/glyph/font
+identity and exact outline presence authenticate retained rows; any mismatch aborts the candidate. Other changes use the
+general authorities.
+
+Placement-slot identity follows the stable occurrence source rather than the run's geometry revision. Paragraph,
+boundary-source, and ellipsis runs remain distinct source kinds, but changing font metrics or other canonical run geometry
+does not by itself retire and rewrite the per-glyph placement-slot lane. The run canonical revision still changes
+independently and guards static local geometry. In the maintained full font-size update, this separation reduced candidate
+publication from 456.5 KiB to 371.3 KiB by removing the redundant approximately 85 KiB occurrence rewrite; the measured
+CPU timing change was within noise and is not claimed as a speedup.
+
+The intermediate direct-offset A/B/B/A ordered Bitmap comparison used 40 warmups and two 101-sample passes per revision. Pooled candidate
+median/p95 is `2.874 / 2.915 ms` for 21,805 Latin glyphs and `2.233 / 2.258 ms` for 21,978 dense-CJK glyphs. Exact clean
+main measures `3.697 / 3.754 ms` for Latin and `2.909 / 2.968 ms` for CJK. The retained candidate is therefore 22.3%
+faster at the Latin median and 23.2% faster at the CJK median, with 22.4% and 23.9% lower p95 respectively. Every
+active-resize sample still emitted one glyph-wide f32x2 patch—174,440 bytes for Latin and 175,824 bytes for CJK—so these
+results establish the retained CPU positioning win but do not measure the current indexed publication path.
+
+A corrected indexed-publication smoke over the same 21,805-glyph Latin resize produced 3,903 active placement rows and
+one 31,224-byte session-table patch on every measured update. It produced zero placement-slot writes and zero
+static/raster writes because the stable word-root assignments did not change. This is the expected compact transfer shape,
+and the five-sample smoke authenticated the dirty buffers and byte count before the full interleaved benchmark gauntlet.
+
+The corrected indexed A/B matrix pools three independent 101-sample passes after 40 warmups for both exact
+`2094243668bcf5462cff0ac3b1f7faf52cba3b6c` main and the candidate. Bitmap Latin improves from
+`3.741 / 3.829 ms` median/p95 to `2.584 / 2.680 ms` while writes fall from 174,440 to 31,224 bytes; dense-CJK Bitmap
+improves from `2.986 / 3.153 ms` to `2.268 / 2.292 ms` while its two alternating states write 103,880 or 109,200 bytes
+instead of 175,824. Justified Latin improves from `3.675 / 3.726 ms` to `3.447 / 3.491 ms` and writes 31,344 bytes
+instead of 174,440. MTSDF and Slug Latin improve from `4.079 / 4.131 ms` and `4.031 / 4.098 ms` to
+`2.683 / 2.708 ms` and `2.639 / 2.743 ms`; both write 31,224 rather than 348,880 bytes. Mixed bidi is the explicit
+exception: it regresses from `3.956 / 4.065 ms` to `4.520 / 4.685 ms` while reducing publication from 176,352 to
+35,856 bytes. The bidi CPU regression remains open for browser end-to-end attribution; it is not averaged into a general
+speedup claim.
+
+A follow-up same-harness A/B/B/A comparison isolates the compact-count and precomputed-anchor change against exact
+branch parent `2b6d5eb3`. Each resize pass used 8 warmups and 31 measured samples, pooling 62 samples per revision.
+Justified Latin improves from `3.450 / 3.616 ms` median/p95 to `3.218 / 3.251 ms` (−6.7%/−10.1%); mixed bidi improves
+from `4.490 / 4.603 ms` to `4.404 / 4.503 ms` (−1.9%/−2.2%); ordinary Latin improves from `2.584 / 2.656 ms` to
+`2.540 / 2.624 ms` (−1.7%/−1.2%); and dense CJK improves from `2.293 / 2.324 ms` to `2.278 / 2.306 ms`
+(−0.7%/−0.8%). Patch counts and bytes are unchanged: 31,344 justified, 35,856 bidi, 31,224 ordinary Latin, and the
+same alternating 103,880/109,200 dense-CJK bytes. A separate 20-warmup, 202-sample-per-revision cold comparison measures
+only +0.4%/+0.5% Latin/CJK median; p95 changes −1.9%/+1.5%. The optimized Wasm is 339 raw bytes smaller. This is
+incremental attribution against the immediate parent, not a substitute for the final fresh-main performance gauntlet.
+
+The intermediate direct-offset `adopt-position-query` case prepared borrowed-layout positioning before timing the remaining transaction.
+For the same final Latin fixture, measurement is `0.220 / 0.227 ms`, measurement plus positioning is
+`1.222 / 1.248 ms`, and adoption plus retained gather, plan compilation, and publication is `1.655 / 1.688 ms`. The
+dense-CJK publication tail is `0.973 / 0.998 ms`. These phases explain the complete median rather than forming a second
+layout path: glyph-wide direct-offset publication was about 58% of the Latin total, per-glyph positioning about 35%, and line fitting
+about 8% after rounding.
+
+The current indexed renderer contract is exercised as product code rather than a synthetic placement graph. Direct TypeGPU
+renders Bitmap/MSDF/Slug through project Chromium WebGPU with nonzero-alpha counts `2148/2010/1992`. Native Three TSL and
+the experimental Three/TypeGPU shader set each pass Bitmap/MSDF/Slug, retained storage/draw, detached-copy, decoration,
+and custom-composition gates on WebGPU and forced WebGL2 with identical per-backend counts. These runs close the basic
+indexed browser-realization gate; the full editorial pixel/performance and soak matrix remains open. Both Three and direct
+TypeGPU store Slug's `placementSlot` in the existing unused `bandCounts.z` lane. Slug therefore retains seven technique
+records plus its separate stable-glyph identity record under the eight-buffer Codec contract; its vertex pipeline binds
+the seven technique records and reads one shared scene-owned x/y placement table from storage. Placement uses neither a
+texture nor an additional Codec buffer or draw. Direct TypeGPU remains a proof-of-concept, but this measured physical
+choice no longer exceeds the contract it advertises.
+
+The planner-scoped placement allocator reconciles compact CPU placement topology transactionally and quarantines retired
+slots until renderer acknowledgement. Its focused lifecycle tests validate reorder, retirement, acknowledgement,
+abort/retry, and stale-slot reuse directly; there is no parallel run allocator, canonical-update mode, batch identity, or
+draw identity. Its desired and occupied values are the planner's `PlacementLogicalKey` directly; the former generic
+one-field wrappers carried no additional invariant and are removed. The standalone M1 visual-span and multi-fragment
+shadow planners were retired after the complete 12.1–12.5
+core, renderer, browser, size, and performance matrix closed; focused production-path regressions remain authoritative.
+
+The final reduction layer removes 4,785 net non-documentation lines relative to the accepted placement-publication
+checkpoint without changing batches, primitives, draws, stable identity, or the x/y placement contract. Instrumented
+Rust production coverage is unchanged after consolidating six overlapping tests; built-package Node coverage slightly
+increases while 241 overlapping cases are removed. A final ownership audit keeps four large Rust modules because they
+own different stages: paragraph-local f64 segments, fixed run-local geometry, root occurrence-slot identity and
+acknowledgement-gated reuse, and the root f32x2 renderer buffer. The bounded follow-up removes a repeated retained
+segment-resolution pass, a duplicate glyph-advance field, fixed per-instance placement-buffer metadata, and the last
+wildcard-exported host Codec assembler.
+
+On the rebuilt 20-warmup/101-sample 22k alternating-width harness, the cleaned head measures `1.626 ms` ordinary Latin,
+`2.248 ms` justified Latin, `3.565 ms` mixed bidi, and `2.462 ms` dense CJK median, publishing
+`30.6/30.6/35.1/96.3 KiB` respectively. The same-host main medians are `3.725/3.281/3.953/2.995 ms`, so all four current
+paths remain faster. Against PR #175, the shaper is 7,738 raw / 2,989 gzip / 2,679 Brotli bytes smaller. Three is
+8,652 raw / 8,426 minified / 2,203 gzip / 1,728 Brotli bytes smaller; Three+TypeGPU is 8,609 / 8,431 / 2,124 / 1,538
+bytes smaller. Direct TypeGPU is +1 raw / −5 minified / +3 gzip / +45 Brotli bytes. Against exact main, the completed
+feature costs 161,147 raw / 59,828 gzip / 42,769 Brotli shaper bytes, 27,021 / 6,899 / 5,409 Three bytes, and
+7,394 / 1,466 / 1,175 direct-TypeGPU bytes; those are retained feature costs rather than duplicate live-deformation
+storage, which is absent.
+
+A ten-window hardware WebGPU dynamic-layout rerun keeps one draw and 387 glyphs in every 120-frame window. The median
+window is `0.573 ms` CPU and `0.858 ms` GPU, versus main's same-machine `0.655/0.853 ms`; the CPU path is 12.6% faster,
+while the `0.005 ms` GPU difference is noise-level parity. Direct TypeGPU's project-Chromium live gate passes Bitmap,
+MTSDF, and Slug with its callback bind groups, placement updates, and disposal lifecycle.
+
+The indexed direction keeps the existing batches, physical instances, primitive spans, and draws. Direct physical
+addressing reads `placementSlot[physical]` and the shared session row. A portable `RasterCodec.codecBody` receives
+only the frozen renderer capability set and authors glyph-local technique outputs. After authenticating that body,
+package-private host assembly appends stable identity, optional transform identity, and the slot store. Codec authors
+therefore describe glyph meaning and raster inputs, not slot allocation, tables, bind groups, or backend memory layout,
+and they cannot accidentally omit or collide with system lanes. An adapter may keep a separate u32 lane or pack the slot
+into a proven-unused technique lane without changing the public Codec plan or creating a run/slice batch key.
+
+An earlier indexed cleanup checkpoint remained 4–5% slower than main while still publishing the baseline 170.4/171.7 KiB;
+that result is negative evidence about the incomplete implementation, not the current 31,224-byte publication shape. The
+intermediate direct-offset candidate isolated a real retained CPU speedup but preserved glyph-wide transfer. The current
+indexed candidate combines that retained positioning work with compact session rows. Its immediate-parent A/B is
+directionally positive across ordinary, justified, bidi, and dense-CJK resize. A subsequent same-machine A/B/B/A against
+freshly fetched `origin/main` `ee56fa48` (README-only after the byte-identical `20942436` shaper) used 20 warmups and 101
+measured updates per pass, pooling 202 samples per revision. Candidate `8221aa87` improves ordinary Latin from
+`3.725 / 3.856 ms` median/p95 to `2.523 / 2.594 ms` (−32.3%/−32.7%), dense CJK from `2.995 / 3.040 ms` to
+`2.261 / 2.291 ms` (−24.5%/−24.6%), and justified Latin from `3.281 / 3.685 ms` to `3.195 / 3.276 ms`
+(−2.6%/−11.1%). Mixed bidi regresses from `3.953 / 4.071 ms` to `4.407 / 4.516 ms` (+11.5%/+10.9%) even though
+publication falls from 176,352 to 35,856 bytes. The fresh-main CPU/publication comparison is therefore complete but the
+performance gate remains open on mixed bidi and the full browser/editorial matrix.
+
+The subsequent lazy-absolute-semantic checkpoint removes the remaining width-only semantic position rewrite rather than
+changing line fitting, batching, draws, or the renderer placement contract. Two final 20-warmup/101-sample passes pool to
+`1.562 / 1.615 ms` median/p95 for ordinary Latin, `3.437 / 3.491 ms` for mixed bidi, and `2.277 / 2.298 ms` for dense
+CJK. Justified Latin pools to a `2.229 ms` median; one pass suffered unrelated host stalls, while the independent clean
+pass measured `2.189 / 2.210 ms`. Compared with the recorded same-host fresh-main medians (`3.725 / 3.281 / 3.953 /
+2.995 ms` for ordinary/justified/bidi/CJK), all four paths are now faster, including mixed bidi by 13.0%. Each update
+still publishes only the compact placement data: 31,224 bytes ordinary, 31,344 justified, 35,856 bidi, and 98,560 bytes
+across three dense-CJK patches in this final state. The exact package gate passes 982/982 tests plus Rust, type, fuzz,
+and format checks. The subsequent browser gauntlet passes all 120 Presentation cells: both native TSL and Three/TypeGPU,
+10 workloads, WebGPU/WebGL2, and Bitmap/MTSDF/Slug. Editorial preserves exactly three draws and measures
+`0.990–1.710 ms` median reflow across those full runs. Direct TypeGPU's dedicated Chromium WebGPU gate also passes all
+three rasters. The reviewed size check accepts a 554-byte raw shaper increase (0.04%); adapter and font sizes are
+unchanged. There is no remaining known CPU, publication, renderer, or size regression in this cutover.
+
+Final reduction removes the compile-time justification and text-effect specialization axes from the positioning
+traversal. Both conditions are invariant for a fragment or build, and the specialized forms duplicated most of the same
+machine code to avoid only a small adjustment tail or optional effect-lane append. One runtime traversal removes 80 Rust
+source lines and 26,486 raw / 3,200 gzip optimized-Wasm bytes. A 22k A/B/B/A keeps ordinary, bidi, and dense-CJK width
+medians within 0.3%; the longer 501-sample justified comparison is within 0.34%, with identical patches and write bytes.
+This is accepted as prediction-friendly parity rather than preserving duplicated code for an unmeasured theoretical win.
+
+The remaining justified penalty was not the integer division or SIMD space scan. Trivial-order positioning had selected
+one placement segment per cluster whenever any justification was nonzero. Word-space-only distribution now reuses the
+existing stable word/numeric-block segmentation and ends a segment immediately after each adjusted space; nonzero
+letter-gap distribution retains cluster granularity because every gap can move the next glyph. A 50-warmup/501-sample
+A/B/B/A reduces the 22k justified median from `2.067–2.077 ms` to `1.500–1.510 ms` with the same one patch and 30.6 KiB
+write. Ordinary and mixed-bidi controls remain `1.538 ms` and `3.321 ms`. The optimized shaper grows by 175 raw / 162
+gzip / 34 Brotli bytes. The existing exact F16.16 quotient/remainder arithmetic and `simd128` flag scan remain
+authoritative; no aggregate-count line format or second justification model is added without evidence that the retained
+scan is material.
+
+The benchmark also owns a `position-query` case that runs the same break-changing flow and positioning tail through the
+borrowed-layout mask while excluding gather, plan compilation, publication, and inspection copies. On the pinned M4 host,
+623 rendered Bitmap glyphs measured `0.061 ms` on the frozen main baseline and `0.109 ms` after the initial cutover;
+shrinking the shipping run-local glyph row reduced the frontier result to `0.105–0.106 ms`. Direct row addressing for
+source-order runs then reduced a stable 22k-glyph positioning comparison from `2.776–2.823 ms` to `2.695–2.701 ms` without
+changing RTL/fallback lookup. The matching complete 22k active-resize path improved from `4.067` to `3.893 ms` for Latin
+and from `3.650` to `3.607 ms` for dense CJK. Embedding each retained local raster origin in the existing 64-byte
+`LayoutGlyph` row then removed two parallel per-glyph vectors and their retained-copy/gather traffic. On the exact rebuilt
+source, complete Latin measured `3.864 / 3.994 ms` median/p95 and dense CJK measured `3.195 / 3.218 ms`, with low
+`2.21% / 1.23%` relative standard deviation. This confirmed that duplicate origin storage materially amplified the dense
+CJK regression, but that earlier incomplete indexed design still did not beat the same-contract baseline.
+Those measurements remain attribution history rather than the current package state.
+
+The final ordered-only verification uses exact `origin/main` `ee56fa48` and cleanup head `8457073d`, with two passes per
+revision, 20 warmups, and 101 measured updates per pass. Pooled medians/p95 are `1.489/1.581 ms` ordinary Latin,
+`1.508/1.589 ms` justified Latin, `3.229/3.351 ms` mixed bidi, and `2.264/2.357 ms` dense CJK. The matching main values are
+`3.639/3.784`, `3.698/3.898`, `3.882/4.027`, and `2.897/3.002 ms`, so every final path is faster by 16.8–59.2% at the
+median. Publication falls from 174,440/174,440/176,352/175,824 bytes to 31,352/31,352/35,896/98,560 bytes. Relative to
+PR #175, the final shaper is 85,192 raw / 26,476 gzip / 15,688 Brotli bytes smaller; browser core is 1,090 / 223 / 82
+bytes smaller; Three is 11,217 / 2,790 / 2,223 bytes smaller; direct TypeGPU is 777 / 186 / 104 bytes smaller; and the
+combined adapter graph is 11,170 / 2,764 / 2,292 bytes smaller. Relative to main, the retained feature costs 83,693 raw /
+36,341 gzip / 29,760 Brotli shaper bytes, 10,837 / 2,808 / 2,185 browser-core bytes, 24,456 / 6,312 / 4,914 Three bytes,
+and 6,616 / 1,277 / 1,026 direct-TypeGPU bytes. These are generated-artifact measurements on the pinned arm64 host; the
+repository size gate accepts them.
 
 [^slug-shader-core]: The directory is the single renderer-independent expression of the analytic Slug fill algorithm.
 

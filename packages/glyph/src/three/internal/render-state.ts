@@ -28,7 +28,6 @@ export interface OriginSegment {
   readonly origins: RetainedBuffer;
   readonly stableIds: RetainedBuffer;
   readonly storageKey: string;
-  readonly order: RetainedBuffer | undefined;
   readonly geometry: ThreeGlyphGeometrySource | undefined;
   readonly start: number;
   readonly count: number;
@@ -49,10 +48,6 @@ export interface OriginRecord {
 export type TransformRealization =
   | Readonly<{ kind: 'direct'; transformId: number }>
   | Readonly<{ kind: 'indexed'; indices: RetainedBuffer }>;
-
-export interface RecordAddressing {
-  readonly order: RetainedBuffer | undefined;
-}
 
 export interface ReusedDrawUpdate {
   readonly mesh: THREE.Mesh;
@@ -92,6 +87,7 @@ export interface PreparedDrawReplacement {
 
 export interface PreparationContext {
   readonly buffers: Map<ThreeBufferBinding, RetainedBuffer>;
+  placementTable: RetainedBuffer | undefined;
   readonly resources: Map<ThreeResolvedResourceBinding, RetainedResource>;
   readonly bitmapTextures: Map<ThreeResolvedResourceBinding, RetainedTextureLease>;
   readonly msdfAtlases: Map<ThreeResolvedResourceBinding, RetainedTextureLease>;

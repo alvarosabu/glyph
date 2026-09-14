@@ -23,6 +23,7 @@ import { msdfSchema } from '../../dist/raster/msdf.js';
 import { slugSchema } from '../../dist/raster/slug.js';
 import { decorationSchema, threeSystemBuffers } from '../../dist/three/codec.js';
 import { textShaperAbi } from '../../dist/text-shaper-abi.js';
+import { compileNodeMaterial } from '../support/node-material-shaders.mjs';
 
 const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const densityFontUrl = new URL(
@@ -39,6 +40,10 @@ const sourceSerifFontUrl = new URL(
 );
 const iconSlugFontUrl = new URL(
   '../../../../apps/benchmarks/fixtures/rendering/font-awesome-free-6.7.2-slug.font.glb.gz',
+  import.meta.url,
+);
+const interSlugFontUrl = new URL(
+  '../../../../apps/benchmarks/fixtures/rendering/inter-slug.font.glb.gz',
   import.meta.url,
 );
 const multiTechniqueFontUrl = new URL('../../../../apps/r3f-hello-world/assets/inter-latin.font.glb', import.meta.url);
@@ -344,7 +349,7 @@ test('Text renderOrder ranks grouped paragraphs while standalone Text keeps Thre
     assert.equal(draws.length, 1, 'one group shares one compatible draw');
     const attribute = draws[0].geometry.getAttribute(glyphAttribute(threeSystemBuffers.transformIndex.id));
     const start = draws[0].userData.pmndrsGlyphRunStart;
-    return Array.from(attribute.array.subarray(start, start + draws[0].geometry.instanceCount));
+    return Array.from({ length: draws[0].geometry.instanceCount }, (_, index) => attribute.getX(start + index));
   };
 
   const authored = groupedSequence();
@@ -445,7 +450,7 @@ test('Rust ranks interleaved TextGroup scopes only within their stable root slot
     assert.equal(draws.length, 1, 'equal group presentation remains one compatible draw');
     const attribute = draws[0].geometry.getAttribute(glyphAttribute(threeSystemBuffers.transformIndex.id));
     const start = draws[0].userData.pmndrsGlyphRunStart;
-    return Array.from(attribute.array.subarray(start, start + draws[0].geometry.instanceCount));
+    return Array.from({ length: draws[0].geometry.instanceCount }, (_, index) => attribute.getX(start + index));
   };
   const authored = sequence();
   firstA.renderOrder = 1;
@@ -591,7 +596,7 @@ test('TextGroup ancestry cannot smuggle a Text across Glyph roots', async (t) =>
 test('text property registries validate and freeze reusable rules', () => {
   for (const [registry, rules] of [
     [TextStyle, { body: { fontSize: 16 } }],
-    [ParagraphLayout, { centered: { align: 'center' } }],
+    [ParagraphLayout, { centered: { align: 'center', dropCap: { lines: 3, marginInline: 4 } } }],
     [Constraints, { card: { width: { mode: 'at-most', size: 320 } } }],
   ]) {
     const created = registry.create(rules);
@@ -599,6 +604,474 @@ test('text property registries validate and freeze reusable rules', () => {
     assert.ok(Object.isFrozen(Object.values(created)[0]));
   }
   assert.throws(() => Constraints.create({ broken: { width: { mode: 'exact', size: Number.NaN } } }), /size/);
+  assert.throws(() => ParagraphLayout.create({ broken: { dropCap: { lines: 0 } } }), /dropCap lines/);
+  assert.throws(
+    () => ParagraphLayout.create({ broken: { dropCap: { lines: 2, marginInline: -1 } } }),
+    /dropCap marginInline/,
+  );
+  ParagraphLayout.create({
+    contoured: {
+      dropCap: {
+        lines: 3,
+        contour: [
+          [0, 0],
+          [1, 0],
+          [0, 1],
+        ],
+      },
+    },
+  });
+  assert.throws(
+    () =>
+      ParagraphLayout.create({
+        broken: {
+          dropCap: {
+            lines: 2,
+            contour: [
+              [0, 0],
+              [1.1, 0],
+              [0, 1],
+            ],
+          },
+        },
+      }),
+    /within \[0, 1\]/,
+  );
+});
+
+test('public 2D flow accepts keyed polygons and composes around multiple exclusions', async (t) => {
+  const three = await createThreeTestHandle(t);
+  const font = await loadFont({ baked: { bytes: await readFile(fontUrl) } }, bitmap({ strikes: [16] }));
+  t.after(() => font.dispose());
+  const text = three.createText({
+    font,
+    text: 'iiiiiiiiiiiiiiiiiiii',
+    layout: { wrap: 'word', dropCap: { lines: 3, marginInline: 4 } },
+    constraints: {
+      width: { mode: 'exact', size: 120 },
+      height: { mode: 'exact', size: 80 },
+    },
+    flow: {
+      regions: [
+        {
+          key: 'body',
+          shape: {
+            kind: 'polygon',
+            vertices: [
+              [0, 0],
+              [120, 0],
+              [120, 80],
+              [0, 80],
+            ],
+          },
+          exclusions: [
+            { key: 'first', shape: { kind: 'rectangle', bounds: [24 + 2 ** -30, 0, 34, 80] } },
+            { key: 'second', shape: { kind: 'rectangle', bounds: [64, 0, 74, 80] } },
+          ],
+        },
+      ],
+    },
+  });
+  t.after(() => text.dispose());
+
+  const layout = text.glyphs();
+  assert.deepEqual(instrumentedGlyph.latestMeasurementRequestCounts(), {
+    paragraph: 1,
+    paragraphOrder: 0,
+    text: 1,
+    style: 1,
+    constraint: 1,
+    region: 1,
+    exclusion: 2,
+    inlineObject: 0,
+  });
+  assert.equal(layout.lineCount, 1, 'the three disjoint slots remain one logical line');
+  const inlineJumps = [...layout.x]
+    .slice(1)
+    .map((x, index) => x - layout.x[index])
+    .filter((advance) => advance > 8);
+  assert.equal(inlineJumps.length, 2, 'the exclusions introduce two cross-slot x jumps');
+  assert.ok(Object.isFrozen(text.flow));
+  assert.ok(Object.isFrozen(text.flow.regions[0].shape.vertices));
+  assert.equal(
+    text.flow.regions[0].exclusions[0].shape.bounds[0],
+    24,
+    'public flow coordinates normalize to their exact f32 wire value before revision comparison',
+  );
+
+  assert.throws(() => {
+    text.flow = {
+      regions: [
+        { key: 'duplicate', shape: { kind: 'rectangle', bounds: [0, 0, 20, 20] } },
+        { key: 'duplicate', shape: { kind: 'rectangle', bounds: [20, 0, 40, 20] } },
+      ],
+    };
+  }, /region key "duplicate" is duplicated/);
+  assert.throws(() => {
+    text.flow = {
+      regions: [
+        {
+          key: 'crossed',
+          shape: {
+            kind: 'polygon',
+            vertices: [
+              [0, 0],
+              [20, 20],
+              [0, 20],
+              [20, 0],
+            ],
+          },
+        },
+      ],
+    };
+  }, /nonzero finite area|must not self-intersect/);
+});
+
+test('moving multiple exclusions matches cold LTR, RTL, and mixed-direction flow', async (t) => {
+  const three = await createThreeTestHandle(t);
+  const [inter, amiri] = await Promise.all([
+    loadFont({ baked: { bytes: await readFile(fontUrl) } }, bitmap({ strikes: [16] })),
+    loadFont({ baked: { bytes: await readFile(amiriFontUrl) } }, bitmap({ strikes: [16] })),
+  ]);
+  const mixed = createFontStack(inter, amiri);
+  t.after(() => {
+    inter.dispose();
+    amiri.dispose();
+  });
+  const flowAt = (moved) => ({
+    regions: [
+      {
+        key: 'body',
+        shape: { kind: 'rectangle', bounds: [0, 0, 220, 400] },
+        exclusions: [
+          {
+            key: 'upper',
+            shape: { kind: 'rectangle', bounds: moved ? [46, 20, 104, 80] : [18, 20, 76, 80] },
+          },
+          {
+            key: 'lower',
+            shape: {
+              kind: 'polygon',
+              vertices: moved
+                ? [
+                    [116, 84],
+                    [182, 80],
+                    [174, 144],
+                    [108, 140],
+                  ]
+                : [
+                    [140, 84],
+                    [206, 80],
+                    [198, 144],
+                    [132, 140],
+                  ],
+            },
+          },
+        ],
+      },
+    ],
+  });
+  const cases = [
+    {
+      name: 'LTR',
+      font: inter,
+      text: 'alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau '.repeat(
+        2,
+      ),
+      style: { direction: 'ltr', language: 'en' },
+    },
+    {
+      name: 'RTL',
+      font: amiri,
+      text: 'النص العربي يتدفق بوضوح حول العوائق ويتابع القراءة بين الأعمدة دون فقدان ترتيب الكلمات '.repeat(2),
+      style: { direction: 'rtl', language: 'ar' },
+    },
+    {
+      name: 'mixed',
+      font: mixed,
+      text: 'النصPMNDRS2026العربي يتدفق حول object42 ثم يعود إلى العمود التالي مع Latintext واضح '.repeat(2),
+      style: { direction: 'rtl', language: 'ar' },
+    },
+  ];
+  const layoutFields = [
+    'glyphIds',
+    'clusters',
+    'glyphFontSlots',
+    'glyphBidiLevels',
+    'glyphFontSizes',
+    'x',
+    'y',
+    'glyphAdvances',
+    'glyphInkX',
+    'glyphInkY',
+    'glyphInkWidths',
+    'glyphInkHeights',
+    'glyphFlags',
+    'lineTextStarts',
+    'lineTextEnds',
+    'lineGlyphStarts',
+    'lineGlyphCounts',
+    'lineBaselines',
+    'lineAdvances',
+  ];
+
+  for (const fixture of cases) {
+    const properties = {
+      font: fixture.font,
+      text: fixture.text,
+      style: { fontSize: 16, lineHeight: 1.25, ...fixture.style },
+      constraints: {
+        width: { mode: 'exact', size: 220 },
+        height: { mode: 'exact', size: 400 },
+      },
+      layout: { align: 'justify', wrap: 'word' },
+    };
+    const retained = three.createText({ ...properties, flow: flowAt(false) });
+    const initial = retained.glyphs();
+    retained.flow = flowAt(true);
+    const incremental = retained.glyphs();
+    const cold = three.createText({ ...properties, flow: flowAt(true) });
+    const rebuilt = cold.glyphs();
+    try {
+      assert.equal(retained.error, undefined, `${fixture.name} retained flow must publish`);
+      assert.equal(cold.error, undefined, `${fixture.name} cold flow must publish`);
+      assert.ok(incremental.lineCount > 2, `${fixture.name} must exercise multiple exclusion bands`);
+      assert.ok(
+        incremental.lineBaselines.some((baseline) => baseline >= 20 && baseline < 80),
+        `${fixture.name} must cross the upper exclusion band`,
+      );
+      assert.ok(
+        incremental.lineBaselines.some((baseline) => baseline >= 80 && baseline < 144),
+        `${fixture.name} must cross the lower exclusion band`,
+      );
+      assert.notDeepEqual(
+        Array.from(incremental.x),
+        Array.from(initial.x),
+        `${fixture.name} exclusions must move glyphs`,
+      );
+      if (fixture.name === 'LTR') {
+        assert.ok(
+          incremental.glyphBidiLevels.every((level) => (level & 1) === 0),
+          'the LTR fixture must remain visually even-level',
+        );
+      } else if (fixture.name === 'RTL') {
+        assert.ok(
+          incremental.glyphBidiLevels.every((level) => (level & 1) === 1),
+          'the RTL fixture must remain visually odd-level',
+        );
+      } else {
+        assert.ok(new Set(incremental.glyphBidiLevels).size > 1, 'the mixed fixture must resolve multiple bidi levels');
+      }
+      assert.deepEqual(
+        Array.from(incremental.glyphStableIds).sort((left, right) => left - right),
+        Array.from(initial.glyphStableIds).sort((left, right) => left - right),
+        `${fixture.name} exclusion movement must retain glyph identities`,
+      );
+      for (const field of layoutFields) {
+        assert.deepEqual(
+          Array.from(incremental[field]),
+          Array.from(rebuilt[field]),
+          `${fixture.name} ${field} must match cold flow`,
+        );
+      }
+      assert.deepEqual(retained.measure(), cold.measure(), `${fixture.name} measurement must match cold flow`);
+    } finally {
+      retained.dispose();
+      cold.dispose();
+    }
+  }
+});
+
+test('same-source drop caps preserve source ownership and flow body lines beside the cap', async (t) => {
+  const three = await createThreeTestHandle(t);
+  const [font, capFont] = await Promise.all([
+    loadFont({ baked: { bytes: await readFile(fontUrl) } }, bitmap({ strikes: [16] })),
+    loadFont({ baked: { bytes: gunzipSync(await readFile(interSlugFontUrl)) } }, slug),
+  ]);
+  const cap = textSpan(capFont, { fontSize: 48 });
+  const source = 'f\u0301ollow brown fox jumps over the lazy dog and keeps running through the narrow column';
+  const properties = {
+    font,
+    text: txt`${cap`f\u0301`}ollow brown fox jumps over the lazy dog and keeps running through the narrow column`,
+    style: { fontSize: 16, lineHeight: 20 },
+    constraints: { width: { mode: 'exact', size: 180 } },
+    layout: {
+      wrap: 'word',
+      dropCap: {
+        lines: 3,
+        marginInline: 4,
+        contour: [
+          [0, 0],
+          [1, 0],
+          [0, 1],
+        ],
+      },
+    },
+  };
+  const label = three.createText(properties);
+  const scene = new THREE.Scene();
+  scene.add(label);
+  scene.updateMatrixWorld();
+  t.after(() => {
+    label.dispose();
+    font.dispose();
+    capFont.dispose();
+  });
+
+  const measurement = label.measure();
+  assert.equal(label.error, undefined);
+  assert.ok(measurement.lineCount > 0, 'the combined flow must compose at least one body line');
+  const layout = label.glyphs();
+  assert.equal(layout.glyphCount, source.length, 'the source glyph stream has no duplicated or omitted unit');
+  assert.deepEqual(
+    Array.from(layout.clusters),
+    [0, 0, ...Array.from({ length: source.length - 2 }, (_, index) => index + 2)],
+    'the complete combining-mark grapheme stays in the cap and every later source unit stays in the body',
+  );
+  assert.ok(layout.lineCount > 3, 'the fixture must extend beyond the reserved body-line span');
+  assert.equal(layout.lineTextStarts[0], 0, 'the first line owns the cap source prefix');
+
+  const capIndex = layout.clusters.indexOf(0);
+  const firstBodyIndex = layout.clusters.indexOf(2);
+  assert.equal(capIndex, 0);
+  assert.equal(firstBodyIndex, 2);
+  assert.ok(layout.x[firstBodyIndex] > layout.x[capIndex] + 20, 'the first body line starts beside the cap');
+  assert.ok(
+    layout.x[layout.lineGlyphStarts[1]] < layout.x[firstBodyIndex],
+    'the caller-authored triangular contour gives the next body line more inline space',
+  );
+  const firstUncutLineGlyph = layout.lineGlyphStarts[3];
+  assert.ok(
+    layout.x[firstUncutLineGlyph] < layout.x[firstBodyIndex],
+    'body flow returns to the region start after the requested line span',
+  );
+  assert.ok(
+    label.measureGlyphs()?.every((measuredGlyph) => measuredGlyph.drawnOrigin.equals(measuredGlyph.shapedOrigin)),
+  );
+  assert.equal(rootDraws(scene).length, 2, 'the Slug cap and Bitmap body remain two raster batches');
+
+  label.text = txt`${cap`g\u0301`}ollow brown fox jumps over the lazy dog and keeps running through the narrow column`;
+  scene.updateMatrixWorld(true);
+  const incremental = label.glyphs();
+  assert.equal(rootDraws(scene).length, 2, 'a retained cap edit preserves mixed-raster draw topology');
+  const cold = three.createText({
+    ...properties,
+    text: txt`${cap`g\u0301`}ollow brown fox jumps over the lazy dog and keeps running through the narrow column`,
+  });
+  t.after(() => cold.dispose());
+  const coldLayout = cold.glyphs();
+  for (const field of ['glyphIds', 'clusters', 'lineGlyphStarts', 'lineGlyphCounts', 'x', 'y']) {
+    assert.deepEqual(
+      Array.from(incremental[field]),
+      Array.from(coldLayout[field]),
+      `${field} must match cold cap edit`,
+    );
+  }
+});
+
+test('same-source drop caps compose through an explicit multi-line flow region', async (t) => {
+  const three = await createThreeTestHandle(t);
+  const font = await loadFont({ baked: { bytes: await readFile(fontUrl) } }, bitmap({ strikes: [16] }));
+  const scene = new THREE.Scene();
+  const cap = textSpan({ fontSize: 48 });
+  const source = 'f\u0301ollow brown fox jumps over the lazy dog and keeps running through the narrow column';
+  const formatted = txt`${cap`f\u0301`}ollow brown fox jumps over the lazy dog and keeps running through the narrow column`;
+  const flowAt = (inlineStart) => ({
+    regions: [
+      {
+        key: 'body',
+        shape: { kind: 'rectangle', bounds: [0, 0, 180, 180] },
+        exclusions: [{ key: 'lower-float', shape: { kind: 'rectangle', bounds: [inlineStart, 70, 175, 110] } }],
+      },
+    ],
+  });
+  const initialFlow = flowAt(130);
+  const movedFlow = flowAt(105);
+  const properties = {
+    font,
+    text: formatted,
+    style: { fontSize: 16, lineHeight: 1.25 },
+    constraints: {
+      width: { mode: 'exact', size: 180 },
+      height: { mode: 'exact', size: 180 },
+    },
+    layout: { wrap: 'word', dropCap: { lines: 3, marginInline: 4 } },
+  };
+  const label = three.createText({
+    ...properties,
+    flow: initialFlow,
+  });
+  scene.add(label);
+  scene.updateMatrixWorld(true);
+  t.after(() => {
+    label.dispose();
+    font.dispose();
+  });
+
+  const layout = label.glyphs();
+  assert.equal(label.error, undefined);
+  assert.ok(layout.lineCount > 3);
+  assert.equal(layout.glyphCount, source.length);
+
+  label.flow = movedFlow;
+  scene.updateMatrixWorld(true);
+  const incremental = label.glyphs();
+  const cold = three.createText({ ...properties, flow: movedFlow });
+  scene.add(cold);
+  scene.updateMatrixWorld(true);
+  t.after(() => cold.dispose());
+  const coldLayout = cold.glyphs();
+  assert.notDeepEqual(Array.from(incremental.x), Array.from(layout.x));
+  assert.deepEqual(
+    Array.from(incremental.glyphStableIds),
+    Array.from(layout.glyphStableIds),
+    'moving the exclusion must retain the paragraph glyph identities',
+  );
+  for (const field of ['clusters', 'lineGlyphStarts', 'lineGlyphCounts', 'x', 'y']) {
+    assert.deepEqual(Array.from(incremental[field]), Array.from(coldLayout[field]), `${field} must match cold flow`);
+  }
+  const interactionSnapshot = (text) => {
+    const inspected = text.glyphs();
+    const bodyLine = 3;
+    const bodyGlyph = inspected.lineGlyphStarts[bodyLine];
+    const caret = (glyphIndex, line) => {
+      const result = text.caretAt(inspected.x[glyphIndex], inspected.lineBaselines[line]);
+      return result === undefined
+        ? undefined
+        : {
+            offset: result.offset,
+            leading: result.leading,
+            rect: [result.rect.x, result.rect.y, result.rect.width, result.rect.height],
+          };
+    };
+    const selection = (start, end) =>
+      text.selectionRects(start, end)?.map((rect) => [rect.x, rect.y, rect.width, rect.height]);
+    return {
+      capCaret: caret(0, 0),
+      bodyCaret: caret(bodyGlyph, bodyLine),
+      capSelection: selection(0, 2),
+      bodySelection: selection(2, source.length),
+      measurements: text.measureGlyphs()?.map((placement) => ({
+        index: placement.index,
+        sourceIndex: placement.sourceIndex,
+        shapedOrigin: placement.shapedOrigin.toArray(),
+        drawnOrigin: placement.drawnOrigin.toArray(),
+        matrix: placement.originalMatrix.toArray(),
+        ink: [...placement.localInkBounds.min.toArray(), ...placement.localInkBounds.max.toArray()],
+        advance: [...placement.localAdvanceBounds.min.toArray(), ...placement.localAdvanceBounds.max.toArray()],
+      })),
+    };
+  };
+  const incrementalInteractions = interactionSnapshot(label);
+  assert.ok(incrementalInteractions.capSelection?.length === 1, 'the complete cap grapheme has one selection rect');
+  assert.ok(incrementalInteractions.bodySelection?.length > 1, 'the body selection spans several composed lines');
+  assert.ok(incrementalInteractions.capCaret !== undefined, 'the cap owns a reachable caret');
+  assert.ok(incrementalInteractions.bodyCaret !== undefined, 'the resumed body owns a reachable caret');
+  assert.deepEqual(
+    incrementalInteractions,
+    interactionSnapshot(cold),
+    'drop-cap measurement, caret, and selection queries must match cold flow',
+  );
 });
 
 test('detached matrix helpers round-trip aliased and independent targets with a hoisted inverse', () => {
@@ -1277,12 +1750,16 @@ test('Three Text and TextGroup late-bind, synchronize, reparent, and dispose thr
   assert.ok(displayedGlyphs?.[0].localAdvanceBounds.getSize(new THREE.Vector3()).x > 0);
 
   group.renderOrder = 20;
-  scene.updateMatrixWorld();
-  assert.equal(firstDraws[0].renderOrder, 20, 'group render order must update existing draw proxies');
+  scene.updateMatrixWorld(true);
+  assert.equal(firstDraws[0].renderOrder, 20, 'scene traversal must update grouped draw proxies');
+
+  group.renderOrder = 21;
+  group.updateMatrixWorld(true);
+  assert.equal(firstDraws[0].renderOrder, 21, 'direct group traversal must update existing draw proxies');
 
   label.renderOrder = 7;
   scene.updateMatrixWorld();
-  assert.equal(rootDraws(scene)[0].renderOrder, 20);
+  assert.equal(rootDraws(scene)[0].renderOrder, 21);
   assert.equal(firstDraws[0].geometry.instanceCount, 10, 'render-order-only updates must preserve the Rust plan');
 
   label.text = 'Only the final desired value';
@@ -1337,9 +1814,7 @@ test('Three Text and TextGroup late-bind, synchronize, reparent, and dispose thr
     paragraph.dispose();
   }
 
-  // Justification controls: an unbounded justified last line fills the exact
-  // box; capping word growth at its natural width and bounding letter gaps
-  // leaves the line short by design.
+  // An unbounded justified last line fills the box; bounded word and letter growth may leave it short.
   const justifyLayout = (justify, lastLine) => ({
     align: 'justify',
     ...(justify === undefined ? {} : { justify }),
@@ -1383,10 +1858,7 @@ test('Three Text and TextGroup late-bind, synchronize, reparent, and dispose thr
     paragraph.dispose();
   }
 
-  // Column flow: one paragraph fills side-by-side ordered regions without
-  // balancing. The column height is the flow signal, so the reference layout is
-  // one column at the exact column measure; halving its height (plus a line of
-  // slack) must push the tail of the text into the second column.
+  // Ordered columns do not balance: reducing the height must move the paragraph tail into the second region.
   const columnText = 'the quick brown fox jumps over the lazy dog and keeps running until the column turns';
   const columnMeasureWidth = (420 - 20) / 2;
   const reference = three.createText({
@@ -1675,6 +2147,53 @@ test('Three retires materials bound to a replaced buffer generation', async (t) 
   fontDomain.dispose();
 });
 
+test('Three reflow patches only host placement while retaining raster geometry, draws, and materials', async (t) => {
+  const three = await createThreeTestHandle(t);
+  const fontDomain = createThreeFontDomain();
+  const font = await fontDomain.loadFont({ baked: dataUrl(await readFile(fontUrl)) }, bitmap({ strikes: [16] }));
+  const materials = [];
+  const material = defineTextMaterial((context) => {
+    const created = context.createDefaultMaterial();
+    materials.push(created);
+    return created;
+  });
+  const scene = new THREE.Scene();
+  const label = three.createText({
+    font,
+    material,
+    text: 'alpha beta gamma delta epsilon zeta eta theta',
+    constraints: { width: { mode: 'exact', size: 300 } },
+  });
+  scene.add(label);
+  scene.updateMatrixWorld(true);
+  const draw = rootDraws(scene)[0];
+  assert.ok(draw);
+  const origins = draw.geometry.getAttribute(glyphAttribute(bitmapSchema.buffers.origin.id));
+  const originalOrigins = origins.array.slice();
+  const placementSlots = draw.geometry.getAttribute(glyphAttribute(threeSystemBuffers.placementSlot.id));
+  const originalPlacementSlots = placementSlots.array.slice();
+  const originalY = [...label.glyphs().y];
+
+  label.set({ constraints: { width: { mode: 'exact', size: 90 } } });
+  scene.updateMatrixWorld(true);
+  const reflowed = rootDraws(scene);
+  assert.equal(reflowed.length, 1);
+  assert.equal(reflowed[0], draw, 'same-capacity origin patches retain the realized draw');
+  assert.equal(reflowed[0].material, materials[0], 'the material remains reusable across reflow');
+  assert.equal(materials.length, 1, 'reflow does not realize a second material');
+  assert.deepEqual(origins.array, originalOrigins, 'break changes preserve glyph-local raster geometry');
+  assert.deepEqual(
+    placementSlots.array,
+    originalPlacementSlots,
+    'break changes retain each glyph-to-segment assignment',
+  );
+  assert.notDeepEqual([...label.glyphs().y], originalY, 'the public positioned layout still moves between lines');
+
+  label.dispose();
+  font.dispose();
+  fontDomain.dispose();
+});
+
 test('one Rust plan partitions a mixed Bitmap to Slug fallback stack', async (t) => {
   const three = await createThreeTestHandle(t);
   const fontDomain = createThreeFontDomain();
@@ -1722,6 +2241,14 @@ test('one Rust plan partitions a mixed Bitmap to Slug fallback stack', async (t)
     [2, 4],
     'Bitmap vec2 and Slug vec4 records must coexist without a user technique selector',
   );
+  const slugDraw = draws.find((draw) => draw.geometry.getAttribute(glyphAttribute(slugSchema.buffers.planeRect.id)));
+  assert.ok(slugDraw);
+  const slugVertex = compileNodeMaterial(slugDraw).vertex;
+  const slugStorageBindings = slugVertex.match(/var<storage/g) ?? [];
+  assert.ok(
+    slugStorageBindings.length <= 8,
+    `Slug needs ${String(slugStorageBindings.length)} WebGPU vertex storage buffers`,
+  );
 
   const [detached] = label.breakApart();
   scene.add(detached);
@@ -1729,6 +2256,16 @@ test('one Rust plan partitions a mixed Bitmap to Slug fallback stack', async (t)
   scene.updateMatrixWorld(true);
   const detachedDraws = detached.children.filter((child) => child.isMesh);
   assert.equal(detachedDraws.length, 2, 'the detached copy must preserve both renderer-program batches');
+  const detachedSlugDraw = detachedDraws.find((draw) =>
+    draw.geometry.getAttribute(glyphAttribute(slugSchema.buffers.planeRect.id)),
+  );
+  assert.ok(detachedSlugDraw);
+  const detachedSlugVertex = compileNodeMaterial(detachedSlugDraw).vertex;
+  const detachedSlugStorageDeclarations = detachedSlugVertex.match(/^.*var<storage.*$/gm) ?? [];
+  assert.ok(
+    detachedSlugStorageDeclarations.length <= 8,
+    `detached Slug storage bindings:\n${detachedSlugStorageDeclarations.join('\n')}`,
+  );
   const transformStorages = detachedDraws.map((draw) => draw.geometry.getAttribute('_pmndrsGlyphInstanceTransforms'));
   assert.ok(transformStorages.every(Boolean));
   assert.equal(
@@ -1883,8 +2420,11 @@ test('one Three root realizes two public Text objects as one indexed Rust draw',
   assert.equal(draws.length, 1, 'compatible paragraphs must batch in Rust before Three sees the plan');
   assert.equal(draws[0].geometry.instanceCount, 4);
   const start = draws[0].userData.pmndrsGlyphRunStart;
-  const indices = draws[0].geometry.getAttribute(glyphAttribute(threeSystemBuffers.transformIndex.id)).array;
-  assert.deepEqual(Array.from(indices.subarray(start, start + 4)), [1, 1, 2, 2]);
+  const indices = draws[0].geometry.getAttribute(glyphAttribute(threeSystemBuffers.transformIndex.id));
+  assert.deepEqual(
+    Array.from({ length: 4 }, (_, index) => indices.getX(start + index)),
+    [1, 1, 2, 2],
+  );
   const transforms = draws[0].geometry.getAttribute('_pmndrsGlyphTransforms');
   assert.equal(transforms.array[1 * 16 + 12], 2);
   assert.equal(transforms.array[2 * 16 + 12], 5);
@@ -2912,8 +3452,11 @@ test('Bitmap strike changes fully initialize a replacement indexed batch', async
   const draw = rootDraws(scene)[0];
   assert.ok(draw);
   const start = draw.userData.pmndrsGlyphRunStart;
-  const transforms = draw.geometry.getAttribute(glyphAttribute(threeSystemBuffers.transformIndex.id)).array;
-  assert.deepEqual(Array.from(transforms.subarray(start, start + draw.geometry.instanceCount)), [1, 1]);
+  const transforms = draw.geometry.getAttribute(glyphAttribute(threeSystemBuffers.transformIndex.id));
+  assert.deepEqual(
+    Array.from({ length: draw.geometry.instanceCount }, (_, index) => transforms.getX(start + index)),
+    [1, 1],
+  );
   const scaledOrigins = draw.geometry.getAttribute(glyphAttribute(bitmapSchema.buffers.origin.id)).array;
   const scaledAdvance = scaledOrigins[(start + 1) * 2] - scaledOrigins[start * 2];
   assert.ok(
@@ -2965,7 +3508,7 @@ test('multi-page Bitmap strikes remain one ordered texture-array draw', async (t
   fontDomain.dispose();
 });
 
-test('large inspection queries grow the inactive A/B result slot to the reported requirement', async (t) => {
+test('large inspection queries grow the result arena to the reported requirement', async (t) => {
   const three = await createThreeTestHandle(t, defineThreeConfig({ capacity: { size: 8_192, policy: 'grow' } }));
   const fontDomain = createThreeFontDomain();
   const font = await fontDomain.loadFont(
@@ -3019,10 +3562,8 @@ test('Rust ellipsis reshapes only the narrowed unsafe line boundary', async (t) 
   assert.equal(inspection.clusters.at(-1), 3, 'the ellipsis is anchored at the truncation boundary');
   assert.deepEqual([...inspection.glyphIds], [61, 2613, 2598, 6597]);
   assert.deepEqual([...inspection.clusters], [2, 1, 0, 3]);
-  // Re-pinned under the F16.16 layout-unit contract: the RTL alignment origin is
-  // derived from the higher-resolution quantized line advance. Relative glyph
-  // advances remain unchanged; only the uniform line origin moved by 0.01337 units.
-  assert.deepEqual([...inspection.x], [0.23200830817222595, 10.808008193969727, 18.376008987426758, 23.91200828552246]);
+  // CPU inspection and the renderer share the declared local-plus-offset f32 placement authority.
+  assert.deepEqual([...inspection.x], [0.2320079803466797, 10.808008193969727, 18.376007080078125, 23.91200828552246]);
 
   label.dispose();
   font.dispose();

@@ -1,10 +1,6 @@
 // Generated from Rust compiler layout facts. Do not edit.
 export const textShaperAbi = {
   "codec": {
-    "allocationStrategies": {
-      "orderedDirect": 1,
-      "stableIndirect": 2
-    },
     "batchFields": {
       "clip": 16,
       "depth": 32,
@@ -25,7 +21,6 @@ export const textShaperAbi = {
       "aliasVec4": 8,
       "indirectDraws": 2,
       "orderedDirect": 16,
-      "stableIndirect": 32,
       "storageBuffers": 1
     },
     "inputScopes": {
@@ -69,7 +64,7 @@ export const textShaperAbi = {
     },
     "bufferStrategies": {
       "orderedDirect": 1,
-      "stableIndirect": 2
+      "sessionShared": 3
     },
     "decorationFlags": {
       "all": 15,
@@ -87,6 +82,14 @@ export const textShaperAbi = {
       "wavy": 5
     },
     "defaultRootTextCapacity": 1024,
+    "dropCapAlignments": {
+      "baseline": 2,
+      "textTop": 1
+    },
+    "dropCapSides": {
+      "inlineEnd": 2,
+      "inlineStart": 1
+    },
     "exclusionWrapSides": {
       "both": 1,
       "inlineEnd": 3,
@@ -118,7 +121,10 @@ export const textShaperAbi = {
       "textTop": 2
     },
     "internalBufferBindings": {
-      "order": 65535
+      "placement": 65534
+    },
+    "internalBufferIds": {
+      "placement": 2147483647
     },
     "lastLinePolicies": {
       "auto": 1,
@@ -199,6 +205,7 @@ export const textShaperAbi = {
       "flowThreadId": 3,
       "foregroundRgba": 0,
       "outlineRgba": 6,
+      "placementSlot": 8,
       "regionId": 2,
       "shadowRgba": 7,
       "stableGlyphId": 5,
@@ -367,7 +374,6 @@ export const textShaperAbi = {
     },
     "codecProgram": {
       "alignment": 4,
-      "allocationStrategy": 46,
       "bufferCount": 42,
       "bufferStart": 32,
       "capabilitySetId": 8,
@@ -381,6 +387,7 @@ export const textShaperAbi = {
       "paintCapabilities": 24,
       "primitiveKind": 50,
       "programId": 4,
+      "reserved0": 46,
       "reserved1": 62,
       "resourceKindMask": 12,
       "semanticViewMask": 16,
@@ -414,10 +421,9 @@ export const textShaperAbi = {
       "generation": 4,
       "id": 0,
       "liveRecords": 20,
-      "orderBufferId": 32,
       "programId": 8,
       "scalarType": 14,
-      "size": 36,
+      "size": 32,
       "strategy": 16,
       "vectorWidth": 15
     },
@@ -425,6 +431,14 @@ export const textShaperAbi = {
       "align": 47,
       "alignment": 4,
       "blockAlign": 49,
+      "dropCapAlignment": 82,
+      "dropCapLines": 81,
+      "dropCapMarginBlock": 88,
+      "dropCapMarginInline": 84,
+      "dropCapReserved": 98,
+      "dropCapSide": 83,
+      "dropCapVertexCount": 96,
+      "dropCapVerticesOffset": 92,
       "firstLineIndent": 56,
       "flags": 50,
       "flowThreadId": 0,
@@ -443,7 +457,7 @@ export const textShaperAbi = {
       "resumeBlockOffset": 24,
       "resumeCluster": 36,
       "resumeRegion": 42,
-      "size": 84,
+      "size": 100,
       "spaceAfter": 64,
       "spaceBefore": 60,
       "viewportBlockEnd": 20,
@@ -472,8 +486,6 @@ export const textShaperAbi = {
       "depthKey": 20,
       "flags": 10,
       "id": 0,
-      "indirectBufferId": 56,
-      "indirectOffset": 60,
       "materialId": 12,
       "orderToken": 52,
       "primitiveCount": 32,
@@ -482,7 +494,7 @@ export const textShaperAbi = {
       "programVariant": 8,
       "resourceCount": 48,
       "resourceStart": 44,
-      "size": 64,
+      "size": 56,
       "transformId": 24
     },
     "engineExclusion": {
@@ -625,53 +637,51 @@ export const textShaperAbi = {
     "engineResult": {
       "abiVersion": 0,
       "alignment": 16,
-      "bufferCount": 92,
-      "buffersOffset": 88,
+      "bufferCount": 88,
+      "buffersOffset": 84,
       "byteLength": 4,
-      "capabilitySet": 60,
-      "codecFingerprintHigh": 68,
-      "codecFingerprintLow": 64,
-      "codecHandle": 56,
-      "diagnosticCount": 132,
-      "diagnosticsOffset": 128,
-      "drawCount": 116,
-      "drawsOffset": 112,
+      "capabilitySet": 56,
+      "codecFingerprintHigh": 64,
+      "codecFingerprintLow": 60,
+      "codecHandle": 52,
+      "diagnosticCount": 128,
+      "diagnosticsOffset": 124,
+      "drawCount": 112,
+      "drawsOffset": 108,
       "engineRevision": 20,
-      "faultParagraphId": 136,
-      "faultStyleId": 140,
+      "faultParagraphId": 132,
+      "faultStyleId": 136,
       "flags": 12,
-      "outputSlot": 36,
-      "patchCount": 100,
-      "patchesOffset": 96,
-      "primitiveCount": 108,
-      "primitivesOffset": 104,
+      "patchCount": 96,
+      "patchesOffset": 92,
+      "primitiveCount": 104,
+      "primitivesOffset": 100,
       "publicationGeneration": 32,
-      "requestCapacity": 40,
+      "requestCapacity": 36,
       "requiredBaseRevision": 28,
-      "requiredRequestCapacity": 44,
-      "requiredResultCapacity": 52,
-      "resourceCount": 84,
-      "resourcesOffset": 80,
-      "resultCapacity": 48,
-      "retirementCount": 124,
-      "retirementsOffset": 120,
+      "requiredRequestCapacity": 40,
+      "requiredResultCapacity": 48,
+      "resourceCount": 80,
+      "resourcesOffset": 76,
+      "resultCapacity": 44,
+      "retirementCount": 120,
+      "retirementsOffset": 116,
       "revision": 24,
       "rootId": 16,
-      "semanticViewCount": 76,
-      "semanticViewsOffset": 72,
+      "semanticViewCount": 72,
+      "semanticViewsOffset": 68,
       "size": 144,
       "status": 8
     },
     "engineRetirement": {
-      "afterPublicationGeneration": 12,
       "alignment": 4,
-      "byteLength": 20,
-      "byteOffset": 16,
+      "byteLength": 16,
+      "byteOffset": 12,
       "flags": 2,
       "generation": 8,
       "id": 4,
       "kind": 0,
-      "size": 24
+      "size": 20
     },
     "engineSemanticView": {
       "alignment": 4,

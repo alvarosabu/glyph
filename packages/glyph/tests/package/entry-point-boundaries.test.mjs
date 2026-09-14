@@ -37,14 +37,31 @@ test('application types stay at root while integration construction lives on con
     null,
     'configured-controller snapshot ownership must remain package-private',
   );
+  assert.equal(
+    manifest.exports['./config/raster-host'],
+    null,
+    'renderer-specific Codec packing must remain package-private',
+  );
   assert.ok(manifest.exports['./config/*'], 'renderer-neutral integration leaves must be public');
 
   for (const name of ['GlyphConfig', 'Codec', 'TechniqueSchema', 'RasterFormat']) {
     assert.equal(root.has(name), true, `applications must be able to name ${name} from the root`);
   }
-  for (const retiredRootName of ['loadFont', 'createFontLibrary', 'FontLibrary', 'createParagraph', 'Paragraph']) {
+  for (const retiredRootName of [
+    'loadFont',
+    'createFontLibrary',
+    'FontLibrary',
+    'createParagraph',
+    'Paragraph',
+    'CodecAllocationMode',
+  ]) {
     assert.equal(root.has(retiredRootName), false, `root must not publish retired API ${retiredRootName}`);
   }
+  assert.equal(
+    published(await declaration('three.d.ts')).has('ThreeAllocationMode'),
+    false,
+    'the Three integration must not publish the retired allocation mode',
+  );
 
   const leaves = {
     'config/glyph.d.ts': ['defineGlyphConfig', 'defineGlyphSchema', 'resourceLease'],
@@ -78,7 +95,11 @@ test('application types stay at root while integration construction lives on con
   }
 
   const privateLeafHelpers = {
-    'config/codec-program.d.ts': ['assertTechniqueCodecBody', 'normalizeCodecProgramSystemBuffers'],
+    'config/codec-program.d.ts': [
+      'assertTechniqueCodecBody',
+      'attachHostCodecProgramSystemBuffers',
+      'normalizeCodecProgramSystemBuffers',
+    ],
     'config/raster.d.ts': ['registerGlyphRasterCodec', 'resolveRasterCodec'],
     'config/raster-format.d.ts': ['isRasterFormat', 'rasterFormatForKey', 'rasterFormatForReference'],
   };
@@ -88,6 +109,17 @@ test('application types stay at root while integration construction lives on con
       assert.equal(leaf.has(name), false, `${path} must not publish package-owned helper ${name}`);
     }
   }
+  assert.doesNotMatch(
+    await declaration('config/raster.d.ts'),
+    /placementSlotTarget|CodecProgramU32StoreTarget/,
+    'adapter buffer/lane packing must stay outside the public raster codec contract',
+  );
+  const rasterRuntime = await import('../../dist/config/raster.js');
+  assert.equal(
+    'attachHostCodecProgramSystemBuffers' in rasterRuntime,
+    false,
+    'config/raster.js must not expose package-owned assembly at runtime',
+  );
 });
 
 test('integrations re-export root names only when their own signatures use them', async () => {

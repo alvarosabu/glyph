@@ -1,14 +1,18 @@
 use alloc::vec::Vec;
+use core::num::NonZeroU32;
 
-use crate::{FontMetrics, unicode::UnicodeAnalysis};
+use crate::{FontGlyphExtents, FontMetrics, unicode::UnicodeAnalysis};
 
 use super::{
     EngineError, FrameFault,
     frame::{WRAP_CHARACTER, WRAP_NONE, WRAP_WORD},
     identity_index::{IdentityIndex, IdentityIndexError},
+    run_local::{NumericBlockSpan, RunLocalArena},
     shaping_state::{ShapeArena, ShapingRun},
-    style_state::StyleSegment,
+    style_state::{ResolvedStyle, StyleArena, StyleSegment},
 };
+
+use super::run_local::{ClusterFinish, RunLocalBuildError, RunLocalGlyphInput};
 
 pub(crate) const CLUSTER_SAFE_BEFORE: u8 = 1 << 0;
 pub(crate) const CLUSTER_REQUIRED_BREAK: u8 = 1 << 1;
@@ -39,6 +43,106 @@ pub(crate) struct WordBreakRecord {
     pub cluster_end: u32,
     pub advance_units: i32,
     pub space_units: i32,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum WordSidecarMode {
+    #[default]
+    Unbuilt,
+    Short,
+    Sparse,
+    Dense,
+    Overflow,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct PlacementCluster {
+    pub segment_anchor: u32,
+    pub dense: bool,
+    pub numeric_block_ordinal: u32,
+    pub block_local_prefix: f64,
+    pub block_anchor_inline: f64,
+    pub block_anchor_block: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct RunCanonicalRevision(NonZeroU32);
+
+impl RunCanonicalRevision {
+    pub(crate) const fn get(self) -> u32 {
+        self.0.get()
+    }
+
+    pub(crate) fn allocate(next: &mut u32) -> Result<Self, EngineError> {
+        let value = (*next).max(1);
+        let revision = NonZeroU32::new(value).ok_or(EngineError::RevisionExhausted)?;
+        *next = value.checked_add(1).ok_or(EngineError::RevisionExhausted)?;
+        Ok(Self(revision))
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum BoundaryRunRole {
+    BoundarySource,
+    Ellipsis,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum LayoutRunSourceKind {
+    Paragraph,
+    Boundary {
+        flow_thread_id: u32,
+        role: BoundaryRunRole,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct LayoutRun {
+    pub source_kind: LayoutRunSourceKind,
+    pub cluster_start: u32,
+    pub cluster_end: u32,
+    pub glyph_start: u32,
+    pub glyph_count: u32,
+    /// First shaping run in this geometry run. Adjacent script runs may merge when direction,
+    /// bidi level, selected font, and layout geometry agree.
+    pub source_run: u32,
+    pub font_handle: u32,
+    pub numeric_blocks: NumericBlockSpan,
+    /// Exact retained local-content token. `None` exists only while a pending cluster arena is
+    /// being built; every committed run has a revision assigned by the shared finalizer.
+    pub canonical_revision: Option<RunCanonicalRevision>,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct RunCanonicalInput<'a> {
+    pub text: &'a [u16],
+    pub text_unit_ids: &'a [u32],
+    pub style_arena: &'a StyleArena,
+    pub styles: &'a [StyleSegment],
+    pub shaping_runs: &'a [ShapingRun],
+}
+
+#[derive(Default)]
+pub(super) struct LayoutRunArena {
+    runs: Vec<LayoutRun>,
+}
+
+impl LayoutRunArena {
+    fn reserve(&mut self, capacity: usize) -> Result<(), EngineError> {
+        reserve(&mut self.runs, capacity)
+    }
+
+    fn clear(&mut self) {
+        self.runs.clear();
+    }
+
+    fn push(&mut self, run: LayoutRun) -> Result<(), EngineError> {
+        self.runs
+            .try_reserve(1)
+            .map_err(|_| EngineError::ResultTooLarge)?;
+        self.runs.push(run);
+        Ok(())
+    }
 }
 
 fn summarize_unit_chunks(
@@ -133,7 +237,10 @@ pub(crate) struct ClusterArena {
     pub chunk_auxiliary_sums: Vec<i64>,
     pub chunk_flags_or: Vec<u8>,
     pub word_breaks: Vec<WordBreakRecord>,
-    pub(crate) word_breaks_valid: bool,
+    pub(crate) word_sidecar_mode: WordSidecarMode,
+    // Stable word/run root per cluster. Positioning reads this directly instead of
+    // rediscovering roots while every changed line is traversed.
+    pub(super) placement_segment_anchors: Vec<u32>,
     /// Per-cluster `units_per_em` of the owning shaped font (0 while unshaped),
     /// resolved once at cluster build. Positioning derives its scale from the
     /// CURRENT style's font size and this column, so font-size-only style changes
@@ -161,6 +268,8 @@ pub(crate) struct ClusterArena {
     pub index_at: Vec<u32>,
     pub(super) shaped: Vec<u8>,
     pub(super) unsafe_before: Vec<u8>,
+    pub(super) layout_runs: LayoutRunArena,
+    pub(super) run_local: RunLocalArena,
 }
 
 pub(crate) struct ClusterBuildInput<'a> {
@@ -178,6 +287,7 @@ impl ClusterArena {
         reserve(&mut self.ends, capacity)?;
         reserve(&mut self.advances, capacity)?;
         reserve(&mut self.advance_units, capacity)?;
+        reserve(&mut self.placement_segment_anchors, capacity)?;
         reserve(&mut self.units_per_em, capacity)?;
         reserve(&mut self.flags, capacity)?;
         reserve(&mut self.style_indexes, capacity)?;
@@ -196,7 +306,8 @@ impl ClusterArena {
         reserve(&mut self.glyph_stable_ids, capacity.saturating_mul(2))?;
         reserve(&mut self.index_at, capacity.saturating_add(1))?;
         reserve(&mut self.shaped, capacity)?;
-        reserve(&mut self.unsafe_before, capacity)
+        reserve(&mut self.unsafe_before, capacity)?;
+        Ok(())
     }
 
     pub(crate) fn build(
@@ -269,6 +380,7 @@ impl ClusterArena {
         }
         self.build_index(text.len())?;
         self.aggregate_shape(runs, shape, metrics_for)?;
+        self.rebuild_layout_runs_for_shaping(runs)?;
         self.apply_break_flags(unicode)?;
         self.refresh_layout_units()?;
         Ok(())
@@ -478,6 +590,7 @@ impl ClusterArena {
                 self.flags[cluster] |= CLUSTER_SAFE_BEFORE;
             }
         }
+        self.rebuild_layout_runs_for_shaping(runs)?;
         if cluster_start > 0 {
             self.flags[cluster_start - 1] &= !CLUSTER_ALLOWED_BREAK;
         }
@@ -540,20 +653,21 @@ impl ClusterArena {
             &mut self.chunk_flags_or,
         );
         self.word_breaks.clear();
-        self.word_breaks_valid = false;
+        self.word_sidecar_mode = WordSidecarMode::Unbuilt;
+        self.placement_segment_anchors.clear();
         Ok(())
     }
 
-    /// Lazily derives the sparse word index only when active geometry needs word
-    /// wrapping. Once valid, width-only reflow reuses it without another scan.
+    /// Derives the word-root sidecar used by wrapping and stable placement segments.
+    /// Width-only reflow reuses the selected representation without another scan.
     pub(crate) fn ensure_word_breaks(&mut self) -> Result<(), EngineError> {
-        if self.word_breaks_valid {
+        if self.word_sidecar_mode != WordSidecarMode::Unbuilt {
             return Ok(());
         }
         self.word_breaks.clear();
         // Below one chunk, scalar composition is cheaper than allocating a sidecar.
         if self.flags.len() < LAYOUT_CHUNK {
-            self.word_breaks_valid = true;
+            self.word_sidecar_mode = WordSidecarMode::Short;
             return Ok(());
         }
         let mut opportunity_count = 0usize;
@@ -565,7 +679,7 @@ impl ClusterArena {
         // Dense break streams stay on chunk/scalar composition; sparse records would rival the
         // source lanes, while negative-prefix summaries preserve first-overflow semantics.
         if opportunity_count.saturating_mul(2) >= self.flags.len() {
-            self.word_breaks_valid = true;
+            self.word_sidecar_mode = WordSidecarMode::Dense;
             return Ok(());
         }
         reserve(&mut self.word_breaks, opportunity_count.saturating_add(1))?;
@@ -579,12 +693,12 @@ impl ClusterArena {
             if flags & (CLUSTER_ALLOWED_BREAK | CLUSTER_REQUIRED_BREAK | CLUSTER_HARD_BREAK) != 0 {
                 let Ok(segment_advance) = i32::try_from(advance_units) else {
                     self.word_breaks.clear();
-                    self.word_breaks_valid = true;
+                    self.word_sidecar_mode = WordSidecarMode::Overflow;
                     return Ok(());
                 };
                 let Ok(segment_space) = i32::try_from(space_units) else {
                     self.word_breaks.clear();
-                    self.word_breaks_valid = true;
+                    self.word_sidecar_mode = WordSidecarMode::Overflow;
                     return Ok(());
                 };
                 self.word_breaks.push(WordBreakRecord {
@@ -606,12 +720,12 @@ impl ClusterArena {
         {
             let Ok(segment_advance) = i32::try_from(advance_units) else {
                 self.word_breaks.clear();
-                self.word_breaks_valid = true;
+                self.word_sidecar_mode = WordSidecarMode::Overflow;
                 return Ok(());
             };
             let Ok(segment_space) = i32::try_from(space_units) else {
                 self.word_breaks.clear();
-                self.word_breaks_valid = true;
+                self.word_sidecar_mode = WordSidecarMode::Overflow;
                 return Ok(());
             };
             self.word_breaks.push(WordBreakRecord {
@@ -620,8 +734,62 @@ impl ClusterArena {
                 space_units: segment_space,
             });
         }
-        self.word_breaks_valid = true;
+        self.word_sidecar_mode = WordSidecarMode::Sparse;
         Ok(())
+    }
+
+    pub(crate) fn ensure_placement_segment_anchors(&mut self) -> Result<(), EngineError> {
+        if self.placement_segment_anchors.len() == self.starts.len() {
+            return Ok(());
+        }
+        if self.word_sidecar_mode == WordSidecarMode::Unbuilt {
+            return Err(EngineError::InvalidRequest);
+        }
+        self.placement_segment_anchors.clear();
+        reserve(&mut self.placement_segment_anchors, self.starts.len())?;
+        let mut covered = 0usize;
+        for run in &self.layout_runs.runs {
+            let run_start =
+                usize::try_from(run.cluster_start).map_err(|_| EngineError::InvalidRequest)?;
+            let run_end =
+                usize::try_from(run.cluster_end).map_err(|_| EngineError::InvalidRequest)?;
+            if run_start != covered || run_start >= run_end || run_end > self.starts.len() {
+                return Err(EngineError::InvalidRequest);
+            }
+            let run_anchor = *self
+                .stable_ids
+                .get(run_start)
+                .filter(|anchor| **anchor != 0)
+                .ok_or(EngineError::InvalidRequest)?;
+            let mut word_anchor = run_anchor;
+            for cluster in run_start..run_end {
+                let hard_break = self.flags[cluster] & CLUSTER_HARD_BREAK != 0
+                    && self.glyph_counts[cluster] == 0;
+                let anchor = if hard_break {
+                    self.stable_ids[cluster]
+                } else if self.word_sidecar_mode == WordSidecarMode::Dense {
+                    run_anchor
+                } else {
+                    word_anchor
+                };
+                if anchor == 0 {
+                    return Err(EngineError::InvalidRequest);
+                }
+                self.placement_segment_anchors.push(anchor);
+                if self.word_sidecar_mode != WordSidecarMode::Dense
+                    && self.flags[cluster]
+                        & (CLUSTER_ALLOWED_BREAK | CLUSTER_REQUIRED_BREAK | CLUSTER_HARD_BREAK)
+                        != 0
+                    && cluster + 1 < run_end
+                {
+                    word_anchor = self.stable_ids[cluster + 1];
+                }
+            }
+            covered = run_end;
+        }
+        (covered == self.starts.len())
+            .then_some(())
+            .ok_or(EngineError::InvalidRequest)
     }
 
     /// Derives minimum-content and maximum-content inline extents from one scan over
@@ -730,6 +898,10 @@ impl ClusterArena {
         copy_lane!(index_at);
         copy_lane!(shaped);
         copy_lane!(unsafe_before);
+        self.layout_runs.reserve(source.layout_runs.runs.len())?;
+        self.layout_runs
+            .runs
+            .extend_from_slice(&source.layout_runs.runs);
         Ok(())
     }
 
@@ -914,6 +1086,64 @@ impl ClusterArena {
         Ok(())
     }
 
+    /// Assigns canonical tokens after exact normalized run comparison; changed runs mint revisions.
+    /// Absolute offsets and temporary shaping-run ordinals are traversal cursors, not identity.
+    pub(crate) fn finalize_layout_run_revisions(
+        &mut self,
+        previous: &Self,
+        current: RunCanonicalInput<'_>,
+        committed: RunCanonicalInput<'_>,
+        index: &mut IdentityIndex,
+        next_revision: &mut u32,
+    ) -> Result<(), EngineError> {
+        index
+            .prepare(previous.layout_runs.runs.len())
+            .map_err(identity_index_error)?;
+        for (run_index, run) in previous.layout_runs.runs.iter().copied().enumerate() {
+            let anchor = previous.run_anchor(run)?;
+            index
+                .insert(
+                    anchor,
+                    u32::try_from(run_index).map_err(|_| EngineError::ResultTooLarge)?,
+                )
+                .map_err(identity_index_error)?;
+        }
+
+        for run_index in 0..self.layout_runs.runs.len() {
+            let run = self.layout_runs.runs[run_index];
+            let anchor = self.run_anchor(run)?;
+            let previous_run = index
+                .get(anchor)
+                .and_then(|previous_index| usize::try_from(previous_index).ok())
+                .and_then(|previous_index| previous.layout_runs.runs.get(previous_index).copied());
+            let retained = previous_run
+                .map(|candidate| {
+                    runs_canonically_equal(self, run, current, previous, candidate, committed)
+                })
+                .transpose()?
+                .filter(|equal| *equal)
+                .and_then(|_| previous_run.and_then(|candidate| candidate.canonical_revision));
+            let revision = match retained {
+                Some(revision) => revision,
+                None => RunCanonicalRevision::allocate(next_revision)?,
+            };
+            debug_assert_ne!(revision.get(), 0);
+            self.layout_runs.runs[run_index].canonical_revision = Some(revision);
+        }
+
+        Ok(())
+    }
+
+    fn run_anchor(&self, run: LayoutRun) -> Result<u32, EngineError> {
+        let cluster =
+            usize::try_from(run.cluster_start).map_err(|_| EngineError::InvalidRequest)?;
+        self.stable_ids
+            .get(cluster)
+            .copied()
+            .filter(|anchor| *anchor != 0)
+            .ok_or(EngineError::InvalidRequest)
+    }
+
     pub(crate) fn clear(&mut self) {
         self.starts.clear();
         self.ends.clear();
@@ -923,7 +1153,8 @@ impl ClusterArena {
         self.chunk_auxiliary_sums.clear();
         self.chunk_flags_or.clear();
         self.word_breaks.clear();
-        self.word_breaks_valid = false;
+        self.word_sidecar_mode = WordSidecarMode::Unbuilt;
+        self.placement_segment_anchors.clear();
         self.units_per_em.clear();
         self.flags.clear();
         self.style_indexes.clear();
@@ -943,6 +1174,250 @@ impl ClusterArena {
         self.index_at.clear();
         self.shaped.clear();
         self.unsafe_before.clear();
+        self.layout_runs.clear();
+        self.run_local.clear();
+    }
+
+    pub(crate) fn layout_runs(&self) -> &[LayoutRun] {
+        &self.layout_runs.runs
+    }
+
+    pub(crate) fn run_local(&self) -> &RunLocalArena {
+        &self.run_local
+    }
+
+    pub(crate) fn placement_cluster(
+        &self,
+        run: LayoutRun,
+        direction: u8,
+        cluster: usize,
+    ) -> Result<PlacementCluster, EngineError> {
+        self.placement_cluster_at(run, direction, cluster)
+    }
+
+    pub(crate) fn placement_segment_monotone(
+        &self,
+        run: LayoutRun,
+        direction: u8,
+        cluster: usize,
+        stop_after_space: bool,
+    ) -> Result<(PlacementCluster, usize), EngineError> {
+        let placement = self.placement_cluster_at(run, direction, cluster)?;
+        if direction & 1 != 0 || self.flags[cluster] & CLUSTER_HARD_BREAK != 0 {
+            return Ok((placement, cluster + 1));
+        }
+        let run_end = usize::try_from(run.cluster_end).map_err(|_| EngineError::InvalidRequest)?;
+        let mut segment_end = cluster + 1;
+        while segment_end < run_end
+            && self.placement_segment_anchors[segment_end] == placement.segment_anchor
+            && (!stop_after_space || self.flags[segment_end - 1] & CLUSTER_SPACE == 0)
+        {
+            segment_end += 1;
+        }
+        let run_start =
+            usize::try_from(run.cluster_start).map_err(|_| EngineError::InvalidRequest)?;
+        let block_lane_start = usize::try_from(run.numeric_blocks.cluster_start)
+            .map_err(|_| EngineError::InvalidRequest)?;
+        let block_lane = block_lane_start
+            .checked_add(cluster - run_start)
+            .ok_or(EngineError::ResultTooLarge)?;
+        let block = *self
+            .run_local
+            .cluster_blocks()
+            .get(block_lane)
+            .ok_or(EngineError::InvalidRequest)?;
+        let mut block_end = cluster + 1;
+        while block_end < segment_end
+            && self
+                .run_local
+                .cluster_blocks()
+                .get(block_lane_start + (block_end - run_start))
+                == Some(&block)
+        {
+            block_end += 1;
+        }
+        Ok((placement, block_end))
+    }
+
+    fn placement_cluster_at(
+        &self,
+        run: LayoutRun,
+        direction: u8,
+        cluster: usize,
+    ) -> Result<PlacementCluster, EngineError> {
+        let run_start =
+            usize::try_from(run.cluster_start).map_err(|_| EngineError::InvalidRequest)?;
+        let run_end = usize::try_from(run.cluster_end).map_err(|_| EngineError::InvalidRequest)?;
+        if cluster < run_start
+            || cluster >= run_end
+            || self.word_sidecar_mode == WordSidecarMode::Unbuilt
+        {
+            return Err(EngineError::InvalidRequest);
+        }
+        let run_offset = if direction & 1 == 0 {
+            cluster - run_start
+        } else {
+            run_end - cluster - 1
+        };
+        if self.flags[cluster] & CLUSTER_HARD_BREAK != 0 && self.glyph_counts[cluster] == 0 {
+            return Ok(PlacementCluster {
+                segment_anchor: self.stable_ids[cluster],
+                dense: false,
+                numeric_block_ordinal: u32::MAX,
+                block_local_prefix: 0.0,
+                block_anchor_inline: 0.0,
+                block_anchor_block: 0.0,
+            });
+        }
+        let block_lane = usize::try_from(run.numeric_blocks.cluster_start)
+            .map_err(|_| EngineError::InvalidRequest)?
+            .checked_add(run_offset)
+            .ok_or(EngineError::ResultTooLarge)?;
+        let block_index = *self
+            .run_local
+            .cluster_blocks()
+            .get(block_lane)
+            .filter(|index| **index != u32::MAX)
+            .ok_or(EngineError::InvalidRequest)?;
+        let block = *self
+            .run_local
+            .blocks()
+            .get(usize::try_from(block_index).map_err(|_| EngineError::InvalidRequest)?)
+            .ok_or(EngineError::InvalidRequest)?;
+        let numeric_block_ordinal = block_index
+            .checked_sub(run.numeric_blocks.start)
+            .filter(|ordinal| *ordinal < run.numeric_blocks.count)
+            .ok_or(EngineError::InvalidRequest)?;
+        let segment_anchor = *self
+            .placement_segment_anchors
+            .get(cluster)
+            .filter(|anchor| **anchor != 0)
+            .ok_or(EngineError::InvalidRequest)?;
+        Ok(PlacementCluster {
+            segment_anchor,
+            dense: self.word_sidecar_mode == WordSidecarMode::Dense,
+            numeric_block_ordinal,
+            block_local_prefix: *self
+                .run_local
+                .cluster_prefixes()
+                .get(block_lane)
+                .ok_or(EngineError::InvalidRequest)?,
+            block_anchor_inline: block.anchor_inline,
+            block_anchor_block: block.anchor_block,
+        })
+    }
+
+    pub(crate) fn rebuild_run_local_geometry(
+        &mut self,
+        runs: &[ShapingRun],
+        styles: &[StyleSegment],
+        extents_for: impl Fn(u32, u32) -> Option<FontGlyphExtents> + Copy,
+    ) -> Result<(), EngineError> {
+        for run in &mut self.layout_runs.runs {
+            run.numeric_blocks = NumericBlockSpan::default();
+        }
+        let mut run_local = core::mem::take(&mut self.run_local);
+        run_local.clear();
+        let result = (|| {
+            for run_index in 0..self.layout_runs.runs.len() {
+                let run = self.layout_runs.runs[run_index];
+                let direction = usize::try_from(run.source_run)
+                    .ok()
+                    .and_then(|source| runs.get(source))
+                    .map(|run| run.direction)
+                    .or_else(|| (run.glyph_count == 0).then_some(0))
+                    .ok_or(EngineError::InvalidRequest)?;
+                let start =
+                    usize::try_from(run.cluster_start).map_err(|_| EngineError::InvalidRequest)?;
+                let end =
+                    usize::try_from(run.cluster_end).map_err(|_| EngineError::InvalidRequest)?;
+                let mut writer = run_local.begin_run();
+                if direction & 1 == 0 {
+                    for cluster in start..end {
+                        append_run_local_cluster(&mut writer, self, styles, cluster, extents_for)?;
+                    }
+                } else {
+                    for cluster in (start..end).rev() {
+                        append_run_local_cluster(&mut writer, self, styles, cluster, extents_for)?;
+                    }
+                }
+                self.layout_runs.runs[run_index].numeric_blocks =
+                    writer.finish().map_err(run_local_error)?;
+            }
+            Ok(())
+        })();
+        if result.is_err() {
+            run_local.clear();
+            for run in &mut self.layout_runs.runs {
+                run.numeric_blocks = NumericBlockSpan::default();
+            }
+        }
+        self.run_local = run_local;
+        result
+    }
+
+    #[cfg(test)]
+    pub(super) fn rebuild_layout_runs(&mut self) -> Result<(), EngineError> {
+        self.rebuild_layout_runs_with(|left, right| left == right)
+    }
+
+    fn rebuild_layout_runs_for_shaping(&mut self, runs: &[ShapingRun]) -> Result<(), EngineError> {
+        self.rebuild_layout_runs_with(|left, right| {
+            match (
+                usize::try_from(left).ok().and_then(|index| runs.get(index)),
+                usize::try_from(right)
+                    .ok()
+                    .and_then(|index| runs.get(index)),
+            ) {
+                (Some(left), Some(right)) => {
+                    left.direction == right.direction
+                        && left.bidi_level == right.bidi_level
+                        && run_layout_compatible(left.style, right.style)
+                }
+                (None, None) => left == NO_SOURCE_RUN && right == NO_SOURCE_RUN,
+                _ => false,
+            }
+        })
+    }
+
+    fn rebuild_layout_runs_with(
+        &mut self,
+        compatible_source_runs: impl Fn(u32, u32) -> bool,
+    ) -> Result<(), EngineError> {
+        self.layout_runs.clear();
+        let mut cluster_start = 0usize;
+        while cluster_start < self.starts.len() {
+            let source_run = self.source_runs[cluster_start];
+            let font_handle = self.font_handles[cluster_start];
+            let mut cluster_end = cluster_start + 1;
+            while cluster_end < self.starts.len()
+                && compatible_source_runs(source_run, self.source_runs[cluster_end])
+                && self.font_handles[cluster_end] == font_handle
+            {
+                cluster_end += 1;
+            }
+            let glyph_start = self.glyph_starts[cluster_start];
+            let final_cluster = cluster_end - 1;
+            let glyph_end = self.glyph_starts[final_cluster]
+                .checked_add(self.glyph_counts[final_cluster])
+                .ok_or(EngineError::ResultTooLarge)?;
+            self.layout_runs.push(LayoutRun {
+                source_kind: LayoutRunSourceKind::Paragraph,
+                cluster_start: u32::try_from(cluster_start)
+                    .map_err(|_| EngineError::ResultTooLarge)?,
+                cluster_end: u32::try_from(cluster_end).map_err(|_| EngineError::ResultTooLarge)?,
+                glyph_start,
+                glyph_count: glyph_end
+                    .checked_sub(glyph_start)
+                    .ok_or(EngineError::InvalidRequest)?,
+                source_run,
+                font_handle,
+                numeric_blocks: NumericBlockSpan::default(),
+                canonical_revision: None,
+            })?;
+            cluster_start = cluster_end;
+        }
+        Ok(())
     }
 
     fn build_index(&mut self, text_length: usize) -> Result<(), EngineError> {
@@ -1254,6 +1729,66 @@ impl ClusterArena {
     }
 }
 
+fn append_run_local_cluster(
+    writer: &mut super::run_local::RunLocalWriter<'_>,
+    clusters: &ClusterArena,
+    styles: &[StyleSegment],
+    cluster: usize,
+    extents_for: impl Fn(u32, u32) -> Option<FontGlyphExtents> + Copy,
+) -> Result<(), EngineError> {
+    if clusters.flags[cluster] & CLUSTER_HARD_BREAK != 0 {
+        return writer.push_detached_cluster().map_err(run_local_error);
+    }
+    let style = styles
+        .get(
+            usize::try_from(clusters.style_indexes[cluster])
+                .map_err(|_| EngineError::InvalidRequest)?,
+        )
+        .ok_or(EngineError::InvalidRequest)?
+        .style;
+    let units_per_em = clusters.units_per_em[cluster];
+    if units_per_em == 0.0 {
+        return Err(EngineError::InvalidRequest);
+    }
+    let font_handle = clusters.font_handles[cluster];
+    let scale = f64::from(style.font_size) / units_per_em;
+    let start =
+        usize::try_from(clusters.glyph_starts[cluster]).map_err(|_| EngineError::InvalidRequest)?;
+    let end = start
+        .checked_add(
+            usize::try_from(clusters.glyph_counts[cluster])
+                .map_err(|_| EngineError::InvalidRequest)?,
+        )
+        .ok_or(EngineError::InvalidRequest)?;
+    writer.begin_cluster().map_err(run_local_error)?;
+    for glyph in start..end {
+        let glyph_id = u32::from(clusters.glyph_ids[glyph]);
+        writer
+            .push_glyph(RunLocalGlyphInput {
+                source_glyph: u32::try_from(glyph).map_err(|_| EngineError::ResultTooLarge)?,
+                x_advance: clusters.glyph_x_advances[glyph],
+                x_offset: clusters.glyph_x_offsets[glyph],
+                y_offset: clusters.glyph_y_offsets[glyph],
+                baseline_shift: style.baseline_shift,
+                scale,
+                outline: extents_for(font_handle, glyph_id),
+            })
+            .map_err(run_local_error)?;
+    }
+    writer
+        .finish_cluster(ClusterFinish::Resync(clusters.advances[cluster]))
+        .map_err(run_local_error)
+}
+
+fn run_local_error(error: RunLocalBuildError) -> EngineError {
+    match error {
+        RunLocalBuildError::AllocationFailed => EngineError::ResultTooLarge,
+        RunLocalBuildError::InvalidSource | RunLocalBuildError::LocalGeometryOutOfRange => {
+            EngineError::InvalidRequest
+        }
+    }
+}
+
 fn is_hard_break(text: &[u16], start: u32) -> Result<bool, EngineError> {
     let unit = *text
         .get(usize::try_from(start).map_err(|_| EngineError::InvalidRequest)?)
@@ -1290,6 +1825,298 @@ fn scatter_is_identity(shape: &ShapeArena) -> bool {
         && shape.clusters.windows(2).all(|pair| pair[0] <= pair[1])
 }
 
+fn runs_canonically_equal(
+    current_clusters: &ClusterArena,
+    current_run: LayoutRun,
+    current: RunCanonicalInput<'_>,
+    previous_clusters: &ClusterArena,
+    previous_run: LayoutRun,
+    previous: RunCanonicalInput<'_>,
+) -> Result<bool, EngineError> {
+    let current_clusters_range = run_cluster_range(current_clusters, current_run)?;
+    let previous_clusters_range = run_cluster_range(previous_clusters, previous_run)?;
+    if current_clusters_range.len() != previous_clusters_range.len()
+        || current_run.glyph_count != previous_run.glyph_count
+        || current_run.font_handle != previous_run.font_handle
+        || !run_text_equal(
+            current_clusters,
+            current_clusters_range.clone(),
+            current,
+            previous_clusters,
+            previous_clusters_range.clone(),
+            previous,
+        )?
+    {
+        return Ok(false);
+    }
+
+    for (current_cluster, previous_cluster) in current_clusters_range.zip(previous_clusters_range) {
+        let current_style = cluster_style(current_clusters, current_cluster, current.styles)?;
+        let previous_style = cluster_style(previous_clusters, previous_cluster, previous.styles)?;
+        if lane(&current_clusters.stable_ids, current_cluster)?
+            != lane(&previous_clusters.stable_ids, previous_cluster)?
+            || cluster_text_len(current_clusters, current_cluster)?
+                != cluster_text_len(previous_clusters, previous_cluster)?
+            || lane(&current_clusters.advances, current_cluster)?.to_bits()
+                != lane(&previous_clusters.advances, previous_cluster)?.to_bits()
+            || lane(&current_clusters.advance_units, current_cluster)?
+                != lane(&previous_clusters.advance_units, previous_cluster)?
+            || lane(&current_clusters.units_per_em, current_cluster)?.to_bits()
+                != lane(&previous_clusters.units_per_em, previous_cluster)?.to_bits()
+            || lane(&current_clusters.flags, current_cluster)?
+                != lane(&previous_clusters.flags, previous_cluster)?
+            || lane(&current_clusters.font_handles, current_cluster)?
+                != lane(&previous_clusters.font_handles, previous_cluster)?
+            || lane(&current_clusters.glyph_counts, current_cluster)?
+                != lane(&previous_clusters.glyph_counts, previous_cluster)?
+            || lane(&current_clusters.shaped, current_cluster)?
+                != lane(&previous_clusters.shaped, previous_cluster)?
+            || lane(&current_clusters.unsafe_before, current_cluster)?
+                != lane(&previous_clusters.unsafe_before, previous_cluster)?
+            || !cluster_direction_equal(
+                current_clusters,
+                current_cluster,
+                current,
+                previous_clusters,
+                previous_cluster,
+                previous,
+            )?
+            || !geometric_style_equal(
+                current_style,
+                current.style_arena,
+                previous_style,
+                previous.style_arena,
+            )
+            || !cluster_glyphs_equal(
+                current_clusters,
+                current_cluster,
+                previous_clusters,
+                previous_cluster,
+            )?
+        {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+fn run_cluster_range(
+    clusters: &ClusterArena,
+    run: LayoutRun,
+) -> Result<core::ops::Range<usize>, EngineError> {
+    let start = usize::try_from(run.cluster_start).map_err(|_| EngineError::InvalidRequest)?;
+    let end = usize::try_from(run.cluster_end).map_err(|_| EngineError::InvalidRequest)?;
+    if start >= end || end > clusters.starts.len() {
+        return Err(EngineError::InvalidRequest);
+    }
+    let first_glyph = lane(&clusters.glyph_starts, start)?;
+    let last = end - 1;
+    let glyph_end = lane(&clusters.glyph_starts, last)?
+        .checked_add(lane(&clusters.glyph_counts, last)?)
+        .ok_or(EngineError::InvalidRequest)?;
+    if first_glyph != run.glyph_start
+        || glyph_end
+            .checked_sub(run.glyph_start)
+            .filter(|count| *count == run.glyph_count)
+            .is_none()
+    {
+        return Err(EngineError::InvalidRequest);
+    }
+    Ok(start..end)
+}
+
+fn run_text_equal(
+    current_clusters: &ClusterArena,
+    current_range: core::ops::Range<usize>,
+    current: RunCanonicalInput<'_>,
+    previous_clusters: &ClusterArena,
+    previous_range: core::ops::Range<usize>,
+    previous: RunCanonicalInput<'_>,
+) -> Result<bool, EngineError> {
+    if current.text.len() != current.text_unit_ids.len()
+        || previous.text.len() != previous.text_unit_ids.len()
+    {
+        return Err(EngineError::InvalidRequest);
+    }
+    let current_text = run_text_range(current_clusters, current_range)?;
+    let previous_text = run_text_range(previous_clusters, previous_range)?;
+    let current_units = current
+        .text
+        .get(current_text.clone())
+        .ok_or(EngineError::InvalidRequest)?;
+    let previous_units = previous
+        .text
+        .get(previous_text.clone())
+        .ok_or(EngineError::InvalidRequest)?;
+    let current_ids = current
+        .text_unit_ids
+        .get(current_text)
+        .ok_or(EngineError::InvalidRequest)?;
+    let previous_ids = previous
+        .text_unit_ids
+        .get(previous_text)
+        .ok_or(EngineError::InvalidRequest)?;
+    Ok(current_units == previous_units && current_ids == previous_ids)
+}
+
+fn run_text_range(
+    clusters: &ClusterArena,
+    range: core::ops::Range<usize>,
+) -> Result<core::ops::Range<usize>, EngineError> {
+    let start = usize::try_from(
+        *clusters
+            .starts
+            .get(range.start)
+            .ok_or(EngineError::InvalidRequest)?,
+    )
+    .map_err(|_| EngineError::InvalidRequest)?;
+    let end = usize::try_from(
+        *clusters
+            .ends
+            .get(range.end - 1)
+            .ok_or(EngineError::InvalidRequest)?,
+    )
+    .map_err(|_| EngineError::InvalidRequest)?;
+    if start >= end {
+        return Err(EngineError::InvalidRequest);
+    }
+    Ok(start..end)
+}
+
+fn cluster_text_len(clusters: &ClusterArena, cluster: usize) -> Result<u32, EngineError> {
+    clusters
+        .ends
+        .get(cluster)
+        .copied()
+        .and_then(|end| end.checked_sub(*clusters.starts.get(cluster)?))
+        .filter(|length| *length != 0)
+        .ok_or(EngineError::InvalidRequest)
+}
+
+fn cluster_style(
+    clusters: &ClusterArena,
+    cluster: usize,
+    styles: &[StyleSegment],
+) -> Result<super::style_state::ResolvedStyle, EngineError> {
+    let index = usize::try_from(
+        *clusters
+            .style_indexes
+            .get(cluster)
+            .ok_or(EngineError::InvalidRequest)?,
+    )
+    .map_err(|_| EngineError::InvalidRequest)?;
+    styles
+        .get(index)
+        .map(|segment| segment.style)
+        .ok_or(EngineError::InvalidRequest)
+}
+
+fn geometric_style_equal(
+    current: super::style_state::ResolvedStyle,
+    current_arena: &StyleArena,
+    previous: super::style_state::ResolvedStyle,
+    previous_arena: &StyleArena,
+) -> bool {
+    current.font_stack_handle == previous.font_stack_handle
+        && current.font_size.to_bits() == previous.font_size.to_bits()
+        && current.letter_spacing.to_bits() == previous.letter_spacing.to_bits()
+        && current.word_spacing.to_bits() == previous.word_spacing.to_bits()
+        && current.baseline_shift.to_bits() == previous.baseline_shift.to_bits()
+        && current.direction == previous.direction
+        && current.bidi_override == previous.bidi_override
+        && current_arena.resolved_language(current) == previous_arena.resolved_language(previous)
+        && current_arena.resolved_features(current) == previous_arena.resolved_features(previous)
+}
+
+fn run_layout_compatible(left: ResolvedStyle, right: ResolvedStyle) -> bool {
+    left.same_layout_sources(right)
+}
+
+fn cluster_direction_equal(
+    current_clusters: &ClusterArena,
+    current_cluster: usize,
+    current: RunCanonicalInput<'_>,
+    previous_clusters: &ClusterArena,
+    previous_cluster: usize,
+    previous: RunCanonicalInput<'_>,
+) -> Result<bool, EngineError> {
+    let current_source = lane(&current_clusters.source_runs, current_cluster)?;
+    let previous_source = lane(&previous_clusters.source_runs, previous_cluster)?;
+    match (current_source, previous_source) {
+        (NO_SOURCE_RUN, NO_SOURCE_RUN) => Ok(true),
+        (NO_SOURCE_RUN, _) | (_, NO_SOURCE_RUN) => Ok(false),
+        (current_index, previous_index) => {
+            let current_run = current
+                .shaping_runs
+                .get(usize::try_from(current_index).map_err(|_| EngineError::InvalidRequest)?)
+                .ok_or(EngineError::InvalidRequest)?;
+            let previous_run = previous
+                .shaping_runs
+                .get(usize::try_from(previous_index).map_err(|_| EngineError::InvalidRequest)?)
+                .ok_or(EngineError::InvalidRequest)?;
+            Ok(current_run.direction == previous_run.direction
+                && current_run.bidi_level == previous_run.bidi_level)
+        }
+    }
+}
+
+fn cluster_glyphs_equal(
+    current: &ClusterArena,
+    current_cluster: usize,
+    previous: &ClusterArena,
+    previous_cluster: usize,
+) -> Result<bool, EngineError> {
+    let current_range = cluster_glyph_range(current, current_cluster)?;
+    let previous_range = cluster_glyph_range(previous, previous_cluster)?;
+    Ok(glyph_slice(&current.glyph_ids, current_range.clone())?
+        == glyph_slice(&previous.glyph_ids, previous_range.clone())?
+        && glyph_slice(&current.glyph_x_advances, current_range.clone())?
+            == glyph_slice(&previous.glyph_x_advances, previous_range.clone())?
+        && glyph_slice(&current.glyph_x_offsets, current_range.clone())?
+            == glyph_slice(&previous.glyph_x_offsets, previous_range.clone())?
+        && glyph_slice(&current.glyph_y_offsets, current_range.clone())?
+            == glyph_slice(&previous.glyph_y_offsets, previous_range.clone())?
+        && glyph_slice(&current.glyph_shape_flags, current_range.clone())?
+            == glyph_slice(&previous.glyph_shape_flags, previous_range.clone())?
+        && glyph_slice(&current.glyph_stable_ids, current_range)?
+            == glyph_slice(&previous.glyph_stable_ids, previous_range)?)
+}
+
+fn cluster_glyph_range(
+    clusters: &ClusterArena,
+    cluster: usize,
+) -> Result<core::ops::Range<usize>, EngineError> {
+    let start = usize::try_from(
+        *clusters
+            .glyph_starts
+            .get(cluster)
+            .ok_or(EngineError::InvalidRequest)?,
+    )
+    .map_err(|_| EngineError::InvalidRequest)?;
+    let count = usize::try_from(
+        *clusters
+            .glyph_counts
+            .get(cluster)
+            .ok_or(EngineError::InvalidRequest)?,
+    )
+    .map_err(|_| EngineError::InvalidRequest)?;
+    let end = start
+        .checked_add(count)
+        .ok_or(EngineError::InvalidRequest)?;
+    Ok(start..end)
+}
+
+fn lane<T: Copy>(values: &[T], index: usize) -> Result<T, EngineError> {
+    values
+        .get(index)
+        .copied()
+        .ok_or(EngineError::InvalidRequest)
+}
+
+fn glyph_slice<T>(values: &[T], range: core::ops::Range<usize>) -> Result<&[T], EngineError> {
+    values.get(range).ok_or(EngineError::InvalidRequest)
+}
+
 fn identity_index_error(error: IdentityIndexError) -> EngineError {
     match error {
         IdentityIndexError::AllocationFailed | IdentityIndexError::ArithmeticOverflow => {
@@ -1307,6 +2134,480 @@ mod tests {
         style_state::{ResolvedStyle, StyleSegment},
     };
     use alloc::vec;
+
+    struct CanonicalFixture {
+        arena: ClusterArena,
+        text: Vec<u16>,
+        text_unit_ids: Vec<u32>,
+        style_arena: StyleArena,
+        styles: Vec<StyleSegment>,
+        shaping_runs: Vec<ShapingRun>,
+    }
+
+    fn canonical_fixture(
+        text: &[u16],
+        text_unit_ids: &[u32],
+        source_runs: &[u32],
+        style: ResolvedStyle,
+    ) -> CanonicalFixture {
+        assert_eq!(text.len(), text_unit_ids.len());
+        assert_eq!(text.len(), source_runs.len());
+        let mut arena = ClusterArena::default();
+        for (index, ((&unit, &stable_id), &source_run)) in
+            text.iter().zip(text_unit_ids).zip(source_runs).enumerate()
+        {
+            let start = u32::try_from(index).unwrap();
+            arena.starts.push(start);
+            arena.ends.push(start + 1);
+            arena.advances.push(1.0);
+            arena.advance_units.push(65_536);
+            arena.units_per_em.push(1_000.0);
+            arena.flags.push(CLUSTER_SAFE_BEFORE);
+            arena.style_indexes.push(0);
+            arena.source_runs.push(source_run);
+            arena.binding_handles.push(source_run + 100);
+            arena.font_handles.push(7);
+            arena.stable_ids.push(stable_id);
+            arena.glyph_starts.push(start);
+            arena.glyph_counts.push(1);
+            arena.glyph_ids.push(unit);
+            arena.glyph_clusters.push(start);
+            arena.glyph_x_advances.push(1_000);
+            arena.glyph_x_offsets.push(0);
+            arena.glyph_y_offsets.push(0);
+            arena.glyph_shape_flags.push(0);
+            arena.glyph_stable_ids.push(stable_id);
+            arena.shaped.push(1);
+            arena.unsafe_before.push(0);
+        }
+        arena.rebuild_layout_runs().unwrap();
+        let shaping_run_count = source_runs
+            .iter()
+            .copied()
+            .max()
+            .map_or(0, |maximum| usize::try_from(maximum).unwrap() + 1);
+        let text_end = u32::try_from(text.len()).unwrap();
+        let shaping_runs = (0..shaping_run_count)
+            .map(|_| ShapingRun {
+                text_start: 0,
+                text_end,
+                script: 0x4c61_746e,
+                direction: 0,
+                bidi_level: 0,
+                style,
+            })
+            .collect();
+        CanonicalFixture {
+            arena,
+            text: text.to_vec(),
+            text_unit_ids: text_unit_ids.to_vec(),
+            style_arena: StyleArena::default(),
+            styles: vec![StyleSegment {
+                text_start: 0,
+                text_end,
+                style,
+            }],
+            shaping_runs,
+        }
+    }
+
+    fn stamp_revisions(fixture: &mut CanonicalFixture, revisions: &[u32]) {
+        assert_eq!(fixture.arena.layout_runs.runs.len(), revisions.len());
+        for (run, &revision) in fixture.arena.layout_runs.runs.iter_mut().zip(revisions) {
+            run.canonical_revision = Some(RunCanonicalRevision(
+                NonZeroU32::new(revision).expect("test revision is nonzero"),
+            ));
+        }
+    }
+
+    fn finalize_fixture(
+        current: &mut CanonicalFixture,
+        previous: &CanonicalFixture,
+        index: &mut IdentityIndex,
+        next_revision: &mut u32,
+    ) {
+        let current_input = RunCanonicalInput {
+            text: &current.text,
+            text_unit_ids: &current.text_unit_ids,
+            style_arena: &current.style_arena,
+            styles: &current.styles,
+            shaping_runs: &current.shaping_runs,
+        };
+        let previous_input = RunCanonicalInput {
+            text: &previous.text,
+            text_unit_ids: &previous.text_unit_ids,
+            style_arena: &previous.style_arena,
+            styles: &previous.styles,
+            shaping_runs: &previous.shaping_runs,
+        };
+        current
+            .arena
+            .finalize_layout_run_revisions(
+                &previous.arena,
+                current_input,
+                previous_input,
+                index,
+                next_revision,
+            )
+            .unwrap();
+    }
+
+    fn revisions(fixture: &CanonicalFixture) -> Vec<u32> {
+        fixture
+            .arena
+            .layout_runs()
+            .iter()
+            .map(|run| run.canonical_revision.unwrap().get())
+            .collect()
+    }
+
+    fn shadow_topology(
+        source_runs: &[u32],
+        font_handles: &[u32],
+        glyph_counts: &[u32],
+    ) -> ClusterArena {
+        assert_eq!(source_runs.len(), font_handles.len());
+        assert_eq!(source_runs.len(), glyph_counts.len());
+        let mut arena = ClusterArena::default();
+        let mut glyph_start = 0_u32;
+        for index in 0..source_runs.len() {
+            arena.starts.push(u32::try_from(index).unwrap());
+            arena.ends.push(u32::try_from(index + 1).unwrap());
+            arena.advances.push(0.0);
+            arena.source_runs.push(source_runs[index]);
+            arena.font_handles.push(font_handles[index]);
+            arena.glyph_starts.push(glyph_start);
+            arena.glyph_counts.push(glyph_counts[index]);
+            glyph_start = glyph_start.checked_add(glyph_counts[index]).unwrap();
+        }
+        arena.rebuild_layout_runs().unwrap();
+        arena
+    }
+
+    fn assert_shadow_topology(arena: &ClusterArena) {
+        let cluster_count = arena.starts.len();
+        let mut cluster_to_run = vec![usize::MAX; cluster_count];
+        let mut previous_cluster_end = 0usize;
+        for (run_index, run) in arena.layout_runs().iter().enumerate() {
+            let cluster_start = usize::try_from(run.cluster_start).unwrap();
+            let cluster_end = usize::try_from(run.cluster_end).unwrap();
+            assert_eq!(cluster_start, previous_cluster_end, "gapless clusters");
+            assert!(cluster_start < cluster_end, "nonempty run");
+            assert!(cluster_end <= cluster_count, "bounded run");
+            let expected_glyph_start = arena.glyph_starts[cluster_start];
+            let expected_glyph_end = arena.glyph_starts[cluster_end - 1]
+                .checked_add(arena.glyph_counts[cluster_end - 1])
+                .unwrap();
+            assert_eq!(run.glyph_start, expected_glyph_start);
+            assert_eq!(run.glyph_count, expected_glyph_end - expected_glyph_start);
+            for slot in &mut cluster_to_run[cluster_start..cluster_end] {
+                assert_eq!(*slot, usize::MAX, "clusters have one owner");
+                *slot = run_index;
+            }
+            for cluster in cluster_start..cluster_end {
+                assert_eq!(arena.source_runs[cluster], run.source_run);
+                assert_eq!(arena.font_handles[cluster], run.font_handle);
+            }
+            previous_cluster_end = cluster_end;
+        }
+        assert_eq!(previous_cluster_end, cluster_count, "all clusters covered");
+        for cluster in 1..cluster_count {
+            let same_identity = arena.source_runs[cluster - 1] == arena.source_runs[cluster]
+                && arena.font_handles[cluster - 1] == arena.font_handles[cluster];
+            assert_eq!(
+                cluster_to_run[cluster - 1] == cluster_to_run[cluster],
+                same_identity
+            );
+        }
+    }
+
+    #[test]
+    fn layout_runs_are_gapless_maximal_and_glyph_contiguous() {
+        let source_runs = [0, 0, 0, 0, 1, 1, 1, 1];
+        let font_handles = [10, 10, 20, 20, 20, 20, 10, 10];
+        let arena = shadow_topology(&source_runs, &font_handles, &[1, 2, 0, 1, 3, 0, 2, 1]);
+
+        assert_eq!(
+            arena.layout_runs(),
+            [
+                LayoutRun {
+                    source_kind: LayoutRunSourceKind::Paragraph,
+                    cluster_start: 0,
+                    cluster_end: 2,
+                    glyph_start: 0,
+                    glyph_count: 3,
+                    source_run: 0,
+                    font_handle: 10,
+                    numeric_blocks: NumericBlockSpan::default(),
+                    canonical_revision: None,
+                },
+                LayoutRun {
+                    source_kind: LayoutRunSourceKind::Paragraph,
+                    cluster_start: 2,
+                    cluster_end: 4,
+                    glyph_start: 3,
+                    glyph_count: 1,
+                    source_run: 0,
+                    font_handle: 20,
+                    numeric_blocks: NumericBlockSpan::default(),
+                    canonical_revision: None,
+                },
+                LayoutRun {
+                    source_kind: LayoutRunSourceKind::Paragraph,
+                    cluster_start: 4,
+                    cluster_end: 6,
+                    glyph_start: 4,
+                    glyph_count: 3,
+                    source_run: 1,
+                    font_handle: 20,
+                    numeric_blocks: NumericBlockSpan::default(),
+                    canonical_revision: None,
+                },
+                LayoutRun {
+                    source_kind: LayoutRunSourceKind::Paragraph,
+                    cluster_start: 6,
+                    cluster_end: 8,
+                    glyph_start: 7,
+                    glyph_count: 3,
+                    source_run: 1,
+                    font_handle: 10,
+                    numeric_blocks: NumericBlockSpan::default(),
+                    canonical_revision: None,
+                },
+            ]
+        );
+        assert_shadow_topology(&arena);
+    }
+
+    #[test]
+    fn paragraph_run_owns_direction_canonical_numeric_rows() {
+        let style = ResolvedStyle::test_typography(10.0, 0.0, 0.0);
+        let mut fixture = canonical_fixture(&[b'a' as u16, b'b' as u16], &[10, 11], &[0, 0], style);
+        fixture.shaping_runs[0].direction = 1;
+        fixture.shaping_runs[0].bidi_level = 1;
+
+        fixture
+            .arena
+            .rebuild_run_local_geometry(&fixture.shaping_runs, &fixture.styles, |_, _| {
+                Some(FontGlyphExtents {
+                    x_min: 0,
+                    y_min: 0,
+                    x_max: 500,
+                    y_max: 700,
+                })
+            })
+            .unwrap();
+
+        assert_eq!(fixture.arena.layout_runs()[0].numeric_blocks.count, 1);
+        assert_eq!(
+            fixture.arena.layout_runs()[0].numeric_blocks.cluster_count,
+            2
+        );
+        let blocks = fixture.arena.run_local().blocks();
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks[0].source_glyph_start, 0);
+        assert_eq!(blocks[0].source_glyph_count, 2);
+        let rows = fixture.arena.run_local().rows();
+        assert_eq!(rows.len(), 2);
+        assert_eq!([rows[0].source_glyph, rows[1].source_glyph], [1, 0]);
+        assert_eq!([rows[0].pen_inline, rows[1].pen_inline], [0.0, 1.0]);
+        assert_eq!(fixture.arena.run_local().cluster_blocks(), [0, 0]);
+        assert_eq!(fixture.arena.run_local().cluster_prefixes(), [0.0, 1.0]);
+    }
+
+    #[test]
+    fn canonical_revision_reconciles_insertion_before_by_stable_anchor() {
+        let style = ResolvedStyle::test_typography(16.0, 0.0, 0.0);
+        let mut previous =
+            canonical_fixture(&[b'a' as u16, b'b' as u16], &[10, 11], &[0, 0], style);
+        stamp_revisions(&mut previous, &[1]);
+        let mut current = canonical_fixture(
+            &[b'x' as u16, b'a' as u16, b'b' as u16],
+            &[9, 10, 11],
+            &[1, 0, 0],
+            style,
+        );
+        let mut index = IdentityIndex::default();
+        let mut next_revision = 2;
+
+        finalize_fixture(&mut current, &previous, &mut index, &mut next_revision);
+
+        assert_eq!(revisions(&current), [2, 1]);
+        assert_eq!(next_revision, 3);
+    }
+
+    #[test]
+    fn canonical_revision_invalidates_split_and_merge_topology() {
+        let style = ResolvedStyle::test_typography(16.0, 0.0, 0.0);
+        let mut merged = canonical_fixture(&[b'a' as u16, b'b' as u16], &[10, 11], &[0, 0], style);
+        stamp_revisions(&mut merged, &[1]);
+        let mut split = canonical_fixture(&[b'a' as u16, b'b' as u16], &[10, 11], &[0, 1], style);
+        let mut index = IdentityIndex::default();
+        let mut next_revision = 2;
+
+        finalize_fixture(&mut split, &merged, &mut index, &mut next_revision);
+        assert_eq!(revisions(&split), [2, 3]);
+
+        let mut remerged =
+            canonical_fixture(&[b'a' as u16, b'b' as u16], &[10, 11], &[0, 0], style);
+        finalize_fixture(&mut remerged, &split, &mut index, &mut next_revision);
+        assert_eq!(revisions(&remerged), [4]);
+        assert_eq!(next_revision, 5);
+    }
+
+    #[test]
+    fn canonical_revision_tracks_metrics_but_ignores_paint_and_binding() {
+        let style = ResolvedStyle::test_typography(16.0, 0.0, 0.0);
+        let mut previous = canonical_fixture(&[b'a' as u16], &[10], &[0], style);
+        stamp_revisions(&mut previous, &[1]);
+        let mut index = IdentityIndex::default();
+
+        let mut paint = style;
+        paint.material_id = 91;
+        paint.foreground_rgba = 0x1234_5678;
+        paint.opacity = 0.25;
+        paint.line_height = 48.0;
+        let mut paint_only = canonical_fixture(&[b'a' as u16], &[10], &[0], paint);
+        paint_only.arena.binding_handles[0] = 999;
+        let mut next_revision = 2;
+        finalize_fixture(&mut paint_only, &previous, &mut index, &mut next_revision);
+        assert_eq!(revisions(&paint_only), [1]);
+        assert_eq!(next_revision, 2);
+
+        let metrics = ResolvedStyle::test_typography(18.0, 0.0, 0.0);
+        let mut metrics_changed = canonical_fixture(&[b'a' as u16], &[10], &[0], metrics);
+        finalize_fixture(
+            &mut metrics_changed,
+            &previous,
+            &mut index,
+            &mut next_revision,
+        );
+        assert_eq!(revisions(&metrics_changed), [2]);
+        assert_eq!(next_revision, 3);
+    }
+
+    #[test]
+    fn canonical_revision_exhaustion_is_domain_specific_and_atomic() {
+        let mut next_revision = u32::MAX;
+
+        assert_eq!(
+            RunCanonicalRevision::allocate(&mut next_revision),
+            Err(EngineError::RevisionExhausted)
+        );
+        assert_eq!(next_revision, u32::MAX);
+    }
+
+    #[test]
+    fn layout_run_property_matches_the_scalar_adjacency_oracle() {
+        let mut state = 0x6d2b_79f5_u32;
+        for length in 0..192usize {
+            let mut source_runs = Vec::with_capacity(length);
+            let mut font_handles = Vec::with_capacity(length);
+            let mut glyph_counts = Vec::with_capacity(length);
+            for _ in 0..length {
+                state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                source_runs.push((state >> 29) & 3);
+                font_handles.push(((state >> 25) & 7) + 1);
+                glyph_counts.push((state >> 21) & 3);
+            }
+            let arena = shadow_topology(&source_runs, &font_handles, &glyph_counts);
+            assert_shadow_topology(&arena);
+        }
+    }
+
+    #[test]
+    fn dense_cjk_break_paint_and_raster_lanes_do_not_split_shadow_runs() {
+        const COUNT: usize = 4_096;
+        let mut arena = shadow_topology(&vec![7; COUNT], &vec![31; COUNT], &vec![1; COUNT]);
+        arena.flags = (0..COUNT)
+            .map(|index| CLUSTER_ALLOWED_BREAK | (u8::from(index % 2 == 0) * CLUSTER_SAFE_BEFORE))
+            .collect();
+        arena.style_indexes = (0..COUNT).map(|index| (index % 5) as u32).collect();
+        arena.binding_handles = (0..COUNT).map(|index| (index % 3) as u32 + 1).collect();
+        arena.advances = (0..COUNT)
+            .map(|index| if index % 11 == 0 { -3.0 } else { 9.0 })
+            .collect();
+        arena.rebuild_layout_runs().unwrap();
+
+        assert_eq!(arena.layout_runs().len(), 1);
+        assert_eq!(arena.layout_runs()[0].cluster_end, COUNT as u32);
+        assert_shadow_topology(&arena);
+    }
+
+    #[test]
+    fn layout_runs_merge_script_boundaries_but_keep_direction_and_geometry() {
+        let mut arena = shadow_topology(&[0, 1, 2, 3, 4, 5], &[9, 9, 9, 9, 9, 10], &[1; 6]);
+        let mut runs = Vec::new();
+        for (index, (script, direction, bidi_level, font_size)) in [
+            (1, 0, 0, 16.0),
+            (2, 0, 0, 16.0),
+            (3, 1, 1, 16.0),
+            (4, 0, 2, 16.0),
+            (5, 0, 0, 20.0),
+            (6, 0, 0, 20.0),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            runs.push(ShapingRun {
+                text_start: index as u32,
+                text_end: index as u32 + 1,
+                script,
+                direction,
+                bidi_level,
+                style: ResolvedStyle::test_typography(font_size, 0.0, 0.0),
+            });
+        }
+
+        arena.rebuild_layout_runs_for_shaping(&runs).unwrap();
+
+        assert_eq!(
+            arena
+                .layout_runs()
+                .iter()
+                .map(|run| (run.cluster_start, run.cluster_end))
+                .collect::<Vec<_>>(),
+            [(0, 2), (2, 3), (3, 4), (4, 5), (5, 6)]
+        );
+    }
+
+    #[test]
+    fn latin_font_fallback_and_bidi_direction_split_shadow_runs() {
+        let arena = shadow_topology(
+            &[0, 0, 1, 1, 1, 2, 2],
+            &[5, 5, 5, 8, 8, 8, 8],
+            &[1, 1, 2, 1, 1, 1, 1],
+        );
+
+        assert_eq!(
+            arena
+                .layout_runs()
+                .iter()
+                .map(|run| {
+                    (
+                        run.cluster_start,
+                        run.cluster_end,
+                        run.source_run,
+                        run.font_handle,
+                    )
+                })
+                .collect::<Vec<_>>(),
+            [(0, 2, 0, 5), (2, 3, 1, 5), (3, 5, 1, 8), (5, 7, 2, 8)]
+        );
+        assert_shadow_topology(&arena);
+    }
+
+    #[test]
+    fn justification_and_negative_advances_do_not_split_shadow_runs() {
+        let mut arena = shadow_topology(&[3; 8], &[13; 8], &[1, 2, 1, 1, 0, 1, 1, 1]);
+        arena.flags = vec![CLUSTER_SPACE | CLUSTER_ALLOWED_BREAK; 8];
+        arena.advance_units = vec![-4, 8, 12, -2, 7, 9, -1, 6];
+        arena.rebuild_layout_runs().unwrap();
+
+        assert_eq!(arena.layout_runs().len(), 1);
+        assert_eq!(arena.layout_runs()[0].glyph_count, 8);
+        assert_shadow_topology(&arena);
+    }
 
     #[test]
     fn aggregates_scaled_advances_spacing_and_legal_breaks() {
@@ -1349,6 +2650,7 @@ mod tests {
             Some(FontMetrics {
                 units_per_em: 1_000,
                 ascender: 800,
+                cap_height: 700,
                 descender: -200,
                 line_gap: 0,
                 underline_position: -100,
@@ -1497,6 +2799,7 @@ mod tests {
             Some(FontMetrics {
                 units_per_em: 1_000,
                 ascender: 800,
+                cap_height: 700,
                 descender: -200,
                 line_gap: 0,
                 underline_position: -100,
@@ -1576,6 +2879,7 @@ mod tests {
             Some(FontMetrics {
                 units_per_em: 1_000,
                 ascender: 800,
+                cap_height: 700,
                 descender: -200,
                 line_gap: 0,
                 underline_position: -100,
@@ -1692,6 +2996,7 @@ mod tests {
                     Some(FontMetrics {
                         units_per_em: 1_000,
                         ascender: 800,
+                        cap_height: 700,
                         descender: -200,
                         line_gap: 0,
                         underline_position: -100,
@@ -1764,6 +3069,7 @@ mod tests {
                     Some(FontMetrics {
                         units_per_em: 1_000,
                         ascender: 800,
+                        cap_height: 700,
                         descender: -200,
                         line_gap: 0,
                         underline_position: -100,
@@ -1827,6 +3133,7 @@ mod tests {
             Some(FontMetrics {
                 units_per_em: 1_000,
                 ascender: 800,
+                cap_height: 700,
                 descender: -200,
                 line_gap: 0,
                 underline_position: -100,
@@ -2004,6 +3311,7 @@ mod tests {
             Some(FontMetrics {
                 units_per_em: 1_000,
                 ascender: 800,
+                cap_height: 700,
                 descender: -200,
                 line_gap: 0,
                 underline_position: -100,
@@ -2271,7 +3579,44 @@ mod tests {
         dense.ensure_word_breaks().unwrap();
         assert!(dense.word_breaks.is_empty());
         assert_eq!(dense.word_breaks.capacity(), 0);
-        assert!(dense.word_breaks_valid);
+        assert_eq!(dense.word_sidecar_mode, WordSidecarMode::Dense);
         assert!(dense.chunk_flags_or[0] & CHUNK_NEGATIVE_ADVANCE != 0);
+    }
+
+    #[test]
+    fn placement_segment_anchors_are_precomputed_from_stable_word_and_run_roots() {
+        let mut fixture = canonical_fixture(
+            &[1, 2, 3, 4, 5, 6],
+            &[11, 12, 13, 14, 15, 16],
+            &[0, 0, 0, 0, 1, 1],
+            ResolvedStyle::default(),
+        );
+        fixture.arena.flags[1] |= CLUSTER_ALLOWED_BREAK;
+        fixture.arena.refresh_layout_units().unwrap();
+        fixture.arena.ensure_word_breaks().unwrap();
+        fixture.arena.ensure_placement_segment_anchors().unwrap();
+
+        assert_eq!(fixture.arena.word_sidecar_mode, WordSidecarMode::Short);
+        assert_eq!(
+            fixture.arena.placement_segment_anchors,
+            [11, 11, 13, 13, 15, 15]
+        );
+
+        let count = LAYOUT_CHUNK * 2;
+        let text = vec![1; count];
+        let stable_ids = (1..=u32::try_from(count).unwrap()).collect::<Vec<_>>();
+        let source_runs = vec![0; count];
+        let mut dense =
+            canonical_fixture(&text, &stable_ids, &source_runs, ResolvedStyle::default());
+        dense
+            .arena
+            .flags
+            .fill(CLUSTER_ALLOWED_BREAK | CLUSTER_SAFE_BEFORE);
+        dense.arena.refresh_layout_units().unwrap();
+        dense.arena.ensure_word_breaks().unwrap();
+        dense.arena.ensure_placement_segment_anchors().unwrap();
+
+        assert_eq!(dense.arena.word_sidecar_mode, WordSidecarMode::Dense);
+        assert_eq!(dense.arena.placement_segment_anchors, vec![1; count]);
     }
 }

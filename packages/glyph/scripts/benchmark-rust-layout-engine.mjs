@@ -1,4 +1,4 @@
-/* @workflow { "name": "glyph:rust-layout-benchmark", "summary": "Measures the complete retained Rust text_update path with real font data and render-plan publication.", "requirements": "Built @pmndrs/glyph and @pmndrs/glyph/bake packages. Accepts --glyphs, --reps, --warmup, --case, --technique, --corpus, --allocation, --wasm, --json, and --samples.", "writes": "stdout and the optional JSON report path" } */
+/* @workflow { "name": "glyph:rust-layout-benchmark", "summary": "Measures the complete retained Rust text_update path with real font data and render-plan publication.", "requirements": "Built @pmndrs/glyph and @pmndrs/glyph/bake packages. Accepts --glyphs, --reps, --warmup, --case, --technique, --corpus, --wasm, --json, and --samples.", "writes": "stdout and the optional JSON report path" } */
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { gunzipSync } from 'node:zlib';
@@ -15,8 +15,15 @@ import { slugDescriptor } from '@pmndrs/glyph/raster/slug';
 import { paragraphTextForGlyphs } from './support/paragraph-benchmark-fixture.mts';
 import { copyIntoAllocation, engineFrameUpdateBytes } from '../tests/support/engine-abi.mjs';
 import { techniqueProof } from './support/render-technique-proof.mjs';
+import {
+  assertRustLayoutBenchmarkResult,
+  parseRustLayoutBenchmarkArguments,
+  rustLayoutBenchmarkCases,
+  rustLayoutBenchmarkGeometry,
+  rustLayoutBenchmarkInitialGeometry,
+} from './support/rust-layout-benchmark-cases.mjs';
 
-const options = parseArguments(process.argv.slice(2));
+const options = parseRustLayoutBenchmarkArguments(process.argv.slice(2));
 const rootId = 1;
 const codecHandle = 1;
 const fontHandle = 1;
@@ -29,7 +36,7 @@ const [wasm, artifact] = await Promise.all([
 ]);
 const validated = await validateFontArtifact(artifact);
 const raster = await validateRaster(options.technique, artifact, validated);
-const technique = techniqueProof(abi, options.technique, raster, options.allocation);
+const technique = techniqueProof(abi, options.technique, raster);
 const outputCapacity = technique.outputBytesPerGlyph > 48 ? 8 * 1024 * 1024 : 4 * 1024 * 1024;
 const instance = await WebAssembly.instantiate(await WebAssembly.compile(wasm), {});
 const memory = instance.exports[abi.memory];
@@ -54,32 +61,15 @@ const limits = {
 };
 const baseGeometry = { width: 600, height: regionHeight, maxLines: utf16.length + 1, revision: 1 };
 const baseStyle = { textEnd: utf16.length, fontSize: 24, lineHeight: 1.2, rasterPixelRatio: 1 };
-const initial = updateBytes({
-  textMutation: { start: 0, deleteCount: 0, insert: utf16 },
-  style: baseStyle,
-  geometry: baseGeometry,
-});
 let plannerMemory;
 
 console.log(
-  `technique=${options.technique} corpus=${options.corpus} allocation=${options.allocation} output=${technique.outputBytesPerGlyph} bytes/glyph · memory bytes: instantiate=${memoryAtInstantiation}, initialize=${memoryAfterInitialize}, registered=${memoryAfterRegistration}`,
+  `technique=${options.technique} corpus=${options.corpus} output=${technique.outputBytesPerGlyph} bytes/glyph · memory bytes: instantiate=${memoryAtInstantiation}, initialize=${memoryAfterInitialize}, registered=${memoryAfterRegistration}`,
 );
 
 const reports = [];
 const rawSampleRows = [];
-const cases = [
-  'cold',
-  'no-op',
-  'publish-measurement',
-  'publish-inspection',
-  'font-size',
-  'column-resize',
-  'measure-query',
-  'adopt-measure-query',
-  'suffix-edit',
-  'localized-edit',
-  'localized-splice',
-];
+const cases = rustLayoutBenchmarkCases(options.corpus);
 for (const name of options.case === undefined ? cases : [options.case]) {
   reports.push(name === 'cold' ? measureCold() : measureWarm(name));
 }
@@ -93,7 +83,7 @@ if (options.jsonPath !== undefined) {
         generatedBy: 'glyph:rust-layout-benchmark',
         wasmSha256: createHash('sha256').update(wasm).digest('hex'),
         technique: options.technique,
-        allocation: options.allocation,
+        corpus: options.corpus,
         glyphTarget: options.glyphs,
         warmup: options.warmup,
         repetitions: options.repetitions,
@@ -108,12 +98,25 @@ if (options.jsonPath !== undefined) {
 if (options.samplesPath !== undefined) {
   await writeFile(
     options.samplesPath,
-    `${JSON.stringify({ schemaVersion: 0, warmup: options.warmup, cases: rawSampleRows }, undefined, 2)}\n`,
+    `${JSON.stringify(
+      {
+        schemaVersion: 0,
+        technique: options.technique,
+        corpus: options.corpus,
+        glyphTarget: options.glyphs,
+        warmup: options.warmup,
+        repetitions: options.repetitions,
+        cases: rawSampleRows,
+      },
+      undefined,
+      2,
+    )}\n`,
   );
   console.log(`wrote ${options.samplesPath}`);
 }
 
 function measureCold() {
+  const initial = initialBytes('cold');
   const samples = [];
   const plans = [];
   let glyphs = 0;
@@ -131,6 +134,7 @@ function measureCold() {
 }
 
 function measureWarm(name) {
+  const initial = initialBytes(name);
   createRoot(initial.byteLength);
   let state = execute(initial, true);
   const liveGlyphCount = state.glyphCount;
@@ -141,7 +145,6 @@ function measureWarm(name) {
   const samples = [];
   const plans = [];
   for (let index = 0; index < options.warmup + options.repetitions; index += 1) {
-    const revision = index + 2;
     const common = {
       expectedEngineRevision: state.engineRevision,
       consumedRevision: state.revision,
@@ -163,24 +166,36 @@ function measureWarm(name) {
         style: { ...baseStyle, fontSize: 12 + index * 0.5 },
         geometry: baseGeometry,
       });
-    } else if (name === 'column-resize') {
+    } else if (
+      name === 'column-resize' ||
+      name === 'active-column-resize' ||
+      name === 'justify' ||
+      name === 'bidi-resize'
+    ) {
       bytes = updateBytes({
         ...common,
-        geometry: { ...baseGeometry, width: 420 + index * 7, revision },
+        geometry: rustLayoutBenchmarkGeometry(name, index, baseGeometry),
       });
-    } else if (name === 'measure-query' || name === 'adopt-measure-query') {
+    } else if (
+      name === 'measure-query' ||
+      name === 'position-query' ||
+      name === 'adopt-measure-query' ||
+      name === 'adopt-position-query'
+    ) {
       bytes = updateBytes({
         ...common,
-        geometry: { ...baseGeometry, width: 420 + index * 7, revision },
+        geometry: rustLayoutBenchmarkGeometry('active-column-resize', index, baseGeometry),
       });
       const queryBytes = bytes.slice();
       new DataView(queryBytes.buffer).setUint32(
         abi.layouts.engineUpdateRequest.semanticViewMask,
-        abi.engine.semanticViewMasks.measurement,
+        name === 'position-query' || name === 'adopt-position-query'
+          ? abi.engine.semanticViewMasks.borrowedLayout
+          : abi.engine.semanticViewMasks.measurement,
         true,
       );
-      if (name === 'adopt-measure-query') {
-        execute(queryBytes, index < options.warmup, `adopt-measure-query.prepare[${index}]`, 1);
+      if (name === 'adopt-measure-query' || name === 'adopt-position-query') {
+        execute(queryBytes, index < options.warmup, `${name}.prepare[${index}]`, 1);
       } else {
         bytes = queryBytes;
       }
@@ -217,10 +232,22 @@ function measureWarm(name) {
         style: { ...baseStyle, textEnd },
         geometry: baseGeometry,
       });
+    } else if (name === 'equivalent-width') {
+      bytes = updateBytes({
+        ...common,
+        geometry: rustLayoutBenchmarkGeometry(name, index, baseGeometry),
+      });
     } else {
       bytes = updateBytes({ ...common, geometry: baseGeometry });
     }
-    state = execute(bytes, index < options.warmup, `${name}[${index}]`, name === 'measure-query' ? 1 : undefined);
+    const previous = state;
+    state = execute(
+      bytes,
+      index < options.warmup,
+      `${name}[${index}]`,
+      name === 'measure-query' || name === 'position-query' ? 1 : undefined,
+    );
+    assertRustLayoutBenchmarkResult(name, previous, state);
     if (index >= options.warmup) {
       samples.push(state.durationMs);
       plans.push(state);
@@ -228,6 +255,14 @@ function measureWarm(name) {
   }
   requireStatus(fn.disposeRoot(rootId), `dispose ${name} planner`);
   return summarize(name, liveGlyphCount, samples, plans);
+}
+
+function initialBytes(name) {
+  return updateBytes({
+    textMutation: { start: 0, deleteCount: 0, insert: utf16 },
+    style: baseStyle,
+    geometry: rustLayoutBenchmarkInitialGeometry(name, baseGeometry),
+  });
 }
 
 function createRoot(requestCapacity) {
@@ -270,11 +305,23 @@ function execute(bytes, allowGrowth = false, operation = 'text_update', measureP
   const patchesOffset = result.getUint32(layout.patchesOffset, true);
   const patchLayout = abi.layouts.enginePatch;
   let writeBytes = 0;
+  const patchBuffers = {};
   for (let index = 0; index < patchCount; index += 1) {
     const at = resultPointer + patchesOffset + index * patchLayout.size;
     const patch = new DataView(memory.buffer, at, patchLayout.size);
+    const bufferId = patch.getUint32(patchLayout.bufferId, true);
+    const attribution = (patchBuffers[bufferId] ??= { patches: 0, writeBytes: 0, writeGaps: {} });
+    attribution.patches += 1;
     if (patch.getUint8(patchLayout.opcode) === abi.engine.patchOpcodes.write) {
-      writeBytes += patch.getUint32(patchLayout.byteLength, true);
+      const byteLength = patch.getUint32(patchLayout.byteLength, true);
+      const destinationOffset = patch.getUint32(patchLayout.destinationOffset, true);
+      if (attribution.writeEnd !== undefined && destinationOffset >= attribution.writeEnd) {
+        const gap = destinationOffset - attribution.writeEnd;
+        attribution.writeGaps[gap] = (attribution.writeGaps[gap] ?? 0) + 1;
+      }
+      attribution.writeEnd = destinationOffset + byteLength;
+      writeBytes += byteLength;
+      attribution.writeBytes += byteLength;
     }
   }
   const primitiveCount = result.getUint32(layout.primitiveCount, true);
@@ -288,6 +335,21 @@ function execute(bytes, allowGrowth = false, operation = 'text_update', measureP
       glyphCount += primitive.getUint16(primitiveLayout.recordCount, true);
     }
   }
+  const bufferCount = result.getUint32(layout.bufferCount, true);
+  const buffersOffset = result.getUint32(layout.buffersOffset, true);
+  const bufferLayout = abi.layouts.engineBuffer;
+  const bufferRecords = {};
+  for (let index = 0; index < bufferCount; index += 1) {
+    const at = resultPointer + buffersOffset + index * bufferLayout.size;
+    const bufferRecord = new DataView(memory.buffer, at, bufferLayout.size);
+    const id = bufferRecord.getUint32(bufferLayout.id, true);
+    bufferRecords[id] = {
+      generation: bufferRecord.getUint32(bufferLayout.generation, true),
+      liveRecords: bufferRecord.getUint32(bufferLayout.liveRecords, true),
+      capacityRecords: bufferRecord.getUint32(bufferLayout.capacityRecords, true),
+      byteLength: bufferRecord.getUint32(bufferLayout.byteLength, true),
+    };
+  }
   return {
     durationMs,
     engineRevision: result.getUint32(layout.engineRevision, true),
@@ -297,6 +359,8 @@ function execute(bytes, allowGrowth = false, operation = 'text_update', measureP
     glyphCount,
     patchCount,
     writeBytes,
+    patchBuffers,
+    bufferRecords,
   };
 }
 
@@ -358,16 +422,19 @@ function summarize(name, glyphs, samples, plans) {
     throw new Error(`benchmark planned only ${glyphs} glyph records for a ${options.glyphs}-glyph fixture target`);
   }
   if (options.samplesPath !== undefined) {
-    // Raw per-sample attribution rows in measurement order: tail analysis
-    // needs individual samples correlated with their plan output, which the
-    // sorted summary below deliberately discards.
+    // Preserve measurement order so tail analysis can correlate samples with plan output before summary sorting.
     rawSampleRows.push({
       case: name,
       samples: samples.map((durationMs, index) => ({
         index,
         durationMs,
+        publicationGeneration: plans[index]?.publicationGeneration ?? 0,
+        primitiveCount: plans[index]?.primitiveCount ?? 0,
+        glyphCount: plans[index]?.glyphCount ?? 0,
         patchCount: plans[index]?.patchCount ?? 0,
         writeBytes: plans[index]?.writeBytes ?? 0,
+        patchBuffers: plans[index]?.patchBuffers ?? {},
+        bufferRecords: plans[index]?.bufferRecords ?? {},
       })),
     });
   }
@@ -401,11 +468,16 @@ function printReport(caseReports) {
     );
   }
   console.log('column-resize is the existing layout-width case: one fully active column is reflowed end to end.');
+  console.log('active-column-resize alternates two known break-changing widths and requires a nonempty plan update.');
+  console.log('justify reflows the same active column with justified non-final lines.');
+  console.log('bidi-resize reflows mixed Latin and Arabic text using the pinned Amiri artifact.');
+  console.log('equivalent-width alternates adjacent f32 widths and requires zero render-plan patches or writes.');
   console.log(
     'measure-query answers the same alternating widths through the paragraph-scoped synchronous measure: no gather, plan, or publication.',
+    'position-query adds only the positioning tail to the same synchronous query through borrowed-layout mode: no gather, plan, publication, or inspection copy.',
   );
   console.log(
-    'adopt-measure-query times only adoption, gather, plan compilation, and publication after the same measure query prepared flow and positioning.',
+    'adopt-measure-query includes the positioning tail plus adoption, gather, plan compilation, and publication after measurement prepared flow only; adopt-position-query isolates adoption, gather, plan compilation, and publication after borrowed-layout prepared positioning.',
   );
   console.log(
     'publish-measurement and publish-inspection isolate semantic-sidecar overhead against the otherwise identical no-op publication.',
@@ -430,86 +502,27 @@ function requireStatus(status, operation) {
   if (status !== abi.status.ok) throw new Error(`${operation} failed with status ${status}`);
 }
 
-function parseArguments(arguments_) {
-  const read = (name, fallback) => {
-    const index = arguments_.indexOf(name);
-    return index === -1 ? fallback : Number.parseInt(arguments_[index + 1], 10);
-  };
-  return {
-    technique: normalizeTechnique(readString('--technique', 'bitmap')),
-    allocation: readAllocation('--allocation'),
-    wasm: readString('--wasm'),
-    corpus: normalizeCorpus(readString('--corpus', 'latin')),
-    case: readCase('--case'),
-    glyphs: read('--glyphs', 22_000),
-    height: read('--height', 100_000),
-    repetitions: read('--reps', 31),
-    warmup: read('--warmup', 8),
-    jsonPath: readString('--json'),
-    samplesPath: readString('--samples'),
-  };
-
-  function readString(name, fallback) {
-    const index = arguments_.indexOf(name);
-    return index === -1 ? fallback : arguments_[index + 1];
-  }
-
-  function readCase(name) {
-    const value = readString(name);
-    if (
-      value !== undefined &&
-      ![
-        'cold',
-        'no-op',
-        'publish-measurement',
-        'publish-inspection',
-        'font-size',
-        'column-resize',
-        'measure-query',
-        'adopt-measure-query',
-        'suffix-edit',
-        'localized-edit',
-        'localized-splice',
-      ].includes(value)
-    ) {
-      throw new RangeError(`unknown benchmark case: ${value}`);
-    }
-    return value;
-  }
-
-  function readAllocation(name) {
-    const value = readString(name, 'ordered');
-    if (value !== 'ordered' && value !== 'stable') throw new RangeError(`unknown allocation strategy: ${value}`);
-    return value;
-  }
-}
-
-function normalizeTechnique(value) {
-  const name = value === 'msdf' ? 'mtsdf' : value;
-  if (!['bitmap', 'mtsdf', 'slug'].includes(name)) {
-    throw new RangeError('--technique must be bitmap, mtsdf, msdf, or slug');
-  }
-  return name;
-}
-
-function normalizeCorpus(name) {
-  if (name !== 'latin' && name !== 'cjk') {
-    throw new Error(`--corpus must be latin or cjk, received ${name}`);
-  }
-  return name;
-}
-
 async function loadArtifact(techniqueName, corpus) {
   // CJK ships only the pinned contract strike, which is the one proven to cover the CJK
   // benchmark source. The Latin fixtures carry no CJK coverage, so the pairing is not free.
   const fixtures =
     corpus === 'cjk'
-      ? { bitmap: ['noto-sans-cjk-showcase-bitmap-16.font.glb', false] }
-      : {
-          bitmap: ['inter-bitmap-16.font.glb', false],
-          mtsdf: ['inter-mtsdf.font.glb.gz', true],
-          slug: ['inter-slug.font.glb.gz', true],
-        };
+      ? {
+          bitmap: ['noto-sans-cjk-showcase-bitmap-16.font.glb', false],
+          mtsdf: ['noto-sans-cjk-showcase-mtsdf.font.glb.gz', true],
+          slug: ['noto-sans-cjk-showcase-slug.font.glb.gz', true],
+        }
+      : corpus === 'bidi'
+        ? {
+            bitmap: ['amiri-bitmap-16.font.glb', false],
+            mtsdf: ['amiri-mtsdf.font.glb.gz', true],
+            slug: ['amiri-slug.font.glb.gz', true],
+          }
+        : {
+            bitmap: ['inter-bitmap-16.font.glb', false],
+            mtsdf: ['inter-mtsdf.font.glb.gz', true],
+            slug: ['inter-slug.font.glb.gz', true],
+          };
   const entry = fixtures[techniqueName];
   if (entry === undefined) {
     throw new Error(`corpus ${corpus} has no pinned ${techniqueName} artifact`);

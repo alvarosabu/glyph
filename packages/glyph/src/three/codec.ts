@@ -2,7 +2,6 @@ import {
   compileCodec,
   createCodecProgram,
   id,
-  type CodecAllocationMode,
   type CodecBuffer,
   type CodecBufferId,
   type CodecCapabilitySet,
@@ -13,8 +12,9 @@ import {
   type CodecProgramId,
   type CodecTechniqueId,
 } from '../config/codec.js';
-import { techniqueProgram } from '../config/codec-program.js';
-import { createRasterCodecProgram } from '../config/raster.js';
+import { hostAbsoluteTechniqueProgram, type CodecProgramSystemBuffers } from '../config/codec-program.js';
+import type { RasterCodecSystem } from '../config/raster.js';
+import { attachHostCodecProgramSystemBuffers, createHostRasterCodecProgram } from '../config/raster-host.js';
 import {
   defineCodecBuffers,
   defineTechniqueSchema,
@@ -24,10 +24,11 @@ import {
 } from '../config/schema.js';
 import { bitmapCodec } from '../raster/bitmap.js';
 import { msdfCodec } from '../raster/msdf.js';
-import { slugCodec } from '../raster/slug.js';
+import { slugCodec, slugSchema } from '../raster/slug.js';
 
 const THREE_STABLE_GLYPH_BUFFER_ID: CodecBufferId = id.buffer('glyph-three/stable-glyph');
 const THREE_TRANSFORM_INDEX_BUFFER_ID: CodecBufferId = id.buffer('glyph-three/transform-index');
+const THREE_PLACEMENT_SLOT_BUFFER_ID: CodecBufferId = id.buffer('glyph-three/placement-slot');
 const DECORATION_RECT_BUFFER_ID: CodecBufferId = id.buffer('glyph-three/decoration/rect');
 const DECORATION_PACKED_BUFFER_ID: CodecBufferId = id.buffer('glyph-three/decoration/packed');
 
@@ -43,14 +44,21 @@ export const threeSystemBuffers: {
     readonly scalar: 'u32';
     readonly lanes: readonly ['transformIndex'];
   };
+  readonly placementSlot: {
+    readonly id: typeof THREE_PLACEMENT_SLOT_BUFFER_ID;
+    readonly scalar: 'u32';
+    readonly lanes: readonly ['placementSlot'];
+  };
 } = defineCodecBuffers({
   stableGlyphId: { id: THREE_STABLE_GLYPH_BUFFER_ID, scalar: 'u32', lanes: ['stableGlyphId'] },
   transformIndex: { id: THREE_TRANSFORM_INDEX_BUFFER_ID, scalar: 'u32', lanes: ['transformIndex'] },
+  placementSlot: { id: THREE_PLACEMENT_SLOT_BUFFER_ID, scalar: 'u32', lanes: ['placementSlot'] },
 });
 
 export const TRANSFORM_BUFFER_ID: CodecBufferId = threeSystemBuffers.transformIndex.id;
 
 export const STABLE_GLYPH_BUFFER_ID: CodecBufferId = threeSystemBuffers.stableGlyphId.id;
+export const PLACEMENT_SLOT_BUFFER_ID: CodecBufferId = threeSystemBuffers.placementSlot.id;
 
 /** Decoration is a reserved technique of the Three Codec, not a raster technique: rows are resource-free and fill the gather lanes directly. */
 export const decorationSchema: TechniqueSchema<
@@ -79,8 +87,6 @@ export const decorationSchema: TechniqueSchema<
 
 export type ThreeTransformMode = CodecTransformMode;
 
-export type ThreeAllocationMode = CodecAllocationMode;
-
 export interface ThreeFormatTransformModes {
   readonly bitmap: ThreeTransformMode;
   readonly msdf: ThreeTransformMode;
@@ -94,9 +100,8 @@ export function threeCodecBytes(
   ids: CodecIdFactory = id,
   transformMode: ThreeTransformMode | ThreeFormatTransformModes = 'indexed',
   additionalPrograms: readonly CodecProgram[] = [],
-  allocationMode: ThreeAllocationMode = 'ordered',
 ): Uint8Array {
-  return compileCodec(threeCodecDescriptor(ids, transformMode, additionalPrograms, allocationMode));
+  return compileCodec(threeCodecDescriptor(ids, transformMode, additionalPrograms));
 }
 
 /** @internal Assemble the descriptor retained by the Three adapter alongside its compiled wire Codec. */
@@ -104,12 +109,8 @@ export function threeCodecDescriptor(
   ids: CodecIdFactory = id,
   transformMode: ThreeTransformMode | ThreeFormatTransformModes = 'indexed',
   additionalPrograms: readonly CodecProgram[] = [],
-  allocationMode: ThreeAllocationMode = 'ordered',
 ): CodecDescriptor {
   if (!Array.isArray(additionalPrograms)) throw new TypeError('Three additional Codec programs need an array');
-  if (allocationMode !== 'ordered' && allocationMode !== 'stable') {
-    throw new TypeError('Three allocation mode must be "ordered" or "stable"');
-  }
   const modes =
     typeof transformMode === 'string'
       ? { bitmap: transformMode, msdf: transformMode, slug: transformMode }
@@ -120,38 +121,37 @@ export function threeCodecDescriptor(
     }
   }
   const capabilitySet = threeCodecCapabilitySet();
+  const slugOptions = {
+    namespace: THREE_PROGRAM_NAMESPACE,
+    system: codecSystemBuffers(modes.slug),
+    placementSlotTarget: { buffer: slugSchema.buffers.bandCounts.id, lane: 2 },
+    capabilitySet,
+    transformMode: modes.slug,
+    ids,
+  } as const;
   // The portable assembler validates the handle-supplied factory before Three invokes it directly.
   const rasterPrograms: CodecProgram[] = [
-    createRasterCodecProgram(bitmapCodec, {
+    createHostRasterCodecProgram(bitmapCodec, {
       namespace: THREE_PROGRAM_NAMESPACE,
       system: codecSystemBuffers(modes.bitmap),
       capabilitySet,
       transformMode: modes.bitmap,
-      allocationMode,
       ids,
     }),
-    createRasterCodecProgram(msdfCodec, {
+    createHostRasterCodecProgram(msdfCodec, {
       namespace: THREE_PROGRAM_NAMESPACE,
       system: codecSystemBuffers(modes.msdf),
       capabilitySet,
       transformMode: modes.msdf,
-      allocationMode,
       ids,
     }),
-    createRasterCodecProgram(slugCodec, {
-      namespace: THREE_PROGRAM_NAMESPACE,
-      system: codecSystemBuffers(modes.slug),
-      capabilitySet,
-      transformMode: modes.slug,
-      allocationMode,
-      ids,
-    }),
+    createHostRasterCodecProgram(slugCodec, slugOptions),
   ];
   const DECORATION_TECHNIQUE_ID = ids.technique(decorationSchema.technique);
   const DECORATION_PROGRAM_ID = ids.program(decorationSchema.technique, THREE_PROGRAM_NAMESPACE);
   const programs: CodecProgram[] = [
     ...rasterPrograms,
-    decorationProgram(DECORATION_TECHNIQUE_ID, DECORATION_PROGRAM_ID, modes.bitmap, allocationMode),
+    decorationProgram(DECORATION_TECHNIQUE_ID, DECORATION_PROGRAM_ID, modes.bitmap),
     ...additionalPrograms,
   ];
   return { capabilitySets: [capabilitySet], programs };
@@ -159,7 +159,7 @@ export function threeCodecDescriptor(
 
 export function threeCodecCapabilitySet(): CodecCapabilitySet {
   return {
-    capabilities: ['storage-buffers', 'alias-vec2', 'alias-vec4', 'ordered-direct', 'stable-indirect'],
+    capabilities: ['storage-buffers', 'alias-vec2', 'alias-vec4', 'ordered-direct'],
     maxBufferBytes: 64 * 1024 * 1024,
     updateAlignment: 4,
     coalesceGapBytes: 128,
@@ -177,29 +177,40 @@ function decorationProgram(
   techniqueId: CodecTechniqueId,
   programId: CodecProgramId,
   transformMode: ThreeTransformMode,
-  allocationMode: ThreeAllocationMode,
 ): CodecProgram {
-  const p = techniqueProgram(decorationSchema, { system: codecSystemBuffers(transformMode) });
+  const p = hostAbsoluteTechniqueProgram(decorationSchema);
   const { inlineOrigin, blockOrigin, fontSize, color } = p.semantics;
+  const system = decorationSystemBuffers(transformMode);
+  const authoredBody = p.compile({
+    rect: [inlineOrigin, blockOrigin, fontSize, color.red],
+    packed: [p.binding.color, p.binding.flags],
+  });
   return {
     ...createCodecProgram(
       techniqueId,
       programId,
-      p.compile({
-        rect: [inlineOrigin, blockOrigin, fontSize, color.red],
-        packed: [p.binding.color, p.binding.flags],
-      }),
+      attachHostCodecProgramSystemBuffers(authoredBody, decorationSchema, system),
       programBuffers(decorationSchema, transformMode),
       transformMode,
-      allocationMode,
     ),
     primitiveKind: 'decoration',
     resourceKindMask: 0,
   };
 }
 
-function codecSystemBuffers(transformMode: ThreeTransformMode) {
-  return transformMode === 'indexed' ? threeSystemBuffers : { stableGlyphId: threeSystemBuffers.stableGlyphId };
+function codecSystemBuffers(transformMode: ThreeTransformMode): RasterCodecSystem {
+  return {
+    stableGlyphId: threeSystemBuffers.stableGlyphId,
+    ...(transformMode === 'indexed' ? { transformIndex: threeSystemBuffers.transformIndex } : {}),
+    placementSlot: threeSystemBuffers.placementSlot,
+  };
+}
+
+function decorationSystemBuffers(transformMode: ThreeTransformMode): CodecProgramSystemBuffers {
+  return {
+    stableGlyphId: threeSystemBuffers.stableGlyphId,
+    ...(transformMode === 'indexed' ? { transformIndex: threeSystemBuffers.transformIndex } : {}),
+  };
 }
 
 /** Every Three program publishes its schema's buffers, then the Codec's own system buffers. */

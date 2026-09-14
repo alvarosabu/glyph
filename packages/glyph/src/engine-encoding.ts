@@ -31,9 +31,7 @@ export function normalizedColumns(
   if (columns.count > 1 && constraints?.width?.mode !== 'exact') {
     throw new TypeError('layout columns require an exact width constraint to derive the column measure');
   }
-  // Ordered columns fill without balancing, so the column height is the only
-  // signal that advances flow into the next region: unbounded height would
-  // keep every line in the first column forever.
+  // Ordered columns advance only at the height bound; an unbounded height would keep every line in the first column.
   if (columns.count > 1 && constraints?.height === undefined) {
     throw new TypeError('layout columns require a bounded height constraint to fill columns in order');
   }
@@ -55,6 +53,15 @@ export function compileEngineGeometry(
   const inlineEnd = width.mode === 'unconstrained' ? 0x01_00_00_00 : width.size;
   const blockEnd = height.mode === 'unconstrained' ? 0x01_00_00_00 : height.size;
   const maxLines = layout?.maxLines ?? 0;
+  const dropCap = layout?.dropCap;
+  const encodedDropCap = (() => {
+    if (dropCap === undefined) return undefined;
+    const { contour, ...values } = dropCap;
+    return {
+      ...values,
+      ...(contour === undefined ? {} : { contour: contour.map(([inline, block]) => ({ inline, block })) }),
+    };
+  })();
   const columnWidth = (inlineEnd - columns.gap * (columns.count - 1)) / columns.count;
   if (columns.count > 1 && columnWidth <= 0) {
     throw new RangeError('layout columns and gap leave no positive column measure');
@@ -85,6 +92,7 @@ export function compileEngineGeometry(
       ...(layout?.spaceAfter === undefined ? {} : { spaceAfter: layout.spaceAfter }),
       ...(layout?.justify === undefined ? {} : { justify: layout.justify }),
       ...(layout?.lastLine === undefined ? {} : { lastLine: layout.lastLine }),
+      ...(encodedDropCap === undefined ? {} : { dropCap: encodedDropCap }),
     },
     regions: Array.from({ length: columns.count }, (_, column) => {
       const inlineStart = column * (columnWidth + columns.gap);
@@ -223,9 +231,7 @@ function engineDecoration(decoration: NonNullable<TextStyle['decoration']>, styl
 export function styledSpans<Span extends ParagraphSpan<RasterFormatMetadata>>(
   spans: readonly Span[] | undefined,
 ): readonly Span[] {
-  // Only a collapsed span is dropped. An INVERTED span is a caller arithmetic error whose owner
-  // is range validation, so it is forwarded and rejected rather than filtered away -- swallowing
-  // it here would make an impossible range publish as if it had been honoured.
+  // Drop only collapsed spans. Range validation must reject inverted spans instead of silently publishing them.
   return spans === undefined ? [] : spans.filter((span) => span.start !== span.end);
 }
 

@@ -231,7 +231,7 @@ export function engineFrameUpdateBytes(
     view.setUint8(constraintOffset + constraint.widthMode, abi.engine.axisModes.exact);
     view.setUint8(constraintOffset + constraint.heightMode, abi.engine.axisModes.exact);
     view.setUint8(constraintOffset + constraint.wrap, abi.engine.wrapModes.word);
-    view.setUint8(constraintOffset + constraint.align, abi.engine.inlineAlignments.start);
+    view.setUint8(constraintOffset + constraint.align, abi.engine.inlineAlignments[geometry.align ?? 'start']);
     view.setUint8(constraintOffset + constraint.overflow, abi.engine.overflowModes.visible);
     view.setUint8(constraintOffset + constraint.blockAlign, abi.engine.blockAlignments.start);
     view.setUint8(constraintOffset + constraint.lastLine, abi.engine.lastLinePolicies.auto);
@@ -370,10 +370,7 @@ export function renderCodecBytesFromPrograms(abi, programs) {
   const capabilities = [
     {
       id: 1,
-      flags:
-        abi.codec.capabilityFlags.storageBuffers |
-        abi.codec.capabilityFlags.orderedDirect |
-        abi.codec.capabilityFlags.stableIndirect,
+      flags: abi.codec.capabilityFlags.storageBuffers | abi.codec.capabilityFlags.orderedDirect,
       maxBufferBytes: 64 * 1024 * 1024,
       updateAlignment: 4,
       coalesceGapBytes: 128,
@@ -472,11 +469,6 @@ export function renderCodecBytesFromPrograms(abi, programs) {
     view.setUint16(offset + programLayout.bufferCount, descriptor.buffers.length, true);
     view.setUint32(offset + programLayout.operationStart, operationStart, true);
     view.setUint16(offset + programLayout.operationCount, descriptor.operations.length, true);
-    view.setUint16(
-      offset + programLayout.allocationStrategy,
-      descriptor.allocationStrategy ?? abi.codec.allocationStrategies.orderedDirect,
-      true,
-    );
     view.setUint32(offset + programLayout.inputStart, inputStart, true);
     view.setUint16(offset + programLayout.inputCount, programInputs[index].length, true);
     bufferStart += descriptor.buffers.length;

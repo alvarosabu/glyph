@@ -3,7 +3,7 @@ import type { FontFaceRasterOf, FontFaceSelection } from '../font-face.js';
 import type { BorrowedGlyphLayout, GlyphLayoutInspection, ParagraphLayoutSummary } from '../layout.js';
 import type { FontSelection } from '../loaded-font.js';
 import type { RasterFormatMetadata } from './raster-format.js';
-import type { Constraints, ParagraphLayout, TextStyle } from '../text-properties.js';
+import type { Constraints, ParagraphLayout, TextFlow, TextStyle } from '../text-properties.js';
 import type { PortableResource } from './resources.js';
 import type { CodecBuffer, CodecDescriptor, CodecIdFactory, CodecProgram } from './codec.js';
 import type {
@@ -52,10 +52,10 @@ export interface GlyphBindingSet {
   readonly transformInput: unknown;
 }
 
-export type GlyphBufferDeclaration = Readonly<{ kind: 'codec'; value: CodecBuffer }> | Readonly<{ kind: 'order' }>;
+export type GlyphBufferDeclaration = Readonly<{ kind: 'codec'; value: CodecBuffer }> | Readonly<{ kind: 'placement' }>;
 
 export interface GlyphBufferBindingInput<Program extends object> {
-  readonly program: Program;
+  readonly program: Program | undefined;
   readonly declaration: GlyphBufferDeclaration;
 }
 
@@ -92,7 +92,6 @@ export interface GlyphDrawBindingInput<
   readonly clip: ClipIdentity | undefined;
   readonly depthKey: number;
   readonly order: number;
-  readonly indirect: Readonly<{ buffer: Buffer; byteOffset: number }> | undefined;
 }
 
 export interface GlyphBatchBindingInput<
@@ -256,7 +255,7 @@ export type ResourceUpdate<Resource extends object> =
 export type BufferUpdate<Buffer extends object, Program extends object> = Readonly<{
   kind: 'ensure';
   buffer: Buffer;
-  program: Program;
+  program: Program | undefined;
   scalarType: 'f32' | 'u32' | 'u16';
   vectorWidth: number;
   capacityRecords: number;
@@ -441,6 +440,8 @@ export interface GlyphTextState<Format extends RasterFormatMetadata, MaterialInp
   readonly style?: TextStyle;
   readonly layout?: ParagraphLayout;
   readonly constraints?: Constraints;
+  /** Paragraph-local 2D flow regions and exclusions. */
+  readonly flow?: TextFlow;
 }
 
 /** Narrow integration controller held privately by an adapter's Text object. */

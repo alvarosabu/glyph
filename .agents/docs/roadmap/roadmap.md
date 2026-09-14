@@ -17,18 +17,21 @@ sources:
     resource: '../planning/core-api.md'
     title: 'Core text API'
   - id: 'engine-integration-contract'
-    resource: '../planning/engine-integration-contract.md'
-    title: 'Engine integration contract'
+    resource: '../planning/core-api.md'
+    title: 'Glyph integration API'
   - id: 'engine-integration-plan'
-    resource: '../planning/engine-integration-boundary.md'
-    title: 'Renderer-neutral extraction plan'
+    resource: '../guides/renderer-integration.md'
+    title: 'Renderer integration guide'
   - id: 'paragraph-query-preparation'
     resource: '../planning/paragraph-query-preparation.md'
     title: 'Paragraph-scoped preparation and synchronous layout queries'
+  - id: 'fragment-relative-reflow'
+    resource: '../planning/fragment-relative-reflow.md'
+    title: 'Fragment-relative reflow and LayoutRun placement'
 
 generated:
   by: openai-codex/gpt-5.6
-  at: '2026-08-15T15:53:27Z'
+  at: '2026-09-09T02:02:17Z'
 ---
 
 # Canonical implementation roadmap
@@ -70,8 +73,10 @@ Status key: ✅ complete · 🟡 in progress · ⬜ not started · ⛔ blocked
 |     9 |   ✅   | Port/rewrite and validate Slug                                        | XL     | 7                   | Outline-accurate text passes correctness, packing, visual, and GPU performance gates.                        |
 |    10 |   ✅   | Harden the merged v0 renderer baseline                                | L      | 8–9                 | Bitmap, MSDF, and Slug merge as independent modules over one shaping/layout result; no release is published. |
 |    11 |   🟡   | Extract the renderer-neutral batched core and engine target contract  | XL     | 10                  | One explicit batch renders through Three.js and Wayfare without renderer dependencies in portable core.      |
+|    12 |   ✅   | Implement fragment-relative reflow and editorial contour flow         | XL     | 11.16               | Run-placement patches and exact justified 2D/3D contour/drop-cap renderer gates pass.                        |
 
-Milestones 0–10 are closed. Milestone 11 is the next additive workstream.
+Milestones 0–10 are closed. Milestone 11 remains active on its independent release work; Milestone 12 is an authorized
+additive frontier over the landed retained core and D-352–D-354 rather than a dependency on every open 11.x item.
 
 Do not start a milestone before its dependencies and exit evidence exist.
 
@@ -91,6 +96,7 @@ flowchart LR
   M8 --> M10["10 Shippable raster set"]
   M9 --> M10
   M10 --> M11["11 Renderer-neutral batched core<br/>+ engine targets"]
+  M11Core["Landed 11.16<br/>+ D-352–D-354"] --> M12["12 Fragment-relative reflow<br/>+ editorial contour flow"]
 ```
 
 ## Issue-sized implementation sequence
@@ -155,16 +161,31 @@ These rows replace the former separate backlog. Each is intended to become one f
 | 11.12 |   ✅   | Bake underline position/thickness and strikeout position/size into font metrics without implementing decoration rendering, so text decoration becomes an additive renderer feature instead of an artifact version bump and a re-bake of every shipped font.                                                                                                                                                                                                                                                                                                                    |  S   | 11.6        |
 | 11.13 |   ✅   | Prove the shaping and layout contract can represent a break-inserted hyphen glyph that has no source cluster, and fix the contract if it cannot. Language patterns, break selection, and justification quality controls remain later work.                                                                                                                                                                                                                                                                                                                                     |  M   | 11.6        |
 | 11.14 |   ✅   | Add the professional typography the editorial showcase requires: `wordSpacing`, first-line indent, paragraph space before/after, and justification controls covering minimum/maximum word-space ratio, letter-space expansion, and last-line policy.                                                                                                                                                                                                                                                                                                                           |  L   | 11.12–11.13 |
-| 11.15 |   ⬜   | Settle Three material authority, so applications supply their own `NodeMaterial` and gain lighting, shadows, and depth-composited effects without implementing a raster program. Resolve the open edges in the [material authority concept](../planning/three-material-authority.md) first; it is a recorded proposal, not an accepted design.                                                                                                                                                                                                                                 |  M   | 11.6        |
+| 11.15 |   ⬜   | Settle Three material authority, so applications supply their own `NodeMaterial` and gain lighting, shadows, and depth-composited effects without implementing a raster program. Resolve the open edges in the [Three material API](../planning/three-api.md#define-a-material) first.                                                                                                                                                                                                                                                                          |  M   | 11.6        |
 | 11.16 |   ✅   | Replace duplicate TypeScript shaping, layout, packing, and dirty-plan work with one retained Rust/Wasm frame transaction, validated renderer policy, and incremental render plan; land the Rust, policy/plan, and Three adapter PRs as one coordinated stack after exact Bitmap/MSDF/Slug, benchmark-app, size, and browser parity.                                                                                                                                                                                                                                            |  XL  | 11.6        |
 | 11.17 |   ✅   | Add paragraph-scoped synchronous prepare/query and candidate adoption: measure one pending paragraph per call without compiling a render plan, retain one session transaction with linear identity reservation, and reuse its paragraph-keyed results in the next full frame without a third full buffer.                                                                                                                                                                                                                                                                      |  L   | 11.16       |
-| 11.18 |   🟡   | Complete the Rust engine's realtime publishing set over that proven path: spacing, decorations (solid underline/overline/line-through landed early per D-248; patterned styles and retained decoration diffing remain), ordered column flow inside the content box (landed; balancing and the drop-cap exclusion surface remain), interaction geometry, horizontal and vertical writing, one-call exclusions and sequential regions, bounded CJK tailoring, and optional color-emoji fallback, excluding every explicitly cut unbounded solver or second authored text stream. |  XL  | 11.16       |
+| 11.18 |   🟡   | Complete the Rust engine's realtime publishing set over that proven path: spacing, decorations (solid underline/overline/line-through landed early per D-248; patterned styles and retained decoration diffing remain), ordered column flow and internal one-call rectangle/polygon region and exclusion geometry (landed), interaction geometry, horizontal and vertical writing, bounded CJK tailoring, and optional color-emoji fallback. Public arbitrary-contour authoring, retained `LayoutRun` placement, projected objects, and drop caps belong to the 12.x frontier. |  XL  | 11.16       |
+| 12.1  |   ✅   | Freeze the merged D-352–D-354 baseline, attribute width-update costs, build the test-only `LayoutRun` shadow, and prove numeric row plus Three/direct-TypeGPU renderer feasibility before changing the ABI.                                                                                                                                                                                                                                                                                                                                                                    |  L   | 11.16       |
+| 12.2  |   ✅   | Implement staged run topology and direct engine-owned x/y occurrence placement, then cut semantic queries, publication, and renderer realization atomically to the single retained model. Preserve existing batching/draw topology, keep backend memory layout out of Codec authoring, and close the measured CPU/publication overhead before completion.                                                                                                                                                                                                                      |  XL  | 12.1        |
+| 12.3  |   ✅   | Expose retained two-dimensional polygon region and exclusion authoring, and consume geometry revisions through bounded forward dirty-band convergence.                                                                                                                                                                                                                                                                                                                                                                                                                         |  L   | 12.2        |
+| 12.4  |   ✅   | Add projected known-geometry 3D obstacles, same-source contour drop caps, and justified multi-slot bidi and query closure.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |  XL  | 12.3        |
+| 12.5  |   ✅   | Admit SIMD only from measured thresholds, then close the editorial benchmark and full browser, package, documentation, and release evidence.                                                                                                                                                                                                                                                                                                                                                                                                                                   |  L   | 12.4        |
+
+Item 12.1 used merged commit `2094243668bcf5462cff0ac3b1f7faf52cba3b6c` as its exact baseline. Items 12.1–12.5 are
+complete. The direct engine-owned x/y occurrence offset is implemented through the generated semantic contract, Three,
+and direct TypeGPU without changing batches or draws; public CPU semantic queries retain absolute origins while
+positioned storage stays local. Fresh-main evidence is positive for ordinary Latin, justified Latin, dense CJK, and
+mixed bidi after lazy absolute semantic materialization removed width-only semantic rewrites. Final two-pass candidate
+medians are `1.562`, `2.229`, `2.277`, and `3.437 ms` respectively; mixed bidi is 13.0% faster than the recorded
+fresh-main median. Both shader stacks pass all 120 Presentation cells across 10 workloads, WebGPU/WebGL2, and
+Bitmap/MTSDF/Slug; the dedicated TypeGPU WebGPU, package, documentation, and reviewed release-size gates also pass. The
+dependency does not include unrelated open work grouped under 11.18.
 
 ## Milestone 0 — accept contracts and versions
 
 ### 0.1 closure checklist
 
-- [x] Candidate core and React surfaces are documented in the [API reference](../planning/api-shapes.md#milestone-01-acceptance-evidence).
+- [x] Candidate core and React surfaces are documented in the [Glyph integration API](../planning/core-api.md).
 - [x] Core font/raster capability inference and positive/negative composition cases have compile-only evidence.
 - [x] Canonical URL forms and invalid source/baked combinations have compile-only evidence.
 - [x] The current root package export is ESM-only and contains no CommonJS condition.
@@ -196,7 +217,7 @@ Milestone 0 is closed. Milestone 1 is now the active dependency.
 
 Deliver:
 
-- maintainer review of the core/React [API](../planning/api-shapes.md), [architecture](../planning/architecture.md), [shaping data](../planning/shaping-data-contract.md), and [raster data](../planning/raster-data-contract.md);
+- maintainer review of the [Glyph integration API](../planning/core-api.md), [architecture](../planning/architecture.md), [shaping data](../planning/shaping-data-contract.md), and [raster data](../planning/raster-data-contract.md);
 - accepted font identity `(FontHandle, LocalGlyphId)` and one-face asset rule;
 - accepted canonical URL, baked-sibling, baked-only, explicit override, and preload rules;
 - accepted ESM-only export map, module-Worker boundary, and absence of CommonJS artifacts;
@@ -756,23 +777,23 @@ while behavioral regressions still require new evidence.
 Milestone 11 earns the v1 API and integration boundary. Later milestones remain post-v1 work unless maintainers explicitly
 move them into the release gate:
 
-| Order | Workstream                                          | Effort  | Why next                                                                                                                                                           |
-| ----: | --------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-|    11 | Renderer-neutral batched core and engine targets    | XL      | Extract the accepted many-item API, preserve Three.js, and prove Bitmap/MTSDF/Slug through Wayfare and raw TypeGPU.                                                |
-|    12 | Editorial flow regions and mixed-raster composition | XL      | Add responsive columns and exclusions, then prove bitmap, MTSDF, and Slug over one positioned layout in a live editorial benchmark.                                |
-|    13 | Mixed-font spans and explicit font fallback         | XL      | Extend the multi-font identity smoke proof into paragraph behavior.                                                                                                |
-|    14 | Large-coverage CJK raster paging and icons          | XL      | Add content-aware paging, independently resident resources, and paired CJK/icon correctness and payload gates without reopening item 5.4 shaping semantics.        |
-|    15 | Color emoji                                         | XL      | Extend Slug vector paint/layers and bitmap color resources without changing shaping or layout.                                                                     |
-|    16 | Raster effects and expanded recommendations         | L       | Test the bounded shared-traversal Slug outline approximation, then extend accepted outlines, colorization, shadows, and projected-size guidance with measurements. |
-|    17 | Measured optimization campaigns                     | ongoing | Activate autoresearch only with strict correctness and visual gates.                                                                                               |
-|    18 | Advanced font compiler units                        | XL each | Add general subsetting, remapping, normalized lookups, or SIMD only from evidence.                                                                                 |
-|    19 | Vertical writing                                    | XL      | Add Japanese top-to-bottom shaping, orientation, column layout, interaction geometry, and three-renderer evidence after complete CJK paging.                       |
+| Order | Workstream                                           | Effort  | Why next                                                                                                                                                           |
+| ----: | ---------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|    11 | Renderer-neutral batched core and engine targets     | XL      | Extract the accepted many-item API, preserve Three.js, and prove Bitmap/MTSDF/Slug through Wayfare and raw TypeGPU.                                                |
+|    12 | Fragment-relative reflow and editorial contour flows | XL      | Retain run-local geometry, patch placement around polygon/projected-object exclusions, and prove all three rasters in one editorial composition.                   |
+|    13 | Mixed-font spans and explicit font fallback          | XL      | Extend the multi-font identity smoke proof into paragraph behavior.                                                                                                |
+|    14 | Large-coverage CJK raster paging and icons           | XL      | Add content-aware paging, independently resident resources, and paired CJK/icon correctness and payload gates without reopening item 5.4 shaping semantics.        |
+|    15 | Color emoji                                          | XL      | Extend Slug vector paint/layers and bitmap color resources without changing shaping or layout.                                                                     |
+|    16 | Raster effects and expanded recommendations          | L       | Test the bounded shared-traversal Slug outline approximation, then extend accepted outlines, colorization, shadows, and projected-size guidance with measurements. |
+|    17 | Measured optimization campaigns                      | ongoing | Activate autoresearch only with strict correctness and visual gates.                                                                                               |
+|    18 | Advanced font compiler units                         | XL each | Add general subsetting, remapping, normalized lookups, or SIMD only from evidence.                                                                                 |
+|    19 | Vertical writing                                     | XL      | Add Japanese top-to-bottom shaping, orientation, column layout, interaction geometry, and three-renderer evidence after complete CJK paging.                       |
 
 ### Milestone 11 — renderer-neutral batched core and engine targets
 
 This milestone implements the authoritative [README](../../../README.md), [core text API](../planning/core-api.md),
-and [engine integration contract](../planning/engine-integration-contract.md). It removes Three.js from portable entry
-points while preserving the accepted shaping, paragraph, artifact, raster, and visible-generation behavior.
+and [renderer integration guide](../guides/renderer-integration.md). It removes Three.js from portable entry points while
+preserving the accepted shaping, paragraph, artifact, raster, and visible-generation behavior.
 
 Deliver:
 
@@ -809,7 +830,7 @@ host/program-reuse gates extend beyond this 2D adapter.
 
 Only after these gates pass may maintainers declare and publish v1.
 
-The [renderer-neutral extraction plan](../planning/engine-integration-boundary.md) owns the issue sequence and proof matrix.
+The [renderer integration guide](../guides/renderer-integration.md) owns the current integration boundary and proof matrix.
 Engine transforms, scene composition, pass placement, command encoding, GPU synchronization, and device lifecycle remain
 adapter-owned. Core owns physical glyph grouping and ordered variant-bearing text runs; programs own compatible final draws.
 
@@ -835,22 +856,38 @@ The merged-v0 surface — `/v0`, `/raster/bitmap/v0`, `/raster/slug/v0`, `/raste
 with the internals it alone reached. The third-party extension proof moved with it rather than being retired: its example
 raster is now a portable technique registering a Three program through the public registry.
 
-### Milestone 12 — editorial flow regions and mixed-raster composition
+### Milestone 12 — fragment-relative reflow and editorial contour flow
 
-This post-v1 milestone adds an ordered flow-region planner without weakening the rectangular paragraph fast path. Each line band resolves one or more usable horizontal slots after explicit drop-cap, image, callout, or known-geometry exclusions are subtracted. Shaped clusters fill those slots using existing safe-break and batched boundary-reshape machinery.
+This post-v1 milestone replaces glyph-wide absolute rematerialization with one retained fragment-relative `LayoutRun`
+topology and a separately revisioned placement layer, without weakening the rectangular paragraph fast path. After that
+cutover proves exact current output, authored two-dimensional polygon contours and projected known-geometry three-dimensional
+silhouettes subtract usable slots from justified columns. Same-source drop caps participate as glyph-derived exclusions
+without duplicating or omitting their source cluster. The [fragment-relative reflow plan](../planning/fragment-relative-reflow.md)
+is the sole implementation sequence and proof owner; the [editorial flow research](../planning/editorial-flow-layout.md)
+retains the product motivation, Pretext comparison, and benchmark composition.
 
 Deliver:
 
-- a conservative two-dimensional exclusion and responsive multi-column model with explicit fragment reading order;
-- deterministic LTR, RTL, mixed-direction, complex-script, and moving-obstacle conformance cases;
-- retained broad shaping with measured invalidation and batched reshaping when regions change;
+- stable run-local glyph geometry plus compact transactional placement, publication, and query derivation with exact
+  current i64-decision, f64-positioning, and f32-output behavior;
+- generic synchronous `Text.withGlyphs<Result>()` borrowed reads, while detached glyph copies retain independent
+  ownership and frozen shaping lifecycle;
+- responsive justified columns around authored convex or concave polygon cutouts, projected known-geometry 3D objects,
+  and same-source drop caps, with explicit fragment reading order;
+- deterministic LTR, RTL, mixed-direction, complex-script, drop-cap, and moving-obstacle conformance cases;
+- retained broad shaping with measured geometry-revision invalidation, forward convergence, and only necessary boundary reshaping;
 - one **Editorial composition** live benchmark using native-strike bitmap body copy, an MTSDF pull quote, and a Slug headline or drop cap over one authoritative positioned layout;
 - viewport, column, obstacle, text-editing, typewriter, strike, and display-transform controls with consumer-facing phase, frame, GPU, allocation, and residency evidence;
 - a reproducible comparison with Pretext that distinguishes approximate browser-compatible line breaking from exact GPU-ready shaping and makes no unmeasured speed claim.
 
-Maintainers intend an editorial piece as a v1 showcase, so the typography that composition depends on is scoped into milestone 11 rather than left here: items 11.12–11.14 cover baked decoration metrics, the break-inserted hyphen contract, and `wordSpacing`, first-line indent, paragraph spacing, and justification controls. This milestone keeps only the flow-region planner itself.
+Maintainers intend an editorial piece as a v1 showcase, so the typography that composition depends on is scoped into milestone 11 rather than left here: items 11.12–11.14 cover baked decoration metrics, the break-inserted hyphen contract, and `wordSpacing`, first-line indent, paragraph spacing, and justification controls. This milestone owns the retained placement and contour-flow work that composes those features.
 
-Contour-tight glyph-ink wrapping, arbitrary rendered-pixel occlusion, balanced columns, automatic hyphenation, vertical flow, and a frozen public flow API remain deferred until the initial integration produces evidence. The [editorial flow research concept](../planning/editorial-flow-layout.md) defines the proposed internal model, benchmark composition, comparison rules, and acceptance gates.
+Follow-up: implement the accepted D-356 attached per-glyph deformation design as a separately scoped Three and TypeGPU
+change, with explicit lifecycle, storage, interaction-geometry, and performance evidence before adding
+`Text.transformGlyphs()` or `clearGlyphTransforms()` to either public adapter.
+
+Arbitrary rendered-pixel or depth-buffer occlusion, balanced columns, automatic hyphenation, vertical flow, and a frozen
+general-purpose shape-inside authoring API remain deferred until the initial integration produces evidence.
 
 ### Milestone 14 — large-coverage CJK raster paging and icons
 
@@ -909,8 +946,8 @@ Closes the class of defect behind the displaced-record-slot corruption, in depen
 - [x] every span boundary resolved onto the grapheme cluster grid, by one rule shared between the authored `spans` array and both tree compilers, which resolve at the concatenation join, with a collapsed span kept rather than dropped (D-265);
 - [ ] a render-plan payload that is fully determined before publication, with a non-covering seed failing loudly rather than shipping zeros (D-260);
 - [ ] one address space for change detection, removing the identity guard rather than retaining it as a detector (D-259);
-- [ ] stable-indirect reachable from the public API and under the D-261 oracle, or removed (D-262);
-- [ ] ordered and stable planners unified, gated on the previous item (D-262);
+- [x] verify the accepted stable-indirect removal with full ordered benchmarks, size, renderer gates, and Opus (D-362, D-364);
+- [x] close the former dual-planner item by proving the ordered-only implementation needs no strategy dispatcher (D-362, D-364);
 - [ ] one coordinate space reported by the glyph-origin augmentation lane, with a missing record failing rather than substituting (D-263);
 - [ ] randomized instanced updates in the benchmark harness, whose monotonic reveal exercises only edits that displace nothing.
 

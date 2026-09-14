@@ -23,7 +23,11 @@ import {
   ThreeFontFormats,
   defineThreeConfig,
   defineTextMaterial,
+  projectTextFlowBounds,
+  projectTextFlowSilhouette,
   span as threeSpan,
+  type ProjectTextFlowBoundsOptions,
+  type ProjectTextFlowSilhouetteOptions,
   type ThreeCodec,
   type ThreeHandle,
 } from '../../src/three.js';
@@ -32,6 +36,13 @@ import type * as ThreeApi from '../../src/three.js';
 declare const bitmapFont: Font<typeof bitmap>;
 declare const mtsdfFont: Font<typeof msdf>;
 declare const threeGeometry: import('three/webgpu').BufferGeometry;
+declare const projectionOptions: ProjectTextFlowBoundsOptions;
+declare const silhouetteProjectionOptions: ProjectTextFlowSilhouetteOptions;
+
+projectTextFlowBounds(projectionOptions) satisfies import('../../src/text-properties.js').TextFlowExclusion | undefined;
+projectTextFlowSilhouette(silhouetteProjectionOptions) satisfies
+  | import('../../src/text-properties.js').TextFlowExclusion
+  | undefined;
 
 const emphasis = span(bitmapFont, { color: '#ff00ff' });
 const green = span({ color: '#00ff00' });
@@ -45,7 +56,20 @@ type _NoThreeRootBinding = ThreeApi.ThreeRootBinding;
 type _NoThreePublicationBoundary = ThreeApi.ThreePublicationBoundary;
 const warning = threeSpan(warningMaterial, { color: '#ffcc00' });
 const styles = TextStyle.create({ base: { fontSize: 16 }, accent: { color: '#00ff00' } });
-const layouts = ParagraphLayout.create({ centered: { align: 'center' }, wrapped: { wrap: 'word' } });
+const layouts = ParagraphLayout.create({
+  centered: { align: 'center' },
+  wrapped: { wrap: 'word' },
+  contouredCap: {
+    dropCap: {
+      lines: 3,
+      contour: [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+      ],
+    },
+  },
+});
 const constraints = Constraints.create({
   card: { width: { mode: 'at-most', size: 320 } },
   naturalHeight: { height: { mode: 'unconstrained' } },

@@ -37,6 +37,11 @@ const portableSystemBuffers = defineCodecBuffers({
     scalar: 'u32',
     lanes: ['stableGlyphId'],
   },
+  placementSlot: {
+    id: id.buffer('test.font-face-portable-config/placement-slot'),
+    scalar: 'u32',
+    lanes: ['placementSlot'],
+  },
 });
 await glyph.init();
 
@@ -62,7 +67,6 @@ function defineFontAwareConfig() {
             system: portableSystemBuffers,
             capabilitySet: portableCapabilities,
             transformMode: 'direct',
-            allocationMode: 'ordered',
             ids,
           }),
         ],

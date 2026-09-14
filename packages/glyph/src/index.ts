@@ -89,7 +89,6 @@ export type {
   TransformUpdate,
 } from './config/glyph.js';
 export type {
-  CodecAllocationMode,
   CodecBuffer,
   CodecBufferId,
   CodecCapability,
@@ -233,6 +232,12 @@ export type {
   ParagraphContentProperties,
   ParagraphProperties,
   PropertyList,
+  TextFlow,
+  TextFlowBounds,
+  TextFlowExclusion,
+  TextFlowPoint,
+  TextFlowRegion,
+  TextFlowShape,
   TextDecorationStyle,
 } from './text-properties.js';
 export { Constraints, ParagraphLayout, TextStyle } from './text-properties.js';

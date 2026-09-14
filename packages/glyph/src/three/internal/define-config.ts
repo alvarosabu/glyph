@@ -21,7 +21,6 @@ export function createThreeConfig(options: ThreeConfigOptions, shaders: ThreeSha
     throw new TypeError('ThreeConfig options must be an object');
   }
   const transformMode = options.transformMode ?? 'indexed';
-  const allocationMode = options.allocationMode ?? 'ordered';
   const defaultFontFormat = options.defaultFontFormat ?? 'msdf';
   const capacity =
     options.capacity === undefined ? undefined : normalizeGlyphBufferCapacity(options.capacity, 'ThreeConfig capacity');
@@ -37,7 +36,6 @@ export function createThreeConfig(options: ThreeConfigOptions, shaders: ThreeSha
             ids,
             transformMode,
             programs.map((program) => program.codec),
-            allocationMode,
           ),
         options.material,
         shaders,
@@ -63,7 +61,7 @@ export function createThreeConfig(options: ThreeConfigOptions, shaders: ThreeSha
         maxClusters: 65_536,
         maxLines: 65_536,
         maxRegions: 65_536,
-        maxExclusions: 1,
+        maxExclusions: 65_536,
         maxInlineObjects: 1,
         maxSlotsPerBand: 8,
         maxOutputBytes: 64 * 1024 * 1024,

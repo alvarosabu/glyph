@@ -13,6 +13,7 @@ import {
   IDENTITY_LANE,
   lanes,
   mount,
+  PLACEMENT_SLOT_LANE,
   seededRandom,
   timeout,
   unmount,
@@ -90,9 +91,7 @@ const CASES = [
     fixtures: ['amiri-bitmap', 'amiri-slug'],
     direction: 'rtl',
     language: 'ar',
-    // Arabic letters take initial, medial, final, or isolated forms from their NEIGHBOURS, so an
-    // edit at one offset changes the glyph chosen at the offsets around it. Every case below moves
-    // more glyphs than the edit touches.
+    // Arabic contextual forms let an edit change neighbouring glyphs beyond the touched source range.
     edits: [
       ['deletion inside a joined word reshapes its neighbours', 'العربي', 'العبي'],
       ['deletion at the prefix reshapes the following letter', 'العربي', 'لعربي'],
@@ -116,9 +115,7 @@ const CASES = [
     fixtures: ['amiri-bitmap', 'amiri-slug'],
     direction: 'rtl',
     language: 'ar',
-    // The paragraph resolves right-to-left, so a Latin or digit run inside it is an embedded
-    // left-to-right island. Changing the length of any run renumbers the VISUAL order of every
-    // glyph on the line, while logical order changes only at the edit site.
+    // Embedded LTR islands make an RTL edit renumber visual order beyond the logically changed range.
     edits: [
       ['latin island deleted from an rtl paragraph', 'PMNDRS النص العربي', 'النص العربي'],
       ['latin island inserted into an rtl paragraph', 'النص العربي', 'PMNDRS النص العربي'],
@@ -170,10 +167,7 @@ const CASES = [
     fixtures: ['devanagari'],
     direction: 'ltr',
     language: 'hi',
-    // Devanagari is the sharpest case for identity-space vs slot-space. `ि` (matra i) is typed
-    // AFTER its consonant and rendered BEFORE it, so an insertion at the tail of a cluster displaces
-    // a glyph that precedes it. `्` (virama) joins two consonants into a conjunct, so deleting
-    // one scalar changes the glyph count of the cluster around it.
+    // Pre-base matras and virama conjuncts exercise reordered glyphs and cluster-local glyph-count changes.
     edits: [
       ['virama deleted, splitting a conjunct into two glyphs', 'कर्म', 'करम'],
       ['virama inserted, fusing two consonants into a conjunct', 'करम', 'कर्म'],
@@ -280,7 +274,9 @@ for (const shaping of CASES) {
       });
     }
 
-    for (const [label, from, to] of shaping.edits) {
+    // Authored edits keep script-specific shaping checks; seeded sequences own styled multi-node lanes.
+    // One round-trip per fixture covers generic clipped-slot restoration.
+    for (const [editIndex, [label, from, to]] of shaping.edits.entries()) {
       test(`${where}: ${label}`, { timeout }, async () => {
         const font = await fonts.load(fixture);
         const mounted = mount(font, [paragraph(shaping, from)]);
@@ -294,36 +290,22 @@ for (const shaping of CASES) {
         }
       });
 
-      test(`${where}: ${label}, across a styled multi-node group`, { timeout }, async () => {
-        const font = await fonts.load(fixture);
-        const [head, tail] = shaping.anchors;
-        const before = styledScene(shaping, [head, from, tail]);
-        const edited = styledScene(shaping, [head, to, tail]);
-        const mounted = mount(font, before);
-        try {
-          edit(mounted, font, edited);
-          assertMatchesFreshBuild(font, mounted, edited, `${where} styled group ${label}`);
-        } finally {
-          unmount(mounted);
-        }
-      });
-
-      test(`${where}: ${label}, reverted and reapplied on a clipped single line`, { timeout }, async () => {
-        // Round-tripping is the cheapest way to reach a slot whose occupant left and came back, and
-        // a clipped single line drops the glyphs past the box, so the record run also grows and
-        // shrinks under the edit rather than only shifting.
-        const font = await fonts.load(fixture);
-        const authored = (text) => [paragraph(shaping, text, { flow: clippedFlow })];
-        const mounted = mount(font, authored(from));
-        try {
-          for (const [step, text] of [to, from, to, from, to].entries()) {
-            edit(mounted, font, authored(text));
-            assertMatchesFreshBuild(font, mounted, authored(text), `${where} ${label} round-trip step ${step}`);
+      if (editIndex === 0) {
+        test(`${where}: clipped edits restore returning slots`, { timeout }, async () => {
+          // Round-tripping reuses a vacated slot; clipping also grows and shrinks the record run.
+          const font = await fonts.load(fixture);
+          const authored = (text) => [paragraph(shaping, text, { flow: clippedFlow })];
+          const mounted = mount(font, authored(from));
+          try {
+            for (const [step, text] of [to, from, to, from, to].entries()) {
+              edit(mounted, font, authored(text));
+              assertMatchesFreshBuild(font, mounted, authored(text), `${where} ${label} round-trip step ${step}`);
+            }
+          } finally {
+            unmount(mounted);
           }
-        } finally {
-          unmount(mounted);
-        }
-      });
+        });
+      }
     }
 
     test(`${where}: seeded edit sequences at grapheme boundaries`, { timeout }, async () => {
@@ -333,9 +315,7 @@ for (const shaping of CASES) {
     });
 
     test(`${where}: seeded edit sequences at scalar boundaries`, { timeout }, async () => {
-      // The harder half: splices land on any scalar boundary, so an edit can cut a conjunct, a
-      // matra, or a ligature in half and change the cluster's glyph count without changing its
-      // length. This is the shape that moves an occupant between record slots.
+      // Scalar-boundary splices may cut shaping units and move occupants between physical record slots.
       await runSequence(shaping, fixture, shaping.alphabet);
     });
   }
@@ -412,7 +392,7 @@ function graphemeUnits(source) {
   return [...GRAPHEMES.segment(source)].map((entry) => entry.segment);
 }
 
-/** Negative control: proves `assertMatchesFreshBuild` can see a difference. Without this, every assertion above could pass against a corrupt buffer. Corrupting one float in one packed lane must fail, per lane. */
+/** Negative control: proves every bit-exact packed lane can expose corruption. Placement-slot numbers are lifecycle-local and have a separate mapping oracle. */
 test('the differential oracle fails when a single packed float is corrupted', { timeout }, async () => {
   const shaping = CASES.find((entry) => entry.id === 'indic-reordering');
   const font = await fonts.load('devanagari');
@@ -424,7 +404,9 @@ test('the differential oracle fails when a single packed float is corrupted', { 
 
     const drawn = lanes(mounted).draws;
     assert.ok(drawn.length > 0, 'the control needs at least one draw to corrupt');
-    const packed = Object.keys(drawn[0].attributes).sort();
+    const packed = Object.keys(drawn[0].attributes)
+      .filter((name) => name !== PLACEMENT_SLOT_LANE)
+      .sort();
     assert.ok(packed.length > 0, 'the control needs at least one packed instanced lane to corrupt');
 
     for (const name of packed) {
