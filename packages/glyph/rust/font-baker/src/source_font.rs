@@ -223,9 +223,8 @@ fn insert_scalar_range(unicodes: &mut IntSet<u32>, range: &UnicodeRangeV0) {
 mod tests {
     use super::*;
 
-    const INTER: &[u8] = include_bytes!(
-        "../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
-    );
+    const INTER: &[u8] =
+        include_bytes!("../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf");
 
     #[test]
     fn prepares_a_shaping_complete_ascii_subset() {

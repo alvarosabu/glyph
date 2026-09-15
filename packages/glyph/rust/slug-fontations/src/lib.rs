@@ -229,9 +229,8 @@ mod tests {
     use super::*;
     use pmndrs_glyph_slug_core::{DEFAULT_BAND_COUNT, DEFAULT_CUBIC_SUBDIVISIONS};
 
-    const INTER: &[u8] = include_bytes!(
-        "../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
-    );
+    const INTER: &[u8] =
+        include_bytes!("../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf");
     const DANCING_SCRIPT: &[u8] = include_bytes!(
         "../../../../../benches/fixtures/fonts/dancing-script-3.000/DancingScript-Regular.otf"
     );

@@ -210,9 +210,8 @@ fn validate_fingerprint(name: &str, value: &str) -> Result<(), BitmapBakeError> 
 mod tests {
     use super::*;
 
-    const INTER: &[u8] = include_bytes!(
-        "../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
-    );
+    const INTER: &[u8] =
+        include_bytes!("../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf");
     const SHAPING_FINGERPRINT: &str = "0c522d6ea0db73ba74bcc389dc50263b";
 
     /// Drops a table record, matching a subsetted CFF source whose outline table is absent.

@@ -773,9 +773,8 @@ mod tests {
 
     #[test]
     fn registration_retains_packed_decoration_metrics() {
-        const INTER: &[u8] = include_bytes!(
-            "../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
-        );
+        const INTER: &[u8] =
+            include_bytes!("../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf");
         let glyph_count = 2937usize;
         let extents = alloc::vec![0u8; glyph_count * 8];
         let availability = alloc::vec![0u8; glyph_count.div_ceil(8)];
@@ -802,9 +801,8 @@ mod tests {
 
     #[test]
     fn dense_font_lookups_stay_exact_across_disposal_and_reuse() {
-        const INTER: &[u8] = include_bytes!(
-            "../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
-        );
+        const INTER: &[u8] =
+            include_bytes!("../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf");
         let glyph_count = 2937usize;
         let extents_a = alloc::vec![0u8; glyph_count * 8];
         let extents_b = alloc::vec![0u8; glyph_count * 8];

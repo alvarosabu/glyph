@@ -372,9 +372,8 @@ fn overflow() -> BakeError {
 mod tests {
     use super::*;
 
-    const INTER: &[u8] = include_bytes!(
-        "../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
-    );
+    const INTER: &[u8] =
+        include_bytes!("../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf");
 
     #[test]
     fn checksum_pads_partial_words() {

@@ -273,9 +273,8 @@ fn format_code_point(value: u32) -> String {
 mod tests {
     use super::*;
 
-    const INTER: &[u8] = include_bytes!(
-        "../../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
-    );
+    const INTER: &[u8] =
+        include_bytes!("../../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf");
 
     #[test]
     fn parses_the_focused_cjk_mapping_forms() {
