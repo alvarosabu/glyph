@@ -19,7 +19,7 @@ import { textShaperAbi } from '../../dist/text-shaper-abi.js';
 import { immutableTestFont } from '../support/immutable-font.mjs';
 import { copyIntoAllocation } from '../support/engine-abi.mjs';
 
-const fixtureRoot = new URL('../../../../apps/benchmarks/fixtures/rendering/', import.meta.url);
+const fixtureRoot = new URL('../../../../benches/fixtures/rendering/', import.meta.url);
 const wasmUrl = new URL('../../dist/text-shaper.wasm', import.meta.url);
 
 test('production first-party bindings and benchmark codecs preserve every proven raster lane', async () => {

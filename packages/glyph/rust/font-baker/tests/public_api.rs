@@ -1,7 +1,7 @@
 use pmndrs_glyph_font_baker::{BakeDescriptorV0, BakeErrorCode, abi_json, bake_font};
 
 const INTER: &[u8] =
-    include_bytes!("../../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf");
+    include_bytes!("../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf");
 
 #[test]
 fn generated_abi_is_valid_and_names_the_public_exports() {

@@ -7,7 +7,7 @@ import { test } from 'vitest';
 
 import { glyphExample } from '../src/index.js';
 
-const fixtureDirectory = new URL('../../../apps/benchmarks/fixtures/fonts/inter-v4.1/', import.meta.url);
+const fixtureDirectory = new URL('../../../benches/fixtures/fonts/inter-v4.1/', import.meta.url);
 
 interface BakeFontRequest {
   readonly type: 'bake-font-v0';

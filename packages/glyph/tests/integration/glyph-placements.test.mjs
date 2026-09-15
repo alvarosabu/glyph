@@ -9,7 +9,7 @@ import * as THREE from 'three/webgpu';
 
 import { createThreeTestHandle } from '../support/three-handle.mjs';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16-32.font.glb', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16-32.font.glb', import.meta.url);
 
 let loaded;
 

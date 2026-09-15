@@ -15,7 +15,7 @@ import * as THREE from 'three/webgpu';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const multiFormatFontUrl = new URL('../../../../apps/r3f-hello-world/assets/inter-latin.font.glb', import.meta.url);
 await glyph.init();
 const r3fHandle = glyph.handle('three:react-lease-tests', ThreeConfig);

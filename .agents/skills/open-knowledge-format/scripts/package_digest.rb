@@ -8,8 +8,8 @@ module OkfPackageDigest
   module_function
 
   def workspace_packages(workspace_root)
-    %w[apps packages].flat_map do |directory|
-      workspace_root.glob("#{directory}/*/package.json")
+    %w[apps/*/package.json benches/package.json packages/*/package.json].flat_map do |pattern|
+      workspace_root.glob(pattern)
     end.sort.map do |manifest|
       data = JSON.parse(manifest.read(encoding: 'UTF-8'))
       name = data['name']

@@ -6,14 +6,14 @@ status: stable
 tags: [benchmarks, corpus, shaping, typography]
 sources:
   - id: corpus
-    resource: ../../../apps/benchmarks/src/workloads/benchmark-ipsum/scene.ts
+    resource: ../../../benches/src/workloads/benchmark-ipsum/scene.ts
     title: Executable benchmark ipsum corpus
   - id: benchmark-plan
     resource: benchmark-plan.md
     title: Benchmark plan
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-07-27T13:18:38Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Benchmark ipsum corpus

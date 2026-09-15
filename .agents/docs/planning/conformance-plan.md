@@ -36,8 +36,8 @@ sources:
     title: 'Vitexec'
 
 generated:
-  by: 'openai-codex/gpt-5.6'
-  at: '2026-08-15T15:53:27Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Shaping and layout conformance plan
@@ -309,7 +309,7 @@ Status key: ✅ available · 🟡 partial or conditional · ⬜ not started
 | ------------------------ | :----: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | Unit                     |   🟡   | Deterministic tests for parsing, arithmetic, bounds, hashing, serialization, error mapping, and other isolated policy. Tests may use generated values and inspect package internals.                                                                                                                  | The package that owns the implementation.                    |
 | Package integration      |   🟡   | The baker, bitmap generator, loader, shaper, and paragraph engine are exercised through public package boundaries with generated ABI equality, zero Wasm imports, direct-memory round trips, structured failures, deterministic bytes/results, and format validation. Rendering remains open.         | The package that owns each boundary.                         |
-| Product end-to-end       |   🟡   | Inter, Amiri, and Noto CJK flow through real public baker/loader/registry/shaper/paragraph paths with exact Node, Chromium, and GPU-enabled Vitexec evidence. Rendering remains open.                                                                                                                 | The shared interactive/headless app under `apps/benchmarks`. |
+| Product end-to-end       |   🟡   | Inter, Amiri, and Noto CJK flow through real public baker/loader/registry/shaper/paragraph paths with exact Node, Chromium, and GPU-enabled Vitexec evidence. Rendering remains open.                                                                                                                 | The shared interactive/headless app under `benches`. |
 | Differential conformance |   🟡   | Pinned HarfRust/HarfBuzz source oracles compare every glyph field; Inter records its exact flag inventory while Amiri and all thirteen CJK cases agree exactly. Each also matches the reduced SFNT, and runtime Inter/CJK paths use registered GLB views. Rendering-era script additions remain open. | The conformance runner and fixture corpus.                   |
 | Fuzzing                  |   🟡   | Fixed-seed Rust source, bitmap/loader artifact, raw shaper-request, Unicode paragraph-policy, and CJK boundary mutations run twice in normal CI. Pinned cargo-fuzz/libFuzzer exercises the public bake boundary; minimized findings become checked-in fixtures. Renderer targets remain open.         | Each package owns its target and regression corpus.          |
 | Performance regression   |   🟡   | Correctness-passing browser scenarios retain baker, loader, shaper, paragraph, bidi/policy, and CJK timings/payload/memory/call evidence; reviewed noise thresholds and renderer baselines remain open.                                                                                               | The shared benchmark scenario registry and runners.          |

@@ -6,6 +6,6 @@
     "customConditions": ["source"],
     "noEmit": true
   },
-  "include": ["../../../../../packages/**/*.mjs", "../../../../../apps/**/*.mjs"],
+  "include": ["../../../../../packages/**/*.mjs", "../../../../../apps/**/*.mjs", "../../../../../benches/**/*.mjs"],
   "exclude": ["../../../../../**/dist/**", "../../../../../**/node_modules/**"]
 }

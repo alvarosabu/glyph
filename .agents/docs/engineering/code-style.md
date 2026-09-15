@@ -21,11 +21,11 @@ sources:
     resource: ../../../packages/glyph/src/three/text.ts
     title: Retained paragraph and Three.js synchronization boundary
   - id: benchmark-runner
-    resource: ../../../apps/benchmarks/src/benchmark/runner.ts
+    resource: ../../../benches/src/benchmark/runner.ts
     title: Shared benchmark lifecycle
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-08-15T15:53:27Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Engineering house style

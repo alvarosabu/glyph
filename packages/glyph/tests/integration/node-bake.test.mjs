@@ -16,9 +16,9 @@ import { validateFontArtifact } from '@pmndrs/glyph/bake';
 import { runCli } from '../../dist/node/cli.js';
 import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerprint.js';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
 const iconFontUrl = new URL(
-  '../../../../apps/benchmarks/fixtures/fonts/font-awesome-free-6.7.2/fa-solid-900.ttf',
+  '../../../../benches/fixtures/fonts/font-awesome-free-6.7.2/fa-solid-900.ttf',
   import.meta.url,
 );
 const goldenUrl = new URL('../fixtures/inter-bitmap-v0.json', import.meta.url);

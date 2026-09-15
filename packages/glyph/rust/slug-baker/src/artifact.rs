@@ -336,7 +336,7 @@ mod tests {
     use crate::model::SLUG_GENERATOR_VERSION;
 
     const INTER: &[u8] = include_bytes!(
-        "../../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
+        "../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
     );
 
     /// JavaScript-derived keys pin Rust serialization to the TypeScript ABI.

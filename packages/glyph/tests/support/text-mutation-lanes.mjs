@@ -19,7 +19,7 @@ const SLUG_PLACEMENT_SLOT_COMPONENT = 2;
 const TRANSFORM_INDEX_LANE = `_pmndrsGlyph_${TRANSFORM_BUFFER_ID}`;
 const TRANSFORM_TABLE = '_pmndrsGlyphTransforms';
 
-export const fixtures = new URL('../../../../apps/benchmarks/fixtures/rendering/', import.meta.url);
+export const fixtures = new URL('../../../../benches/fixtures/rendering/', import.meta.url);
 
 /** Node's default 30s per-test budget cannot cover baking a font plus a full edit sequence. */
 export const timeout = 5 * 60 * 1_000;

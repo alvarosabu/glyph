@@ -91,7 +91,7 @@
     }
   },
   "completeInter": {
-    "fixture": "apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf",
+    "fixture": "benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf",
     "glyphSlots": 2937,
     "requestSkippedGlyphs": 0,
     "generatedGlyphs": 2915,

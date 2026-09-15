@@ -19,7 +19,7 @@ import { registerThreeRasterProgram, ThreeConfig } from '../../dist/three.js';
 import { indexedQuadGeometry } from '../support/portable-geometry.mjs';
 import * as THREE from 'three/webgpu';
 
-const fixtureUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const fixtureUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const ORIGIN_BUFFER_ID = id.buffer('test.three-supplied-geometry/origin');
 
 const suppliedGeometryTechnique = defineRasterFormat({

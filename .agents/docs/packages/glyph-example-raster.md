@@ -5,7 +5,7 @@ description: Proves the portable raster boundary and ships matching TypeGPU and 
 resource: ../../../packages/glyph-example-raster
 workspace_package: '@pmndrs/glyph-example-raster'
 documentation_type: reference
-source_digest: 'sha256:bb89113a897420e375d33ca750b845ab3efb6512a2073c3824f64a888bbe2a11'
+source_digest: 'sha256:d40615cff25aa2dbcc351ebe90752201d74f76c0d2dffa33cf00fad5453235f1'
 tags: [package, raster, extension-proof, typegpu, tsl]
 sources:
   - id: manifest
@@ -45,11 +45,11 @@ sources:
     resource: ../../../packages/glyph-example-raster/tests/renderer-variants.test.ts
     title: Manual Three registration and shader variant test
   - id: browser-proof
-    resource: ../../../apps/benchmarks/vitexec/external-raster-proof.probe.ts
+    resource: ../../../benches/vitexec/external-raster-proof.probe.ts
     title: Dual-backend product rendering probe
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-09-04T00:13:53Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Package reference: `@pmndrs/glyph-example-raster`

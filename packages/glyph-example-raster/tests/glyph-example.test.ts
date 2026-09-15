@@ -54,7 +54,7 @@ declare module '@pmndrs/glyph/three' {
 
 type GlyphExampleMaterialContext = ThreeTextMaterialContextMap['studio.glyph-example'];
 
-const source = new URL('../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
+const source = new URL('../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
 const temporaryDirectories: string[] = [];
 const materials: THREE.NodeMaterial[] = [];
 const genericMaterialContexts: GlyphExampleMaterialContext[] = [];

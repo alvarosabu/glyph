@@ -9,7 +9,7 @@ import { validateFontArtifact } from '@pmndrs/glyph/bake';
 import { fontBindingBytes, renderCodecBytes, renderCodecBytesFromPrograms } from '../support/engine-abi.mjs';
 import { textShaperAbi } from '../../dist/text-shaper-abi.js';
 
-const fixtureDirectory = new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/', import.meta.url);
+const fixtureDirectory = new URL('../../../../benches/fixtures/fonts/inter-v4.1/', import.meta.url);
 const shaperWasmUrl = new URL('../../dist/text-shaper.wasm', import.meta.url);
 async function fixture() {
   const [source, bakerWasm, shaperWasm] = await Promise.all([
@@ -222,12 +222,9 @@ test('compiled Wasm retains ordered font stacks and prevents dangling font dispo
 
 test('text_update advances missing clusters through an ordered font stack', async () => {
   const [interArtifact, devanagariArtifact, shaperWasm, abi] = await Promise.all([
-    readFile(new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
     readFile(
-      new URL(
-        '../../../../apps/benchmarks/fixtures/rendering/noto-sans-devanagari-bitmap-16.font.glb',
-        import.meta.url,
-      ),
+      new URL('../../../../benches/fixtures/rendering/noto-sans-devanagari-bitmap-16.font.glb', import.meta.url),
     ),
     readFile(shaperWasmUrl),
     textShaperAbi,
@@ -287,10 +284,7 @@ test('text_update advances missing clusters through an ordered font stack', asyn
 test('text_update appends a reordered Devanagari grapheme after a conjunct', async () => {
   const [artifact, shaperWasm, abi] = await Promise.all([
     readFile(
-      new URL(
-        '../../../../apps/benchmarks/fixtures/rendering/noto-sans-devanagari-bitmap-16.font.glb',
-        import.meta.url,
-      ),
+      new URL('../../../../benches/fixtures/rendering/noto-sans-devanagari-bitmap-16.font.glb', import.meta.url),
     ),
     readFile(shaperWasmUrl),
     textShaperAbi,
@@ -583,7 +577,7 @@ function align(value, alignment) {
 /** measureParagraph overwrites the borrowed result without publishing or advancing revisions. */
 test('measure_paragraph answers synchronously without publishing or burning revisions', async () => {
   const [interArtifact, shaperWasm, abi] = await Promise.all([
-    readFile(new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
     readFile(shaperWasmUrl),
     textShaperAbi,
   ]);
@@ -766,7 +760,7 @@ test('measure_paragraph answers synchronously without publishing or burning revi
 /** On a fingerprint hit, the committing frame adopts the retained speculative transaction's pending state and reserved glyph ids rather than rolling them back. */
 test('the committing frame adopts the speculative transaction and its reserved glyph identities', async () => {
   const [interArtifact, shaperWasm, abi] = await Promise.all([
-    readFile(new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
     readFile(shaperWasmUrl),
     textShaperAbi,
   ]);
@@ -884,7 +878,7 @@ test('the committing frame adopts the speculative transaction and its reserved g
 /** Measurement-only queries skip per-glyph positioning (derived at line level instead); committing then runs exactly that missing tail, proved by byte-identical output vs. a never-measured control. */
 test('measurement-only queries leave the committing frame byte-identical to a never-measured control', async () => {
   const [interArtifact, shaperWasm, abi] = await Promise.all([
-    readFile(new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
     readFile(shaperWasmUrl),
     textShaperAbi,
   ]);
@@ -1006,7 +1000,7 @@ test('measurement-only queries leave the committing frame byte-identical to a ne
 /** A width change that preserves committed line breaks adopts committed positioning and publishes nothing; one that moves breaks still relayouts fully. */
 test('resize equivalence adopts committed positioning and still relayouts on break changes', async () => {
   const [interArtifact, shaperWasm, abi] = await Promise.all([
-    readFile(new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
     readFile(shaperWasmUrl),
     textShaperAbi,
   ]);
@@ -1118,7 +1112,7 @@ test('resize equivalence adopts committed positioning and still relayouts on bre
 /** f32 extents are pinned exactly per the F16.16 integer rounding contract (layout_units.rs), deterministic across native/Wasm and hosts. A pinned-value change is a layout-contract change — re-derive deliberately, never absorb. */
 test('measured f32 extents reproduce exactly at every pinned width', async () => {
   const [interArtifact, shaperWasm, abi] = await Promise.all([
-    readFile(new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
     readFile(shaperWasmUrl),
     textShaperAbi,
   ]);

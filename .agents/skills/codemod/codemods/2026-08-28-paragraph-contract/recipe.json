@@ -48,7 +48,7 @@
     "mise exec -- node .agents/skills/codemod/codemods/2026-08-28-paragraph-contract/test.mjs",
     "mise exec -- pnpm exec tsc -p packages/glyph/tsconfig.json --noEmit",
     "mise exec -- pnpm exec tsc -p packages/glyph/tsconfig.types.json --noEmit",
-    "mise exec -- pnpm exec tsc -p apps/benchmarks/tsconfig.json --noEmit",
-    "mise exec -- pnpm exec tsc -p apps/benchmarks/tsconfig.scripts.json --noEmit"
+    "mise exec -- pnpm exec tsc -p benches/tsconfig.json --noEmit",
+    "mise exec -- pnpm exec tsc -p benches/tsconfig.scripts.json --noEmit"
   ]
 }

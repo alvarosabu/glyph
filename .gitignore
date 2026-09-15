@@ -6,7 +6,7 @@ dist/
 target/
 *.tsbuildinfo
 coverage/
-apps/benchmarks/.cache/
+benches/.cache/
 packages/glyph/.cache/
 
 # Claude sync on SessionStart hook

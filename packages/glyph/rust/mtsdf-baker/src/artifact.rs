@@ -533,7 +533,7 @@ mod tests {
     };
 
     const INTER: &[u8] = include_bytes!(
-        "../../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
+        "../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
     );
     const SHAPING_FINGERPRINT: &str = "0c522d6ea0db73ba74bcc389dc50263b";
     const SOURCE_FINGERPRINT: &str = "14fa0a34f3783dd4f131d5b546e453b7";

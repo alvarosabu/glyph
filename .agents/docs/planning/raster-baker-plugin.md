@@ -32,12 +32,12 @@ sources:
     resource: '../../../packages/glyph-example-raster/tests/glyph-example.test.ts'
     title: 'External plugin lifecycle tests'
   - id: 'plugin-browser-proof'
-    resource: '../../../apps/benchmarks/src/benchmark/targets/product/external-raster-proof.ts'
+    resource: '../../../benches/src/benchmark/targets/product/external-raster-proof.ts'
     title: 'External plugin browser proof'
 
 generated:
-  by: 'openai-codex/gpt-5.6'
-  at: '2026-08-15T15:53:27Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Build a raster and baker plugin

@@ -6,7 +6,7 @@
     "architecture": "arm64",
     "node": "v24.18.0",
     "rust": "1.97.1",
-    "fixture": "apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
+    "fixture": "benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
   },
   "cases": [
     {

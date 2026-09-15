@@ -198,7 +198,7 @@ test('handle-scoped ID provenance expires with its owning handle state', async (
 
 test('font bindings cannot be disposed while an owned stack still references them', async () => {
   const [artifact, wasm] = await Promise.all([
-    readFile(new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
     readFile(wasmUrl),
   ]);
   const validated = await validateFontArtifact(artifact);

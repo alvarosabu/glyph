@@ -9,7 +9,7 @@ import * as THREE from 'three/webgpu';
 
 import { createThreeTestHandle } from '../support/three-handle.mjs';
 
-const fixtures = new URL('../../../../apps/benchmarks/fixtures/rendering/', import.meta.url);
+const fixtures = new URL('../../../../benches/fixtures/rendering/', import.meta.url);
 
 /** Fonts chosen for shaping behaviour that has broken the engine before. */
 const FONT_FIXTURES = {

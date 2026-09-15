@@ -203,7 +203,7 @@ if workspace_root
 
   (package_concepts.keys - workspace_packages.keys).each do |name|
     package_concepts[name].each do |path, _data|
-      profile << "#{path}: workspace_package #{name} does not exist in apps/* or packages/*"
+      profile << "#{path}: workspace_package #{name} does not exist in apps/*, benches, or packages/*"
     end
   end
 end

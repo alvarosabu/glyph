@@ -11,12 +11,14 @@
     "../../../../../packages/**/*.tsx",
     "../../../../../packages/**/*.mts",
     "../../../../../apps/**/*.ts",
-    "../../../../../apps/**/*.tsx"
+    "../../../../../apps/**/*.tsx",
+    "../../../../../benches/**/*.ts",
+    "../../../../../benches/**/*.tsx"
   ],
   "exclude": [
     "../../../../../**/dist/**",
     "../../../../../**/node_modules/**",
-    "../../../../../apps/benchmarks/size-entries/**/*.ts",
+    "../../../../../benches/size-entries/**/*.ts",
     "../../../../../packages/glyph/tests/types/mtsdf-api.test.ts",
     "../../../../../packages/glyph/tests/types/portable-resources.test.ts",
     "../../../../../packages/glyph/tests/types/raster-plan-program.test.ts",

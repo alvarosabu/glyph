@@ -8,7 +8,7 @@ import { loadFont } from '../../dist/loader.js';
 import { createThreeTestHandle } from '../support/three-handle.mjs';
 import { reconstructPostNarrowRelative, summarizeRealCorpusPlacement } from '../support/layout-run-real-corpus.mjs';
 
-const fixtures = new URL('../../../../apps/benchmarks/fixtures/', import.meta.url);
+const fixtures = new URL('../../../../benches/fixtures/', import.meta.url);
 const renderingFixtures = new URL('rendering/', fixtures);
 
 test('real layouts bound the post-narrow observable-span representability experiment', async (t) => {

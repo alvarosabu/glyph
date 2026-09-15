@@ -9,16 +9,16 @@ sources:
     resource: shaping-data-contract.md
     title: Shaping data contract V0
   - id: package-sizes
-    resource: ../../../apps/benchmarks/src/generated/package-sizes.json
+    resource: ../../../benches/src/generated/package-sizes.json
     title: Generated package-size report
   - id: inter-fixture
-    resource: ../../../apps/benchmarks/fixtures/fonts/inter-v4.1/manifest.json
+    resource: ../../../benches/fixtures/fonts/inter-v4.1/manifest.json
     title: Inter 4.1 fixture manifest
   - id: amiri-fixture
-    resource: ../../../apps/benchmarks/fixtures/fonts/amiri-1.002/manifest.json
+    resource: ../../../benches/fixtures/fonts/amiri-1.002/manifest.json
     title: Amiri 1.002 fixture manifest
   - id: cjk-fixture
-    resource: ../../../apps/benchmarks/fixtures/fonts/noto-sans-cjk-2.004/manifest.json
+    resource: ../../../benches/fixtures/fonts/noto-sans-cjk-2.004/manifest.json
     title: Noto Sans CJK JP 2.004 fixture manifest
   - id: harfbuzz-plans
     resource: https://harfbuzz.github.io/shaping-and-shape-plans.html
@@ -42,8 +42,8 @@ sources:
     resource: https://gpuweb.github.io/gpuweb/wgsl/
     title: WebGPU Shading Language
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-07-26T06:45:24Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Shaping compilation and execution research

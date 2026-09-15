@@ -26,7 +26,7 @@ import {
   shapeGlyphEngine,
 } from '../../dist/glyph-engine.js';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const wasmUrl = new URL('../../dist/text-shaper.wasm', import.meta.url);
 const raster = bitmap({ strikes: [16] });
 const COLLIDING_RESOURCE_A = defineRasterResourceId('pmndrs.msdf/4wzx/16');

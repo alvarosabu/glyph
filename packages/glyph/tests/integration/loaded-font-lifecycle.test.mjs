@@ -11,7 +11,7 @@ import {
 import { loadFont } from '../../dist/loader.js';
 import { bitmap } from '../../dist/raster/bitmap.js';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 
 test('immutable-font disposal remains total when one observer fails', async () => {
   const font = await loadFont({ baked: { bytes: await readFile(fontUrl) } }, bitmap({ strikes: [16] }));

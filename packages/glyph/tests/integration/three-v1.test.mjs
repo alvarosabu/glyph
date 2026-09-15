@@ -25,27 +25,18 @@ import { decorationSchema, threeSystemBuffers } from '../../dist/three/codec.js'
 import { textShaperAbi } from '../../dist/text-shaper-abi.js';
 import { compileNodeMaterial } from '../support/node-material-shaders.mjs';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
-const densityFontUrl = new URL(
-  '../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16-32.font.glb',
-  import.meta.url,
-);
-const amiriFontUrl = new URL(
-  '../../../../apps/benchmarks/fixtures/rendering/amiri-bitmap-16.font.glb',
-  import.meta.url,
-);
+const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const densityFontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16-32.font.glb', import.meta.url);
+const amiriFontUrl = new URL('../../../../benches/fixtures/rendering/amiri-bitmap-16.font.glb', import.meta.url);
 const sourceSerifFontUrl = new URL(
-  '../../../../apps/benchmarks/fixtures/rendering/source-serif-4-bitmap-16.font.glb',
+  '../../../../benches/fixtures/rendering/source-serif-4-bitmap-16.font.glb',
   import.meta.url,
 );
 const iconSlugFontUrl = new URL(
-  '../../../../apps/benchmarks/fixtures/rendering/font-awesome-free-6.7.2-slug.font.glb.gz',
+  '../../../../benches/fixtures/rendering/font-awesome-free-6.7.2-slug.font.glb.gz',
   import.meta.url,
 );
-const interSlugFontUrl = new URL(
-  '../../../../apps/benchmarks/fixtures/rendering/inter-slug.font.glb.gz',
-  import.meta.url,
-);
+const interSlugFontUrl = new URL('../../../../benches/fixtures/rendering/inter-slug.font.glb.gz', import.meta.url);
 const multiTechniqueFontUrl = new URL('../../../../apps/r3f-hello-world/assets/inter-latin.font.glb', import.meta.url);
 const glyphAttribute = (bufferId) => `_pmndrsGlyph_${bufferId}`;
 const instrumentedGlyph = instrumentNextGlyphEngine();

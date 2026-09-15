@@ -31,23 +31,23 @@ sources:
     resource: '../../../packages/glyph/scripts/benchmark-paragraph-layout.mts'
     title: 'Workflow glyph:layout-benchmark'
   - id: harness-runner
-    resource: '../../../apps/benchmarks/src/benchmark/runner.ts'
+    resource: '../../../benches/src/benchmark/runner.ts'
     title: 'Interactive and headless benchmark runner'
   - id: harness-statistics
-    resource: '../../../apps/benchmarks/src/benchmark/statistics.ts'
+    resource: '../../../benches/src/benchmark/statistics.ts'
     title: 'Benchmark harness statistics'
   - id: fixture-contracts
-    resource: '../../../apps/benchmarks/src/benchmark/fixture-contracts.test.ts'
+    resource: '../../../benches/src/benchmark/fixture-contracts.test.ts'
     title: 'Checked-in result fixture contracts'
   - id: package-size-report
-    resource: '../../../apps/benchmarks/src/benchmark/package-size-report.ts'
+    resource: '../../../benches/src/benchmark/package-size-report.ts'
     title: 'Package size same-host and foreign-host gates'
   - id: ci
     resource: '../../../.github/workflows/ci.yml'
     title: 'Repository CI workflow'
 generated:
-  by: anthropic-claude/opus-5
-  at: '2026-08-23T00:00:00Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Benchmarks we can trust
@@ -71,7 +71,7 @@ The rest of the surface is weaker still:
 
 | Path                                                                | Samples                   | Dispersion reported        | Gate                                                |
 | ------------------------------------------------------------------- | ------------------------- | -------------------------- | --------------------------------------------------- |
-| [`runner.ts`](../../../apps/benchmarks/src/benchmark/runner.ts) via CI | 3, warmup 1               | median, p95                | none                                                |
+| [`runner.ts`](../../../benches/src/benchmark/runner.ts) via CI | 3, warmup 1               | median, p95                | none                                                |
 | `runtime-fallback-parity`, `source-outline-fidelity` probes         | 1, warmup 0               | none possible              | none                                                |
 | `benchmark:presentation-performance`                                | 1.5 s rAF window per cell | p95, max, slow-frame count | none — the 20 ms counter is printed, never asserted |
 | `glyph:layout-benchmark`                                            | 31, warmup 8              | median, p95, RSD           | none                                                |
@@ -81,9 +81,9 @@ Three facts follow, and all three are load-bearing:
 
 1. **No timing threshold is asserted anywhere.** No probe, scenario, or test fails on a duration.
 2. **No performance workflow runs in CI.** [`ci.yml`](../../../.github/workflows/ci.yml) runs static checks, the package-size lane, and the conformance suite. Every performance number in this repository was produced by a human running a command locally.
-3. **The one test that looks like a regression gate is not one.** [`fixture-contracts.test.ts`](../../../apps/benchmarks/src/benchmark/fixture-contracts.test.ts) asserts `rustReport.medianMs < baselineReport.medianMs` between two _checked-in JSON files_. It measures nothing at test time and passes forever regardless of the current code.
+3. **The one test that looks like a regression gate is not one.** [`fixture-contracts.test.ts`](../../../benches/src/benchmark/fixture-contracts.test.ts) asserts `rustReport.medianMs < baselineReport.medianMs` between two _checked-in JSON files_. It measures nothing at test time and passes forever regardless of the current code.
 
-[`statistics.ts`](../../../apps/benchmarks/src/benchmark/statistics.ts) is fourteen lines exporting `median` and `percentile`. There is no code in this repository that answers "is this difference real?"
+[`statistics.ts`](../../../benches/src/benchmark/statistics.ts) is fourteen lines exporting `median` and `percentile`. There is no code in this repository that answers "is this difference real?"
 
 The infrastructure is not the problem. The ring-buffer telemetry, the GPU timestamp queries, the User Timing phase spans, the 101-sample kernel cadence, and the invalidation-class separation in the layout scripts are all sound and mostly stay. What is missing is the inferential layer on top and the CI wiring that makes it bite.
 
@@ -267,14 +267,14 @@ Where a bench protects a structural property rather than a duration — emitted 
 
 Labs refuses to compare across hardware. CPU model, architecture, and runtime must match exactly or the comparison is denied outright. A saved result is therefore **only meaningful against another result from the same machine**, and a baseline committed from a maintainer's M4 Pro is worthless to a Linux CI runner and vice versa.
 
-This kills the obvious design — commit a blessed baseline JSON, compare every run against it — and it kills it for a good reason rather than an inconvenient one. It is the same lesson the package-size lane already learned the hard way: [`package-size-report.ts`](../../../apps/benchmarks/src/benchmark/package-size-report.ts) does exact identity comparison on the recording host and budget ceilings everywhere else, because the Linux toolchain emits equal-length but byte-different Wasm.
+This kills the obvious design — commit a blessed baseline JSON, compare every run against it — and it kills it for a good reason rather than an inconvenient one. It is the same lesson the package-size lane already learned the hard way: [`package-size-report.ts`](../../../benches/src/benchmark/package-size-report.ts) does exact identity comparison on the recording host and budget ceilings everywhere else, because the Linux toolchain emits equal-length but byte-different Wasm.
 
 ### Two baselines, for two different jobs
 
 |                 | CI gate                                                            | Reviewed record                                                                    |
 | --------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
 | **What**        | the merge-base commit, measured in the same job on the same runner | the numbers quoted in `.agents/docs/` and the decision register                    |
-| **Where**       | nowhere — built and discarded within the job                       | `apps/benchmarks/fixtures/results/`, and the decision-register entry that cites it |
+| **Where**       | nowhere — built and discarded within the job                       | `benches/fixtures/results/`, and the decision-register entry that cites it |
 | **Compared by** | the two-gate classifier over both runs' block medians              | human review                                                                       |
 | **Updated**     | never; it is recomputed every run                                  | by the rules below                                                                 |
 | **Storage**     | `.labs/` is gitignored                                             | committed, one record per subject, named `<subject>-<sha>-<platform>-<arch>.json`  |
@@ -368,7 +368,7 @@ The kept browser probes should stop being called benchmarks in prose. They are o
 | `fixtures/results/bake-host-baseline-v0.json`                                          | three samples, `performance.now()` clamped to 0.1 ms, and zero consumers anywhere in the repository                 |
 | Superseded `rust-layout-*` records at stale commits                                    | keep one current record per subject; the rest are noise that makes "which is the baseline" unanswerable             |
 
-Two cleanups are adjacent and cheap. There are **four independent percentile implementations** — three ceiling-based, one floor-based returning `NaN` on empty — so p95 in a sweep record and p95 in a runner summary are not computed by the same rule and are not comparable. And [`runner.ts`](../../../apps/benchmarks/src/benchmark/runner.ts) passes a hard-coded sample index `0` to every warmup iteration while the measured loop passes the real index, so a target whose work varies by index is warmed on a different path than it is measured on. Neither blocks this plan; both should be fixed while the surface is being touched.
+Two cleanups are adjacent and cheap. There are **four independent percentile implementations** — three ceiling-based, one floor-based returning `NaN` on empty — so p95 in a sweep record and p95 in a runner summary are not computed by the same rule and are not comparable. And [`runner.ts`](../../../benches/src/benchmark/runner.ts) passes a hard-coded sample index `0` to every warmup iteration while the measured loop passes the real index, so a target whose work varies by index is warmed on a different path than it is measured on. Neither blocks this plan; both should be fixed while the surface is being touched.
 
 ## What this cannot tell us
 

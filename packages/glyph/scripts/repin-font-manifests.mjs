@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createFontBaker } from '@pmndrs/glyph/bake';
 
-const fontsDirectory = new URL('../../../apps/benchmarks/fixtures/fonts/', import.meta.url);
+const fontsDirectory = new URL('../../../benches/fixtures/fonts/', import.meta.url);
 const check = process.argv.includes('--check');
 const baker = await createFontBaker(await readFile(new URL('../dist/font-baker.wasm', import.meta.url)));
 const drift = [];

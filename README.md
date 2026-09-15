@@ -149,6 +149,7 @@ import { bitmapFragment, bitmapVertexSnapped } from '@pmndrs/glyph/shaders/typeg
 ```
 
 ## Roadmap
+
 - Emoji
 - Micro JS shaping engine for basic shaping
 - Editorial flow / polygon cut-outs
@@ -160,15 +161,22 @@ Glyph currently provides fonts, styles, alignment, justification, word-wrap, box
 ## Contribute
 
 This repo uses [mise](https://mise.jdx.dev) to make it easier to install and configure the required toolchains.
+Install [Git LFS](https://git-lfs.com/) to download the fixtures and assets, which are stored outside ordinary Git history.
 Trust the checked-in configuration once per fresh clone before asking mise to install them:
 
 ```sh
 # brew install mise
+git lfs install
+git lfs pull
 mise trust
 mise install
 mise exec -- pnpm install
 mise exec -- pnpm dev
 ```
+
+The benchmark application lives in [`benches/`](benches/). `pnpm dev` opens its interactive harness;
+`pnpm scripts list` lists automated benchmarks and fixture generation commands. CI checks out LFS objects before
+building or testing. Asset paths remain ordinary local files after `git lfs pull`.
 
 Mise is optional. With matching Node, pnpm, and Rust tools already on `PATH`, use `pnpm install` and `pnpm dev`
 directly. The full `pnpm check` additionally requires Ruby 3.1 or newer; development does not.

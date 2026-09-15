@@ -9,7 +9,7 @@ sources:
     resource: https://github.com/notofonts/noto-cjk/blob/main/Sans/README.md
     title: Noto Sans CJK download guide
   - id: pinned-noto-manifest
-    resource: ../../../apps/benchmarks/fixtures/fonts/noto-sans-cjk-2.004/manifest.json
+    resource: ../../../benches/fixtures/fonts/noto-sans-cjk-2.004/manifest.json
     title: Pinned Noto Sans CJK JP 2.004 evidence
   - id: raster-contract
     resource: raster-data-contract.md
@@ -18,8 +18,8 @@ sources:
     resource: ../roadmap/roadmap.md
     title: Canonical roadmap
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-07-27T16:01:32Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Language-aware font units and physical bitmap strikes

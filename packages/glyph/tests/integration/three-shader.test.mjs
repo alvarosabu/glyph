@@ -10,7 +10,7 @@ import * as THREE from 'three/webgpu';
 
 import { createThreeTestHandle } from '../support/three-handle.mjs';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 
 test('a custom Three material composes over the Bitmap shader in the Rust command-buffer draw path', async (t) => {
   const three = await createThreeTestHandle(t);

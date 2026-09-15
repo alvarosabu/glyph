@@ -25,7 +25,7 @@ let sourceBytes;
 before(async () => {
   const [wasm, source, goldenBytes] = await Promise.all([
     readFile(new URL('../../dist/bitmap-baker.wasm', import.meta.url)),
-    readFile(new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url)),
     readFile(new URL('../fixtures/inter-bitmap-v0.json', import.meta.url)),
   ]);
   sourceBytes = source;
@@ -243,10 +243,7 @@ test('rejects reciprocal identity, strike, record, page, KTX2, and budget mutati
 
 test('validates the pinned 65,535-glyph dense-record and multi-page boundary', async () => {
   const fixture = JSON.parse(
-    await readFile(
-      new URL('../../../../apps/benchmarks/fixtures/contracts/max-glyph-pages-v0.json', import.meta.url),
-      'utf8',
-    ),
+    await readFile(new URL('../../../../benches/fixtures/contracts/max-glyph-pages-v0.json', import.meta.url), 'utf8'),
   );
   const embeddedGlb = decodeGlb(embedded.artifacts[0].bytes);
   const embeddedPageView =

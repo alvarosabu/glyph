@@ -11,8 +11,8 @@ import test from 'node:test';
 import { createFontBaker } from '../../../dist/font-baker/index.js';
 import { validateFontArtifact } from '../../../dist/font-baker/validator.js';
 
-const fixtureDirectory = new URL('../../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/', import.meta.url);
-const shapingDirectory = new URL('../../../../../apps/benchmarks/fixtures/shaping/inter-regular/', import.meta.url);
+const fixtureDirectory = new URL('../../../../../benches/fixtures/fonts/inter-v4.1/', import.meta.url);
+const shapingDirectory = new URL('../../../../../benches/fixtures/shaping/inter-regular/', import.meta.url);
 const executeFile = promisify(execFile);
 
 async function shapeReducedFont(t, shapingSfnt, fontFile, shapingCasesDirectory) {
@@ -110,8 +110,8 @@ test('the canonical Inter fixture bakes deterministically and retains HarfRust s
 });
 
 test('the canonical Amiri fixture preserves exact complex shaping through the GLB', async (t) => {
-  const directory = new URL('../../../../../apps/benchmarks/fixtures/fonts/amiri-1.002/', import.meta.url);
-  const casesDirectory = new URL('../../../../../apps/benchmarks/fixtures/shaping/amiri-regular/', import.meta.url);
+  const directory = new URL('../../../../../benches/fixtures/fonts/amiri-1.002/', import.meta.url);
+  const casesDirectory = new URL('../../../../../benches/fixtures/shaping/amiri-regular/', import.meta.url);
   const [wasm, source, manifestSource, expectedOracleSource] = await Promise.all([
     readFile(new URL('../../../dist/font-baker.wasm', import.meta.url)),
     readFile(new URL('Amiri-Regular.ttf', directory)),
@@ -165,8 +165,8 @@ test('the canonical Amiri fixture preserves exact complex shaping through the GL
 });
 
 test('the authenticated Noto CJK fixture retains the closed shaping profile at the u16 limit', async (t) => {
-  const directory = new URL('../../../../../apps/benchmarks/fixtures/fonts/noto-sans-cjk-2.004/', import.meta.url);
-  const casesDirectory = new URL('../../../../../apps/benchmarks/fixtures/shaping/noto-sans-cjk/', import.meta.url);
+  const directory = new URL('../../../../../benches/fixtures/fonts/noto-sans-cjk-2.004/', import.meta.url);
+  const casesDirectory = new URL('../../../../../benches/fixtures/shaping/noto-sans-cjk/', import.meta.url);
   const [wasm, source, manifestSource, expectedOracleSource] = await Promise.all([
     readFile(new URL('../../../dist/font-baker.wasm', import.meta.url)),
     readFile(new URL('NotoSansCJKjp-Regular.otf', directory)),

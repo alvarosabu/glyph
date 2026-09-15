@@ -72,8 +72,8 @@ sources:
     resource: https://crates.io/crates/libfuzzer-sys/0.4.13
     title: libfuzzer-sys 0.4.13
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-08-15T15:53:27Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # V0 toolchain and format version pins
@@ -85,7 +85,7 @@ These values are exact fixture and provenance inputs. “Latest” is never a va
 | Surface                               | Pin                                                                               | Source identity                                                                                                                                           |
 | ------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Rust toolchain                        | `1.97.1`                                                                          | `rust-toolchain.toml`                                                                                                                                     |
-| HarfBuzz build system                 | Meson `1.11.1` + Ninja `1.13.2`                                                   | exact workload-scoped `apps/benchmarks/mise.toml` pins; used only to build the authenticated HarfBuzz oracle utilities from source                        |
+| HarfBuzz build system                 | Meson `1.11.1` + Ninja `1.13.2`                                                   | exact workload-scoped `benches/mise.toml` pins; used only to build the authenticated HarfBuzz oracle utilities from source                        |
 | HarfRust                              | `0.12.0`                                                                          | tag commit `60b28ea22b5261710018d69c168a762bcb28794c`                                                                                                     |
 | HarfBuzz oracle                       | `13.0.0`                                                                          | tag commit `a0fc099681a69ae40665fbea74982a2e9d7a5260`                                                                                                     |
 | R3F example asset subsetter           | HarfBuzz `14.2.0`                                                                 | authenticated release archive; used only to reproduce the checked Inter Latin and Font Awesome globe assets                                               |

@@ -373,7 +373,7 @@ mod tests {
     use super::*;
 
     const INTER: &[u8] = include_bytes!(
-        "../../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
+        "../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf"
     );
 
     #[test]

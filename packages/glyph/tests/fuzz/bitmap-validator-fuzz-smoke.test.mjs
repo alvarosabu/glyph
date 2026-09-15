@@ -13,7 +13,7 @@ const shapingFingerprint = interShapingFingerprint;
 
 test('fixed-seed bitmap artifact mutations fail safely and deterministically', async () => {
   const [source, wasm] = await Promise.all([
-    readFile(new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url)),
     readFile(new URL('../../dist/bitmap-baker.wasm', import.meta.url)),
   ]);
   const descriptor = bitmapDescriptor({ strikes: [16] });

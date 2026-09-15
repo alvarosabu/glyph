@@ -6,8 +6,8 @@ documentation_type: explanation
 tags: [planning, public-api, techniques, bakers, extensibility]
 status: stable
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-08-28T20:20:47Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Making a technique reusable across engines
@@ -226,7 +226,7 @@ Update its policy and TypeGPU device to consume the same portable render contrac
 
 The renderer tests must keep `synthetic-quad` as the generated-geometry contract fixture and prove an explicit indexed `quad` using an immutable supplied geometry payload. They must record index/draw range and instance count separately so an indexed quad cannot accidentally be treated as four policy records.
 
-Layer 2 must test undeclared resource-name retention and stable resource identity across compiler calls. Layer 3 must test generic user-material delivery, schema-driven glyph-origin augmentation, indexed geometry reuse, decoration preservation, and the diagnostic for a RasterCodec with no compatible Three variant. Layer 4 must fail variant-only registration at registration time rather than at first runtime construction. The Three acceptance also includes `apps/benchmarks` and its `benchmark:external-raster` visible-pixel proof.
+Layer 2 must test undeclared resource-name retention and stable resource identity across compiler calls. Layer 3 must test generic user-material delivery, schema-driven glyph-origin augmentation, indexed geometry reuse, decoration preservation, and the diagnostic for a RasterCodec with no compatible Three variant. Layer 4 must fail variant-only registration at registration time rather than at first runtime construction. The Three acceptance also includes `benches` and its `benchmark:external-raster` visible-pixel proof.
 
 The acceptance test continues to use the real baker and font loader only to obtain a loaded font. The engine itself must still be written against public core/portable surfaces plus the technique's public `/typegpu` shader subpath.
 
@@ -282,8 +282,8 @@ Done means all of the following are true:
 - the contract has a language-neutral compatibility fixture proving that TypeGPU/TSL/WGSL/GLSL implementations do not change plan, policy, binding, resource, or retention formats;
 - `glyph-example-renderer` runtime-bakes a font, resolves and maps the example `/typegpu` shader through a concrete TypeGPU/WebGPU path, and produces non-empty changing pixels across a retained text update;
 - the reference Three path produces non-empty visible draws;
-- `apps/benchmarks` runs the external raster proof through the public package exports, including the bundled visible-pixel path;
-- `apps/benchmarks` runs the named cold/retained Three lab and enforces non-empty draw and reuse invariants;
+- `benches` runs the external raster proof through the public package exports, including the bundled visible-pixel path;
+- `benches` runs the named cold/retained Three lab and enforces non-empty draw and reuse invariants;
 - focused package checks, each affected package check, `docs:check`, and the repository check pass.
 
 ## Cost

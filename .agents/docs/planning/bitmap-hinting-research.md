@@ -15,11 +15,11 @@ sources:
     resource: ../../../packages/glyph/src/raster/bitmap.ts
     title: Bitmap runtime renderer
   - id: benchmark-evidence
-    resource: ../../../apps/benchmarks/src/benchmark/targets/product/bitmap-text.ts
+    resource: ../../../benches/src/benchmark/targets/product/bitmap-text.ts
     title: Bitmap public-Text product target
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-08-15T15:53:27Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Grayscale bitmap hinting and phase packing research

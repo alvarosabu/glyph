@@ -14,7 +14,7 @@ import { interShapingFingerprint, interSourceFingerprint } from '../support/inte
 const sourceFingerprint = '0'.repeat(32);
 const shapingFingerprint = '1'.repeat(32);
 const rasterKey = '2'.repeat(32);
-const interUrl = new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
+const interUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
 
 test('Bitmap and MSDF runtime bakers execute through lazy module Workers', async (t) => {
   const originalWorker = globalThis.Worker;

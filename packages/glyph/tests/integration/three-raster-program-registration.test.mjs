@@ -299,7 +299,7 @@ test('engine construction supplies system lanes outside portable codec authoring
 async function fontForTechnique(technique) {
   const registry = new FontRegistry();
   const registered = await registry.registerAsset(
-    await readFile(new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
+    await readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
   );
   const variant = createImmutableFontVariant({
     backing: createImmutableFontBacking(registered),

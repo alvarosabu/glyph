@@ -14,7 +14,7 @@ import { reproducibleRustEnvironment } from './support/reproducible-rust-env.mjs
 const packageRoot = fileURLToPath(new URL('../', import.meta.url));
 const workspaceRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const scriptPath = fileURLToPath(import.meta.url);
-const fontPath = join(workspaceRoot, 'apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf');
+const fontPath = join(workspaceRoot, 'benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf');
 const evidencePath = join(packageRoot, 'rust/mtsdf-admission/evidence/baker-phases-v0.json');
 const profileBinary = join(
   packageRoot,
@@ -52,7 +52,7 @@ async function main() {
         architecture: process.arch,
         node: process.version,
         rust: '1.97.1',
-        fixture: 'apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf',
+        fixture: 'benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf',
       },
       cases: observations,
     };

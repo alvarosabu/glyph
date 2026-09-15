@@ -6,7 +6,7 @@ import { Worker } from 'node:worker_threads';
 import { glyph } from '@pmndrs/glyph';
 import { bitmap } from '@pmndrs/glyph/raster/bitmap';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const bytes = await readFile(fontUrl);
 
 test('FontFace loading and explicit cloning do not initialize the Glyph engine', async () => {

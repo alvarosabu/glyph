@@ -28,7 +28,7 @@ import { validateFontArtifact } from '@pmndrs/glyph/bake';
 import { getRegisteredFontData } from '../../dist/internal/registered-font.js';
 import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerprint.js';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
 const multiFormatUrl = new URL('../../../../apps/r3f-hello-world/assets/inter-latin.font.glb', import.meta.url);
 const multiFormatBytes = await readFile(multiFormatUrl);
 
@@ -80,7 +80,7 @@ before(async () => {
     readFile(embeddedOutput),
     readFile(externalOutput),
     readFile(externalRasterId),
-    readFile(new URL('../../../../apps/benchmarks/fixtures/rendering/amiri-bitmap-16.font.glb', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/rendering/amiri-bitmap-16.font.glb', import.meta.url)),
   ]);
   externalRasterId = externalRasterId.split('/').at(-1);
   incompatibleBytes = replaceAscii(embeddedBytes, '"bakerVersion":"0.0.0"', '"bakerVersion":"9.9.9"');

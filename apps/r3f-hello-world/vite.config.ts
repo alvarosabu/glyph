@@ -10,11 +10,11 @@ const CROSS_ORIGIN_ISOLATION_HEADERS = {
 const FONT_LICENSES = [
   {
     name: 'Inter 4.1',
-    url: new URL('../benchmarks/fixtures/fonts/inter-v4.1/LICENSE.txt', import.meta.url),
+    url: new URL('../../benches/fixtures/fonts/inter-v4.1/LICENSE.txt', import.meta.url),
   },
   {
     name: 'Font Awesome Free 6.7.2',
-    url: new URL('../benchmarks/fixtures/fonts/font-awesome-free-6.7.2/LICENSE.txt', import.meta.url),
+    url: new URL('../../benches/fixtures/fonts/font-awesome-free-6.7.2/LICENSE.txt', import.meta.url),
   },
 ] as const;
 

@@ -17,7 +17,7 @@ const result = spawnSync(
     'fuzzing',
     '--',
     '--source',
-    '../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf',
+    '../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf',
     ...arguments_,
   ],
   { stdio: 'inherit' },

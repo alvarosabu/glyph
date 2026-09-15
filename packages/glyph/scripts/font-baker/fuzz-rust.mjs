@@ -11,7 +11,7 @@ await mkdir(new URL(`target/artifacts/${target}/`, fuzzDirectory), { recursive: 
 await mkdir(corpusDirectory, { recursive: true });
 if (target === 'bake_font') {
   await copyFile(
-    new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', fuzzDirectory),
+    new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', fuzzDirectory),
     new URL('inter-v4.1-40d692fc.ttf', corpusDirectory),
   );
 } else {

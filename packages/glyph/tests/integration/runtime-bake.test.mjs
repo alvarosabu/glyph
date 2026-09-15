@@ -20,7 +20,7 @@ import { cloneImmutableFont, immutableFontResources, immutableFontVariantIdentit
 import { FontLoader } from '../../dist/loader.js';
 import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerprint.js';
 
-const fixtureDirectory = new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/', import.meta.url);
+const fixtureDirectory = new URL('../../../../benches/fixtures/fonts/inter-v4.1/', import.meta.url);
 const fixturePromise = Promise.all([
   readFile(new URL('Inter-Regular.ttf', fixtureDirectory)),
   readFile(new URL(fontBakerWasmUrl)),

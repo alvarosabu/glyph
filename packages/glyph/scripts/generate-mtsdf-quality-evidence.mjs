@@ -105,7 +105,7 @@ function measureCorpus() {
         '--locked',
         '--quiet',
         '--',
-        resolve(workspaceDirectory, 'apps/benchmarks/fixtures/fonts', font),
+        resolve(workspaceDirectory, 'benches/fixtures/fonts', font),
         '--em-size',
         String(EM_SIZE),
         '--pixel-range',

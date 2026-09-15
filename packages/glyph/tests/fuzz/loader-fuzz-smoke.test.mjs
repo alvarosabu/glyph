@@ -9,7 +9,7 @@ import { mutateArtifact } from '../support/artifact-mutations.mjs';
 
 test('fixed-seed loader artifact mutations fail safely, purely, and deterministically', async () => {
   const [source, wasm] = await Promise.all([
-    readFile(new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url)),
+    readFile(new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url)),
     readFile(new URL('../../dist/font-baker.wasm', import.meta.url)),
   ]);
   const baker = await createFontBaker(wasm);

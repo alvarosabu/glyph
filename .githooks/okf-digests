@@ -31,7 +31,7 @@ staged=$(git diff --cached --name-only)
 [ -n "$staged" ] || exit 0
 
 affected=""
-for root in apps/benchmarks apps/r3f-hello-world packages/glyph packages/glyph-example-raster; do
+for root in benches apps/r3f-hello-world packages/glyph packages/glyph-example-raster; do
   if printf '%s\n' "$staged" | grep -q "^$root/"; then
     affected="$affected $root"
   fi
@@ -57,6 +57,7 @@ digests=$(run_ruby .agents/skills/open-knowledge-format/scripts/generate_package
 
 for root in $affected; do
   doc=".agents/docs/packages/$(basename "$root").md"
+  [ "$root" != benches ] || doc=".agents/docs/packages/benchmarks.md"
   [ -f "$doc" ] || continue
   digest=$(printf '%s\n' "$digests" | awk -F'\t' -v r="$root" '$3 == r { print $2 }')
   [ -n "$digest" ] || continue

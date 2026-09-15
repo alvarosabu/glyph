@@ -13,7 +13,7 @@ import { validateBitmapArtifact } from '../../dist/bakers/bitmap-validator.js';
 import { interShapingFingerprint, interSourceFingerprint } from '../support/inter-identity.mjs';
 
 const wasmUrl = new URL('../../dist/bitmap-baker.wasm', import.meta.url);
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
 const sourceFingerprint = interSourceFingerprint;
 const shapingFingerprint = interShapingFingerprint;
 const publishedAbi = bitmapBakerAbi;

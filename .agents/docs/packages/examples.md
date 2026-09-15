@@ -5,7 +5,7 @@ description: Demonstrates matching public imperative Three.js and React Three Fi
 resource: ../../../apps/r3f-hello-world
 workspace_package: '@pmndrs/glyph-examples'
 documentation_type: reference
-source_digest: 'sha256:5d0e95e6562dba1dd2360abd89627510d8e14203b3b677b3ad3569ebafa1b201'
+source_digest: 'sha256:2c69a1d7483d8652f831e40c5ffb134d95a482a97151ffc4e97caf3c1e17d26d'
 tags: [package, example, three, react, react-three-fiber, vite]
 sources:
   - id: manifest
@@ -21,8 +21,8 @@ sources:
     resource: ../../../apps/r3f-hello-world/src/app.tsx
     title: Public R3F raster-format and nested font-span lifecycle
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-09-04T00:50:50Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Package reference: `@pmndrs/glyph-examples`

@@ -23,9 +23,9 @@ import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerpri
 import { interShapingFingerprint, interSourceFingerprint } from '../support/inter-identity.mjs';
 
 const wasmUrl = new URL('../../dist/mtsdf-baker.wasm', import.meta.url);
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
 const showcaseFontUrl = new URL(
-  '../../../../apps/benchmarks/fixtures/fonts/noto-sans-cjk-showcase-v0/NotoSansCJKjp-Showcase.otf',
+  '../../../../benches/fixtures/fonts/noto-sans-cjk-showcase-v0/NotoSansCJKjp-Showcase.otf',
   import.meta.url,
 );
 const shapingFingerprint = interShapingFingerprint;

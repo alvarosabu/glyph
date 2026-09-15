@@ -9,13 +9,10 @@ import { validateBitmapArtifact } from '../dist/bakers/bitmap-validator.js';
 import { composeFontBake } from '../dist/internal/compose-bake.js';
 import { bitmapDescriptor, bitmapRasterKey } from '../dist/raster/bitmap.js';
 
-const sourceUrl = new URL('../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
+const sourceUrl = new URL('../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
 const wasmUrl = new URL('../dist/bitmap-baker.wasm', import.meta.url);
 const outputUrl = new URL('../tests/fixtures/inter-bitmap-v0.json', import.meta.url);
-const renderingFixtureUrl = new URL(
-  '../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb',
-  import.meta.url,
-);
+const renderingFixtureUrl = new URL('../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const glyphCount = 2937;
 const options = { strikes: [16] };
 const descriptor = bitmapDescriptor(options);
@@ -82,7 +79,7 @@ for (let glyphId = 0; glyphId < glyphCount; glyphId += 1) {
 const fixture = {
   schemaVersion: 0,
   source: {
-    fixture: 'apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf',
+    fixture: 'benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf',
     bytes: source.byteLength,
     sha256: hash(source),
     fingerprint: coreValidation.sourceFingerprint,
@@ -121,7 +118,7 @@ const fixture = {
   },
 };
 
-await mkdir(new URL('../../../apps/benchmarks/fixtures/rendering/', import.meta.url), {
+await mkdir(new URL('../../../benches/fixtures/rendering/', import.meta.url), {
   recursive: true,
 });
 await Promise.all([

@@ -7,7 +7,7 @@ import { getRegisteredFontData } from '../../dist/internal/registered-font.js';
 import { immutableFontResources } from '../../dist/loaded-font.js';
 import { createFontLibrary, loadFont } from '../../dist/loader.js';
 
-const fixtureUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const fixtureUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const raster = bitmap({ strikes: [16] });
 
 test('copy input creates one private GLB backing and exposes no mutable implementation handles', async () => {

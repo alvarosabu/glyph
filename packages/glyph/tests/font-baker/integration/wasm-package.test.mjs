@@ -62,7 +62,7 @@ test('JavaScript uses the MurmurHash3 x86 128 wire format', () => {
 
 test('prepares and inspects one reusable subset through the packaged Wasm API', async () => {
   const source = await readFile(
-    new URL('../../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url),
+    new URL('../../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url),
   );
   const baker = await createFontBaker(wasm);
   const prepared = baker.prepare({

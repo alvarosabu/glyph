@@ -2,219 +2,225 @@
 type: Workspace Package
 title: '@pmndrs/glyph-benchmarks'
 description: Provides the shared interactive and automated benchmark product surface.
-resource: ../../../apps/benchmarks
+resource: ../../../benches
 workspace_package: '@pmndrs/glyph-benchmarks'
 documentation_type: reference
-source_digest: 'sha256:8b57139fbad01dde81a4633eebbe56aab747c72999174c30c4de273303404fe5'
+source_digest: 'sha256:2f766fce7d3e792d9090ccdb209d8f8a9c39225c200386014a8b203aef78c490'
 tags: [package, benchmarks, react, vite, product-e2e]
 sources:
   - id: manifest
-    resource: ../../../apps/benchmarks/package.json
+    resource: ../../../benches/package.json
     title: Package manifest
   - id: vite-config
-    resource: ../../../apps/benchmarks/vite.config.ts
+    resource: ../../../benches/vite.config.ts
     title: Benchmark development and preview server configuration
   - id: benchmark-plan
     resource: ../planning/benchmark-plan.md
     title: Benchmark plan
   - id: benchmark-ipsum
-    resource: ../../../apps/benchmarks/src/workloads/benchmark-ipsum/scene.ts
+    resource: ../../../benches/src/workloads/benchmark-ipsum/scene.ts
     title: Canonical benchmark ipsum corpus
   - id: advanced-shaping-workload
-    resource: ../../../apps/benchmarks/src/workloads/advanced-shaping/scene.ts
+    resource: ../../../benches/src/workloads/advanced-shaping/scene.ts
     title: Authored Advanced Shaping workload timeline
   - id: live-text-scene
-    resource: ../../../apps/benchmarks/src/workloads/shared/live-text-scene.ts
+    resource: ../../../benches/src/workloads/shared/live-text-scene.ts
     title: Public-API-facing live Text scene contract
   - id: live-text-scene-registry
-    resource: ../../../apps/benchmarks/src/workloads/live-text-scenes.ts
+    resource: ../../../benches/src/workloads/live-text-scenes.ts
     title: Single-paragraph workload scene registry
   - id: benchmark-font-assets
-    resource: ../../../apps/benchmarks/src/workloads/font-assets/index.ts
+    resource: ../../../benches/src/workloads/font-assets/index.ts
     title: Canonical selected-technique font-asset adapter
   - id: benchmark-font-asset-contract
-    resource: ../../../apps/benchmarks/src/workloads/font-assets/contracts.ts
+    resource: ../../../benches/src/workloads/font-assets/contracts.ts
     title: Typed fixture delivery request and result contract
   - id: benchmark-runtime-font-assets
-    resource: ../../../apps/benchmarks/src/workloads/font-assets/runtime.ts
+    resource: ../../../benches/src/workloads/font-assets/runtime.ts
     title: Shared Glyph font loading, source-font path, and delivery instrumentation
   - id: runtime-fallback-parity-probe
-    resource: ../../../apps/benchmarks/vitexec/runtime-fallback-parity.probe.ts
+    resource: ../../../benches/vitexec/runtime-fallback-parity.probe.ts
     title: Baked and runtime delivery parity probe
   - id: slug-role-scenes
-    resource: ../../../apps/benchmarks/src/benchmark/targets/conformance/raster/slug-role-scenes.ts
+    resource: ../../../benches/src/benchmark/targets/conformance/raster/slug-role-scenes.ts
     title: Slug release-role scene definitions
   - id: slug-role-scene-evidence
-    resource: ../../../apps/benchmarks/fixtures/results/slug-role-scenes-chromium149.json
+    resource: ../../../benches/fixtures/results/slug-role-scenes-chromium149.json
     title: Retained Slug release-role evidence
   - id: slug-outline-research
     resource: ../planning/slug-outline-research.md
     title: Slug outline architecture
   - id: slug-external-render-parity-probe
-    resource: ../../../apps/benchmarks/vitexec/slug-external-render-parity.probe.ts
+    resource: ../../../benches/vitexec/slug-external-render-parity.probe.ts
     title: Fully external Slug public-rendering parity probe
   - id: slug-external-render-parity-evidence
-    resource: ../../../apps/benchmarks/fixtures/results/slug-external-render-parity-chromium149.json
+    resource: ../../../benches/fixtures/results/slug-external-render-parity-chromium149.json
     title: Retained fully external Slug rendering evidence
   - id: icon-grid-evidence
-    resource: ../../../apps/benchmarks/fixtures/results/icon-grid-retained-evidence-chromium149.json
+    resource: ../../../benches/fixtures/results/icon-grid-retained-evidence-chromium149.json
     title: Retained complete icon-grid traversal evidence
   - id: raster-format-compare
-    resource: ../../../apps/benchmarks/src/surfaces/conformance/scenes/raster-format-comparison.ts
+    resource: ../../../benches/src/surfaces/conformance/scenes/raster-format-comparison.ts
     title: Surface-owned realtime MSDF and Slug GPU comparison
   - id: low-level-raster-reference
-    resource: ../../../apps/benchmarks/src/benchmark/low-level/raster/source-outline-reference.ts
+    resource: ../../../benches/src/benchmark/low-level/raster/source-outline-reference.ts
     title: Shared low-level source-outline oracle
   - id: external-raster-product-target
-    resource: ../../../apps/benchmarks/src/benchmark/targets/product/external-raster-proof.ts
+    resource: ../../../benches/src/benchmark/targets/product/external-raster-proof.ts
     title: External raster public-API product proof
   - id: react-text-product-target
-    resource: ../../../apps/benchmarks/src/benchmark/targets/product/react-text.ts
+    resource: ../../../benches/src/benchmark/targets/product/react-text.ts
     title: React Text reconciliation product target
   - id: v1-bitmap-proof
-    resource: ../../../apps/benchmarks/src/v1-bitmap-proof.ts
+    resource: ../../../benches/src/v1-bitmap-proof.ts
     title: Target-v1 retained Bitmap browser proof
   - id: v1-mtsdf-proof
-    resource: ../../../apps/benchmarks/src/v1-mtsdf-proof.ts
+    resource: ../../../benches/src/v1-mtsdf-proof.ts
     title: Target-v1 retained MTSDF browser proof
   - id: v1-slug-proof
-    resource: ../../../apps/benchmarks/src/v1-slug-proof.ts
+    resource: ../../../benches/src/v1-slug-proof.ts
     title: Target-v1 retained Slug browser proof
   - id: v1-compose-proof
-    resource: ../../../apps/benchmarks/src/v1-compose-proof.ts
+    resource: ../../../benches/src/v1-compose-proof.ts
     title: Target-v1 composed canonical-shader browser proof
   - id: paragraph-contracts
-    resource: ../../../apps/benchmarks/src/benchmark/targets/conformance/paragraph-contracts.ts
+    resource: ../../../benches/src/benchmark/targets/conformance/paragraph-contracts.ts
     title: Public Rust paragraph conformance target
   - id: bitmap-text-product-target
-    resource: ../../../apps/benchmarks/src/benchmark/targets/product/bitmap-text.ts
+    resource: ../../../benches/src/benchmark/targets/product/bitmap-text.ts
     title: Finite Bitmap public Text product target
   - id: mtsdf-text-product-target
-    resource: ../../../apps/benchmarks/src/benchmark/targets/product/mtsdf-text.ts
+    resource: ../../../benches/src/benchmark/targets/product/mtsdf-text.ts
     title: Finite MTSDF public Text product target
   - id: slug-text-product-target
-    resource: ../../../apps/benchmarks/src/benchmark/targets/product/slug-text.ts
+    resource: ../../../benches/src/benchmark/targets/product/slug-text.ts
     title: Finite Slug public Text product target
   - id: bitmap-finite-scene
-    resource: ../../../apps/benchmarks/src/benchmark/low-level/raster/bitmap-finite-scene.ts
+    resource: ../../../benches/src/benchmark/low-level/raster/bitmap-finite-scene.ts
     title: Shared finite Bitmap scene and exact CPU-reference capture
   - id: bitmap-conformance-line
-    resource: ../../../apps/benchmarks/src/techniques/bitmap/conformance-line.ts
+    resource: ../../../benches/src/techniques/bitmap/conformance-line.ts
     title: Target-v1 committed Bitmap conformance paragraph
   - id: bitmap-conformance-capture
-    resource: ../../../apps/benchmarks/src/benchmark/targets/conformance/raster/bitmap-capture.ts
+    resource: ../../../benches/src/benchmark/targets/conformance/raster/bitmap-capture.ts
     title: Target-owned finite Bitmap conformance capture
   - id: rgba-readback
-    resource: ../../../apps/benchmarks/src/benchmark/low-level/raster/rgba-readback.ts
+    resource: ../../../benches/src/benchmark/low-level/raster/rgba-readback.ts
     title: Renderer-neutral RGBA8 readback normalization
   - id: bitmap-atlas-metadata
-    resource: ../../../apps/benchmarks/src/techniques/bitmap/metadata.ts
+    resource: ../../../benches/src/techniques/bitmap/metadata.ts
     title: Bitmap technique atlas metadata inspection
   - id: mtsdf-raster-configuration
-    resource: ../../../apps/benchmarks/src/techniques/mtsdf/metadata.ts
+    resource: ../../../benches/src/techniques/mtsdf/metadata.ts
     title: MTSDF technique configuration inspection
   - id: slug-raster-configuration
-    resource: ../../../apps/benchmarks/src/techniques/slug/metadata.ts
+    resource: ../../../benches/src/techniques/slug/metadata.ts
     title: Slug technique allocation inspection
   - id: bitmap-persistent-scene
-    resource: ../../../apps/benchmarks/src/techniques/bitmap/persistent-scene.ts
+    resource: ../../../benches/src/techniques/bitmap/persistent-scene.ts
     title: Bitmap live Text technique adapter
   - id: mtsdf-persistent-scene
-    resource: ../../../apps/benchmarks/src/techniques/mtsdf/persistent-scene.ts
+    resource: ../../../benches/src/techniques/mtsdf/persistent-scene.ts
     title: MTSDF live Text technique adapter
   - id: slug-persistent-scene
-    resource: ../../../apps/benchmarks/src/techniques/slug/persistent-scene.ts
+    resource: ../../../benches/src/techniques/slug/persistent-scene.ts
     title: Slug live Text technique adapter
   - id: renderer-lifecycle
-    resource: ../../../apps/benchmarks/src/renderer/webgpu-renderer.ts
+    resource: ../../../benches/src/renderer/webgpu-renderer.ts
     title: Shared renderer creation and disposal lifecycle
   - id: runtime-world
-    resource: ../../../apps/benchmarks/src/benchmark/runtime-world.ts
+    resource: ../../../benches/src/benchmark/runtime-world.ts
     title: Koota benchmark runtime trait schema
   - id: workload-catalog
-    resource: ../../../apps/benchmarks/src/workloads/catalog.ts
+    resource: ../../../benches/src/workloads/catalog.ts
     title: Typed live-workload policy catalog
   - id: icon-grid-workload
-    resource: ../../../apps/benchmarks/src/workloads/icon-grid/scene.ts
+    resource: ../../../benches/src/workloads/icon-grid/scene.ts
     title: Retained Icon Grid workload instance and public Text example
   - id: application-routes
-    resource: ../../../apps/benchmarks/src/app.tsx
+    resource: ../../../benches/src/app.tsx
     title: Main and Presentation route entry
   - id: harness-route
-    resource: ../../../apps/benchmarks/src/routes/harness-route.tsx
+    resource: ../../../benches/src/routes/harness-route.tsx
     title: Shared Main and Presentation provider identity
   - id: harness-controller
-    resource: ../../../apps/benchmarks/src/controllers/harness-controller.tsx
+    resource: ../../../benches/src/controllers/harness-controller.tsx
     title: URL, transition, presentation, and execution state machine
   - id: harness-scene
-    resource: ../../../apps/benchmarks/src/surfaces/harness/scene.tsx
+    resource: ../../../benches/src/surfaces/harness/scene.tsx
     title: Benchmark and conformance scene composition
   - id: persistent-harness-layout
-    resource: ../../../apps/benchmarks/src/surfaces/harness/persistent-layout.tsx
+    resource: ../../../benches/src/surfaces/harness/persistent-layout.tsx
     title: Persistent renderer provider and exclusive action adapter
   - id: harness-layout
-    resource: ../../../apps/benchmarks/src/components/harness-layout.tsx
+    resource: ../../../benches/src/components/harness-layout.tsx
     title: Main and Presentation application chrome
   - id: bitmap-live-viewport
-    resource: ../../../apps/benchmarks/src/surfaces/benchmark/bitmap-text-viewport.tsx
+    resource: ../../../benches/src/surfaces/benchmark/bitmap-text-viewport.tsx
     title: Bitmap persistent live-text viewport controller
   - id: sdf-live-viewports
-    resource: ../../../apps/benchmarks/src/surfaces/benchmark/sdf-text-viewports.tsx
+    resource: ../../../benches/src/surfaces/benchmark/sdf-text-viewports.tsx
     title: MTSDF and Slug persistent live-text viewport controllers
   - id: benchmark-surface
-    resource: ../../../apps/benchmarks/src/surfaces/benchmark/benchmark-surface.tsx
+    resource: ../../../benches/src/surfaces/benchmark/benchmark-surface.tsx
     title: Authored workload and technique surface dispatcher
   - id: comparison-workload-viewport
-    resource: ../../../apps/benchmarks/src/surfaces/benchmark/comparison-workload-viewport.tsx
+    resource: ../../../benches/src/surfaces/benchmark/comparison-workload-viewport.tsx
     title: Retained comparison workload React viewport
   - id: raster-conformance-session
-    resource: ../../../apps/benchmarks/src/benchmark/targets/conformance/raster/contracts.ts
+    resource: ../../../benches/src/benchmark/targets/conformance/raster/contracts.ts
     title: Low-level raster conformance session contract
   - id: mtsdf-conformance-capture
-    resource: ../../../apps/benchmarks/src/benchmark/targets/conformance/raster/mtsdf-capture.ts
+    resource: ../../../benches/src/benchmark/targets/conformance/raster/mtsdf-capture.ts
     title: Target-owned finite MTSDF capture lifecycle
   - id: slug-conformance-capture
-    resource: ../../../apps/benchmarks/src/benchmark/targets/conformance/raster/slug-capture.ts
+    resource: ../../../benches/src/benchmark/targets/conformance/raster/slug-capture.ts
     title: Target-owned finite Slug capture lifecycle and role proofs
   - id: comparison-workload
-    resource: ../../../apps/benchmarks/src/surfaces/benchmark/scenes/comparison-workload.ts
+    resource: ../../../benches/src/surfaces/benchmark/scenes/comparison-workload.ts
     title: Retained multi-technique workload scene
   - id: comparison-measurement-preview
-    resource: ../../../apps/benchmarks/src/benchmark/probes/comparison-workload-preview.ts
+    resource: ../../../benches/src/benchmark/probes/comparison-workload-preview.ts
     title: Isolated-canvas adapter for Slug performance measurements
   - id: tsl-conformance-target
-    resource: ../../../apps/benchmarks/src/benchmark/targets/conformance/tsl-baseline.ts
+    resource: ../../../benches/src/benchmark/targets/conformance/tsl-baseline.ts
     title: Deterministic TSL renderer conformance target
   - id: live-text-update-probe
-    resource: ../../../apps/benchmarks/scripts/run-live-update-latency-probe.mts
+    resource: ../../../benches/scripts/run-live-update-latency-probe.mts
     title: Input-to-visible-frame latency and glyph-transition probe
   - id: conformance-surface
-    resource: ../../../apps/benchmarks/src/surfaces/conformance/conformance-surface.tsx
+    resource: ../../../benches/src/surfaces/conformance/conformance-surface.tsx
     title: Host-borrowing conformance surface hierarchy
   - id: presentation-framerate-sweep
-    resource: ../../../apps/benchmarks/vitexec/presentation-framerate-sweep.probe.ts
+    resource: ../../../benches/vitexec/presentation-framerate-sweep.probe.ts
     title: Complete Presentation workload performance sweep
   - id: presentation-fresh-scene-performance
-    resource: ../../../apps/benchmarks/vitexec/presentation-fresh-scene-performance.probe.ts
+    resource: ../../../benches/vitexec/presentation-fresh-scene-performance.probe.ts
     title: Isolated Presentation workload performance sweep
   - id: workflow-runner
-    resource: ../../../apps/benchmarks/scripts/workflows.mts
+    resource: ../../../benches/scripts/workflows.mts
     title: Specialized workflow runner
   - id: workflow-arguments
-    resource: ../../../apps/benchmarks/scripts/workflow-arguments.mts
+    resource: ../../../benches/scripts/workflow-arguments.mts
     title: Specialized workflow runner argument ordering
   - id: workflow-output
-    resource: ../../../apps/benchmarks/scripts/workflow-output.mts
+    resource: ../../../benches/scripts/workflow-output.mts
     title: Vitexec failure-output classifier
   - id: raster-technique-compare-probe
-    resource: ../../../apps/benchmarks/vitexec/raster-technique-compare.probe.ts
+    resource: ../../../benches/vitexec/raster-technique-compare.probe.ts
     title: Realtime comparison product probe
 generated:
-  by: openai-codex/gpt-5
-  at: '2026-09-04T00:13:53Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Package reference: `@pmndrs/glyph-benchmarks`
+
+The benchmark workspace is rooted at `benches/`, alongside `apps/` and `packages/`. The root `dev`, `build`,
+`test`, `check`, and `scripts` commands include it explicitly. Fixtures and assets throughout the repository use
+Git LFS, including historical versions; run `git lfs pull` before building or validating a fresh checkout.
+CI downloads LFS objects during checkout. Fixture generators and validators continue to use the hydrated files
+at their normal paths, and package digests are computed from those file contents.
 
 The Vite and TypeScript configurations opt into the workspace packages' custom `source` export condition. Development,
 build, and typecheck therefore consume current TypeScript sources without requiring a package rebuild; release-oriented
@@ -357,7 +363,7 @@ glyphs or paints.
 
 Font delivery is an explicit benchmark axis. **Baked asset** exercises the normal sibling asset, while **Runtime bake** passes `{ source, runtimeBake }`, downloads the source font, builds the core font in the serial core-baker Worker, then builds the selected Bitmap or MSDF raster in its serial lazy Worker. The inspector distinguishes the always-loaded runtime/shaper graph from the conditional core and raster baker host, Worker, and Wasm graphs; it reports source download bytes, generated core/raster CPU bytes, bake durations, and atlas GPU memory. The runtime-fallback conformance workload renders both delivery paths through the same public pipeline and requires an exact RGBA frame match. The headless conformance suite always runs baked delivery, so `benchmark:runtime-fallback` is the lane that exercises runtime delivery: canonical Inter matched exactly for Bitmap, MTSDF, and Slug on hardware WebGPU, each reporting `1/1 exact` with zero mismatched bytes, zero changed pixels, and zero maximum error. The observed cold MSDF raster bake was roughly 114 seconds on this host and remains an observation, not a portability threshold.
 
-The benchmark manifest exposes only `build`, `dev`, `test`, `check`, and the package-owned `size` producer. Specialized maintenance files declare their own names, requirements, write behavior, arguments, and runner; the root `pnpm scripts` command validates and indexes that metadata. The runner removes pnpm's one conventional `--` delimiter and places forwarded Vitexec options before its injected module, while ordinary Node workflows retain script-first argv order.[^workflow-arguments] Vitexec can exit zero after an injected module or page failure, so the runner forwards and inspects its captured output and rejects `[error]` or `[page error]` records; focused negative controls prove both markers while ordinary logs remain accepted.[^workflow-runner][^workflow-output] An ordinary build consumes the checked-in canonical package-size record without rewriting it for the current host. `release:size:generate` is the sole reviewed repository writer, while the package `size` command refreshes the benchmark-owned record during scoped development; the test gate measures the current host read-only and enforces the reviewed absolute and cumulative ceilings. `benchmark:presentation` runs every sequential workload through Bitmap, MTSDF, and Slug on WebGPU and forced WebGL2 using stable `/three`; `--workload`, `--technique`, and `--backend` select one maintained cell, while `--typegpu` exercises experimental `/three/typegpu`. `benchmark:demo` runs the timed sequence; `benchmark:raster-comparison` owns finite-job recovery; `benchmark:presentation-performance` records the current complete cadence sweep; and `benchmark:presentation-fresh-scene-performance` gives selected workloads independent renderer and telemetry lifecycles for release A/B captures. Closed milestone experiments and technique-specific performance matrices are retained as results, not executable product gates. The authenticated HarfBuzz freshness gate remains separate from ordinary repository checks because Meson, Ninja, and GLib belong only to that workload. Install the scoped `apps/benchmarks/mise.toml` pins when needed, then run `pnpm scripts run fixture:harfbuzz:provision` and `pnpm scripts run fixture:japanese-showcase:check`. React Doctor remains a manual review tool rather than a package or CI script; when requested, run `mise exec -- pnpm --dir apps/benchmarks dlx react-doctor@0.7.2 . --scope full --blocking warning --verbose --no-supply-chain --no-color`.[^presentation-framerate-sweep][^presentation-fresh-scene-performance]
+The benchmark manifest exposes only `build`, `dev`, `test`, `check`, and the package-owned `size` producer. Specialized maintenance files declare their own names, requirements, write behavior, arguments, and runner; the root `pnpm scripts` command validates and indexes that metadata. The runner removes pnpm's one conventional `--` delimiter and places forwarded Vitexec options before its injected module, while ordinary Node workflows retain script-first argv order.[^workflow-arguments] Vitexec can exit zero after an injected module or page failure, so the runner forwards and inspects its captured output and rejects `[error]` or `[page error]` records; focused negative controls prove both markers while ordinary logs remain accepted.[^workflow-runner][^workflow-output] An ordinary build consumes the checked-in canonical package-size record without rewriting it for the current host. `release:size:generate` is the sole reviewed repository writer, while the package `size` command refreshes the benchmark-owned record during scoped development; the test gate measures the current host read-only and enforces the reviewed absolute and cumulative ceilings. `benchmark:presentation` runs every sequential workload through Bitmap, MTSDF, and Slug on WebGPU and forced WebGL2 using stable `/three`; `--workload`, `--technique`, and `--backend` select one maintained cell, while `--typegpu` exercises experimental `/three/typegpu`. `benchmark:demo` runs the timed sequence; `benchmark:raster-comparison` owns finite-job recovery; `benchmark:presentation-performance` records the current complete cadence sweep; and `benchmark:presentation-fresh-scene-performance` gives selected workloads independent renderer and telemetry lifecycles for release A/B captures. Closed milestone experiments and technique-specific performance matrices are retained as results, not executable product gates. The authenticated HarfBuzz freshness gate remains separate from ordinary repository checks because Meson, Ninja, and GLib belong only to that workload. Install the scoped `benches/mise.toml` pins when needed, then run `pnpm scripts run fixture:harfbuzz:provision` and `pnpm scripts run fixture:japanese-showcase:check`. React Doctor remains a manual review tool rather than a package or CI script; when requested, run `mise exec -- pnpm --dir benches dlx react-doctor@0.7.2 . --scope full --blocking warning --verbose --no-supply-chain --no-color`.[^presentation-framerate-sweep][^presentation-fresh-scene-performance]
 
 `glyph:rust-layout-benchmark` keeps measurement, positioning, and publication attribution reproducible. `position-query`
 adds the positioning tail to measurement without gathering or publishing. `adopt-position-query` first prepares that
@@ -377,7 +383,7 @@ Main and Presentation are exclusive URL-selected root presentations. Presentatio
 
 The maintained all-workloads live probe also owns the Presentation control smoke: it changes Icon Grid size through the retained popover, verifies outside dismissal and the human workload label, switches to Off-axis / 3D with zero missing glyphs, and checks the authored 200% layout-width ceiling. The former standalone control probe was removed so those assertions execute in the same real route sequence that already proves technique transitions and exclusive renderer ownership. Static dependency boundaries share one filesystem scanner, while exact renderer lifecycle, state restoration, and target-resolution behavior remain covered by focused executable tests rather than source-text assertions about function names or call spelling.
 
-Every live benchmark identity resolves through one typed catalog under `apps/benchmarks/src/workloads/`. The catalog owns labels, descriptions, exact Main and Presentation defaults, font policy, controls and ranges, pan/zoom capability, preload policy, and surface kind; URL parsing normalizes an unknown workload inside its selected mode before font or control policy executes. Main and Presentation derive scene descriptions, amount labels, font selection, preload grouping, and pan/zoom capability from that authority rather than repeating workload-ID switches. Benchmark Ipsum and Advanced Shaping keep their authored corpus and timeline in the same workload hierarchy as Text Ladder, Zoom Text, Icon Grid, Off-axis / 3D, Dynamic Layout, Paragraph Stress, and Paint & Effects. They project their complete anchor, direction, feature, fixture, language, measure, text, alignment, glyph expectation, and timeline intent through the small `LiveTextScene` contract; the route only supplies runtime font size and selects a technique adapter. Advanced Shaping derives the font fixture from the authored case itself, preventing the displayed script and fixture from drifting. The seven retained comparison definitions own construction, layout, animation, and retained configuration hooks; no workload-specific dispatch switch remains for those phases. Icon Grid additionally owns one per-mount instance containing virtual-window epochs, pool assignment and recycling, scroll and auto-pan state, frame smoothing, refresh suspension, visibility, and metrics. The host exposes only generic cold pool resize/readiness, scene attachment, and disposal; renderer, canvas, RAF, GPU timer, font transactions, and telemetry history remain route infrastructure. Each workload mount explicitly initializes the shared scene transform, preventing Text Ladder's authored offscreen exit or Icon Grid pan from polluting the next workload. Their technique-invariant content-width, text-style, and color-cycle utilities live below `workloads/shared`; a source-boundary test rejects static or dynamic imports from any workload module back into renderer implementation files.
+Every live benchmark identity resolves through one typed catalog under `benches/src/workloads/`. The catalog owns labels, descriptions, exact Main and Presentation defaults, font policy, controls and ranges, pan/zoom capability, preload policy, and surface kind; URL parsing normalizes an unknown workload inside its selected mode before font or control policy executes. Main and Presentation derive scene descriptions, amount labels, font selection, preload grouping, and pan/zoom capability from that authority rather than repeating workload-ID switches. Benchmark Ipsum and Advanced Shaping keep their authored corpus and timeline in the same workload hierarchy as Text Ladder, Zoom Text, Icon Grid, Off-axis / 3D, Dynamic Layout, Paragraph Stress, and Paint & Effects. They project their complete anchor, direction, feature, fixture, language, measure, text, alignment, glyph expectation, and timeline intent through the small `LiveTextScene` contract; the route only supplies runtime font size and selects a technique adapter. Advanced Shaping derives the font fixture from the authored case itself, preventing the displayed script and fixture from drifting. The seven retained comparison definitions own construction, layout, animation, and retained configuration hooks; no workload-specific dispatch switch remains for those phases. Icon Grid additionally owns one per-mount instance containing virtual-window epochs, pool assignment and recycling, scroll and auto-pan state, frame smoothing, refresh suspension, visibility, and metrics. The host exposes only generic cold pool resize/readiness, scene attachment, and disposal; renderer, canvas, RAF, GPU timer, font transactions, and telemetry history remain route infrastructure. Each workload mount explicitly initializes the shared scene transform, preventing Text Ladder's authored offscreen exit or Icon Grid pan from polluting the next workload. Their technique-invariant content-width, text-style, and color-cycle utilities live below `workloads/shared`; a source-boundary test rejects static or dynamic imports from any workload module back into renderer implementation files.
 
 The root `app.tsx` owns only runner detection, shell Suspense, and URL route selection. Both route branches render the same `routes/harness-route.tsx` component type, preserving one runtime-world identity while `controllers/harness-controller.tsx` owns URL revisions, post-preload transitions, presentation playback, shortcuts, and execution state. Persistent renderer provisioning and exclusive conformance-action adaptation live in `surfaces/harness/persistent-layout.tsx`; Benchmark/Conformance scene composition lives in `surfaces/harness/scene.tsx`; Main and Presentation chrome remains in `components/harness-layout.tsx`; and runtime control binding remains in `components/runtime-controls.tsx`. The three persistent Bitmap, MTSDF, and Slug live-text viewport controllers live under `surfaces/benchmark`, keeping their host lease, synchronous update path, staged font-fixture loading, loading state, telemetry, and probe contract beside the rendered surface. Their renderer imports remain literal dynamic boundaries: type-only references use `import type`, so the production build retains separate technique chunks rather than pulling renderer implementations into the route entry. Authored scenes load fixtures through `workloads/font-assets`: one discriminated adapter selects only the requested Bitmap, MTSDF, or Slug lane through literal dynamic imports. Each lane loads through the shared Glyph font graph using the public raster format and `@pmndrs/glyph/runtime-bake` entrypoint. Authenticated baked artifacts stay as bytes instead of being republished through temporary Blob URLs; runtime delivery passes the measured core baker as the request's `runtimeBake`. The benchmark's custom fetch, progress, and runtime-bake instrumentation enters through its private font asset module; ordinary applications use `glyph.fontFace(...).load()` from the root. The adapter owns source-font URLs, gzip and SHA-256 authentication, runtime progress, and delivery metrics; renderer modules retain only live GPU lifecycle, configuration, and statistics. Direct font-baker imports and Wasm URLs remain prohibited from this workload-facing path. Conformance React composition lives under `surfaces/conformance`: both the retained comparison and finite captures can receive only the host-owned renderer, while executable low-level work lives below `benchmark/targets/conformance`, `benchmark/targets/product`, and `benchmark/targets/measurement`. The realtime MTSDF/Slug comparison, runtime-fallback capture, external raster proof, React reconciliation target, and finite Bitmap/MTSDF/Slug product lifecycles are owned by those explicit target trees rather than `renderer`. The finite product targets accept the runner's renderer and abort signal, lazily load their public `Text` scenes, render deterministic frames, and dispose only resources they own. Shared Bitmap line construction, exact CPU-reference composition, renderer-state restoration, and RGBA8 readback normalization live below `benchmark/low-level/raster`; MTSDF and Slug product scenes remain target-owned because they are executable benchmark examples. Pure CPU raster and source-outline oracles live in the same low-level tree, so renderer-adjacent finite capture code can share primitives without importing executable targets; a source-boundary regression prohibits renderer-to-target dependencies. Advanced Shaping lives in the conformance target hierarchy behind the registry's literal selected-target dynamic import. Bitmap, MTSDF, and Slug conformance dispatch now enters technique-owned target modules rather than live renderer files. MTSDF and Slug sampling plus source-outline targets implement the same warm session contract, preserving `load → capture → dispose` reuse and forwarding the borrowed renderer and abort signal unchanged; Bitmap's thin target wrapper reuses its neutral low-level finite scene. The target modules own CPU comparison, renderer-state restoration, standard visual captures, and Slug role/external-resource proofs; renderer modules retain only live persistent-scene and font/configuration infrastructure. The targets share the explicitly named `targets/shared/direct-wasm.ts` dependency adapter only after target selection. The public missing-sibling loader Worker is conformance because it proves authenticated Worker bytes and loader fallback behavior; it is not a rendering product target. Boundary tests reject workload imports back into renderer implementation, reject renderer imports of executable targets, authenticate literal selected-target imports, preserve selected-technique asset chunks, and reject direct font-baker or Wasm URL imports outside the shared adapter, preventing raw tooling from leaking into the normal Presentation module graph.
 

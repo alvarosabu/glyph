@@ -128,9 +128,7 @@ test('stable and experimental handles retain independent shader selection in one
   const experimental = await createThreeTestHandle(t, experimentalThree.ThreeConfig);
   const font = glyph.fontFace(
     new Blob([
-      await readFile(
-        new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url),
-      ),
+      await readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
     ]),
     { format: bitmap({ strikes: [16] }) },
   );
@@ -163,9 +161,7 @@ test('stable and experimental handles retain independent shader selection in one
 test('stable and experimental Three configs share the custom material override contract', async (t) => {
   const font = glyph.fontFace(
     new Blob([
-      await readFile(
-        new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url),
-      ),
+      await readFile(new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url)),
     ]),
     { format: bitmap({ strikes: [16] }) },
   );

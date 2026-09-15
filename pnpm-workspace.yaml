@@ -1,5 +1,6 @@
 packages:
   - apps/*
+  - benches
   - packages/*
 
 minimumReleaseAgeExclude:

@@ -11,7 +11,7 @@ sources:
     resource: '../planning/conformance-plan.md'
     title: 'Conformance plan'
   - id: 'benchmark-workload-catalog'
-    resource: '../../../apps/benchmarks/src/workloads/catalog.ts'
+    resource: '../../../benches/src/workloads/catalog.ts'
     title: 'Typed live-workload catalog'
   - id: 'core-api'
     resource: '../planning/core-api.md'
@@ -30,8 +30,8 @@ sources:
     title: 'Fragment-relative reflow and LayoutRun placement'
 
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-09-09T02:02:17Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Canonical implementation roadmap

@@ -14,7 +14,7 @@ import { msdf } from '@pmndrs/glyph/raster/msdf';
 import { slug } from '@pmndrs/glyph/raster/slug';
 import { defineThreeConfig, ThreeConfig } from '@pmndrs/glyph/three';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const bytes = await readFile(fontUrl);
 const multiFormatBytes = await readFile(
   new URL('../../../../apps/r3f-hello-world/assets/inter-latin.font.glb', import.meta.url),

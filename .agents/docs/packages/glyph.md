@@ -5,7 +5,7 @@ description: Implements portable font loading, retained Rust shaping and layout,
 resource: ../../../packages/glyph
 workspace_package: '@pmndrs/glyph'
 documentation_type: reference
-source_digest: 'sha256:6315a61cc4d56c2080b0a7f076c07fe78a327fe47f482bec21905829ff02ee0d'
+source_digest: 'sha256:bbe47f47ce3539607cea9f9feec3e76b75eebacaf3a887e1e458952d5979b1d8'
 tags: [package, public-api, rust, wasm, threejs, typography]
 sources:
   - id: manifest
@@ -99,8 +99,8 @@ sources:
     resource: ../planning/detached-glyph-slice.md
     title: Planner-assisted detached glyph slice
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-09-13T15:38:33Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-15T19:11:33Z'
 ---
 
 # Package reference: `@pmndrs/glyph`
@@ -1038,10 +1038,10 @@ MTSDF, and Slug records all use one byte-identical optimized shaper Wasm and the
 raster-format-specific Rust command-buffer publication. The base reports 25,515 positioned glyphs; the current publication reports 21,805
 renderable instances from the unchanged 22,000-glyph target because it omits non-rendering glyphs from GPU records.
 
-The exact [TypeScript baseline](../../../apps/benchmarks/fixtures/results/typescript-layout-baseline-90964be0-darwin-arm64.json)
-and current [Bitmap](../../../apps/benchmarks/fixtures/results/rust-layout-bitmap-0bdb9e93-darwin-arm64.json),
-[MTSDF](../../../apps/benchmarks/fixtures/results/rust-layout-mtsdf-0bdb9e93-darwin-arm64.json), and
-[Slug](../../../apps/benchmarks/fixtures/results/rust-layout-slug-0bdb9e93-darwin-arm64.json) records are authenticated by
+The exact [TypeScript baseline](../../../benches/fixtures/results/typescript-layout-baseline-90964be0-darwin-arm64.json)
+and current [Bitmap](../../../benches/fixtures/results/rust-layout-bitmap-0bdb9e93-darwin-arm64.json),
+[MTSDF](../../../benches/fixtures/results/rust-layout-mtsdf-0bdb9e93-darwin-arm64.json), and
+[Slug](../../../benches/fixtures/results/rust-layout-slug-0bdb9e93-darwin-arm64.json) records are authenticated by
 the benchmark fixture gate. Every comparable median is faster through Rust: Bitmap is 3.67× faster cold, 2.00× on font
 size, 3.29× on width, and 2.94× on suffix edit; even the slowest technique for each case remains 3.49×, 1.82×, 3.09×,
 and 2.76× faster. This proves the migration comparison on this machine; it does not close the stricter p95-under-4-ms
@@ -1053,7 +1053,7 @@ The paragraph-scoped synchronous measure (11.17) closes that objective for the e
 `column-resize` lane through `pmndrs_glyph_engine_measure_paragraph`: 1.815 ms median / 1.930 ms p95 / 3.0% RSD with
 zero patches and zero publication bytes, beside the full update's 2.996 ms median / 4.483 ms p95 / 21.7% RSD in the
 same run — the first width-change lane under the 4 ms p95 objective, recorded in the
-[measure-query record](../../../apps/benchmarks/fixtures/results/rust-layout-bitmap-measure-a42c976-darwin-arm64.json).
+[measure-query record](../../../benches/fixtures/results/rust-layout-bitmap-measure-a42c976-darwin-arm64.json).
 The variance collapse follows from what the query skips: no gather, no plan compile, no publication packing, and no
 revision burn, so the following ordinary frame adopts the speculative layout instead of paying a checkpoint rebuild.
 
@@ -1123,7 +1123,7 @@ advance lanes from that stream in one sequential pass, bit-identical to a cold b
 Justification distributes euclideanly in layout units — per-site quotient plus a remainder spread one unit over leading
 sites — so the fragment advance and the applied cursor adjustments agree exactly, and the compression capacity
 quantizes through the same `ratio_q16` expression the fit used to admit the line. The
-[integer-units checkpoint record](../../../apps/benchmarks/fixtures/results/rust-layout-bitmap-integer-units-c2e895e-darwin-arm64.json)
+[integer-units checkpoint record](../../../benches/fixtures/results/rust-layout-bitmap-integer-units-c2e895e-darwin-arm64.json)
 pins the slice-4 artifact end-state (measure-query 1.890/2.054 ms median/p95 on a visibly hot host session; the
 interleaved deltas above are the comparative evidence).
 

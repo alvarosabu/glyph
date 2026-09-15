@@ -528,7 +528,7 @@ async function loadArtifact(techniqueName, corpus) {
     throw new Error(`corpus ${corpus} has no pinned ${techniqueName} artifact`);
   }
   const [file, compressed] = entry;
-  const bytes = await readFile(new URL(`../../../apps/benchmarks/fixtures/rendering/${file}`, import.meta.url));
+  const bytes = await readFile(new URL(`../../../benches/fixtures/rendering/${file}`, import.meta.url));
   return compressed ? gunzipSync(bytes) : bytes;
 }
 

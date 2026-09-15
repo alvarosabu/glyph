@@ -6,9 +6,9 @@
   "ignorePatterns": [
     "**/.cache/**",
     "**/target/**",
-    "apps/benchmarks/dist/**",
-    "apps/benchmarks/fixtures/**",
-    "apps/benchmarks/vitexec/admission.probe.ts",
+    "benches/dist/**",
+    "benches/fixtures/**",
+    "benches/vitexec/admission.probe.ts",
     ".agents/docs/planning/extensions/**/*.json",
     "packages/font-baker/src/schemas/**",
     "packages/glyph/dist/**",

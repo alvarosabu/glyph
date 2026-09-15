@@ -15,7 +15,7 @@ import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerpri
 import { interShapingFingerprint } from '../support/inter-identity.mjs';
 
 const wasmUrl = new URL('../../dist/slug-baker.wasm', import.meta.url);
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
 const shapingFingerprint = interShapingFingerprint;
 const progressImports = { env: { pmndrs_glyph_bake_progress() {} } };
 
