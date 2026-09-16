@@ -174,13 +174,13 @@
       "import": "./dist/three/typegpu.js"
     },
     "./three/typegpu/internal/*": null,
-    "./extend": {
+    "./core": {
       "types": {
-        "source": "./src/extend.ts",
-        "default": "./dist/extend.d.ts"
+        "source": "./src/core.ts",
+        "default": "./dist/core.d.ts"
       },
-      "source": "./src/extend.ts",
-      "import": "./dist/extend.js"
+      "source": "./src/core.ts",
+      "import": "./dist/core.js"
     }
   },
   "publishConfig": {

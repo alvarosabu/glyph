@@ -23,7 +23,7 @@ try {
   const outDir = join(smokeRoot, 'portable');
   await writeFile(
     entry,
-    `import { bitmapCodec, msdfCodec, slugCodec } from '@pmndrs/glyph/extend';
+    `import { bitmapCodec, msdfCodec, slugCodec } from '@pmndrs/glyph/core';
        import { isRegisteredRasterCodec } from ${JSON.stringify(registryUrl)};
        const codecs = [bitmapCodec, msdfCodec, slugCodec];
        const ids = ${JSON.stringify(techniqueIds)};

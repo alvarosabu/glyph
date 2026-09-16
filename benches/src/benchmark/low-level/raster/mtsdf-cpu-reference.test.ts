@@ -1,5 +1,5 @@
 import type { GlyphLayout, MsdfData as MtsdfData } from '@pmndrs/glyph';
-import { defineRasterResourceId } from '@pmndrs/glyph/extend';
+import { defineRasterResourceId } from '@pmndrs/glyph/core';
 import { describe, expect, it } from 'vitest';
 
 import { compareRgba8Coverage, renderFlatMtsdfCpuReference } from './mtsdf-cpu-reference';

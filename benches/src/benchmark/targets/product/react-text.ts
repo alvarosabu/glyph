@@ -3,7 +3,7 @@ import React, { createRef, StrictMode } from 'react';
 import * as THREE from 'three/webgpu';
 
 import { glyph, type Constraints, type GlyphLayout, bitmap } from '@pmndrs/glyph';
-import { bitmapSchema } from '@pmndrs/glyph/extend';
+import { bitmapSchema } from '@pmndrs/glyph/core';
 import { Text } from '@pmndrs/glyph/react';
 import type { Text as CoreText } from '@pmndrs/glyph/three';
 

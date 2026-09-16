@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { createGunzip } from 'node:zlib';
 
 import { describe, expect, it } from 'vitest';
-import { MSDF_EM_SIZE, MSDF_PIXEL_RANGE } from '@pmndrs/glyph/extend';
+import { MSDF_EM_SIZE, MSDF_PIXEL_RANGE } from '@pmndrs/glyph/core';
 import bitmapManifest from '../../fixtures/rendering/showcase-raster-fixtures-v0.json' with { type: 'json' };
 import bitmapDensityManifest from '../../fixtures/rendering/showcase-bitmap-density-fixtures-v0.json' with { type: 'json' };
 import mtsdfManifest from '../../fixtures/rendering/showcase-mtsdf-fixtures-v0.json' with { type: 'json' };

@@ -1,5 +1,5 @@
 import { type CodecBufferId, type RasterCodec, type TechniqueSchema } from '@pmndrs/glyph';
-import { f32, techniqueProgram, id, defineTechniqueSchema } from '@pmndrs/glyph/extend';
+import { f32, techniqueProgram, id, defineTechniqueSchema } from '@pmndrs/glyph/core';
 import { glyphExampleIndexedQuadGeometry, glyphExampleSuppliedGeometryDeclaration } from './geometry-fixture.js';
 import { glyphExample } from './raster.js';
 

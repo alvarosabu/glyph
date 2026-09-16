@@ -23,8 +23,8 @@ import {
   compileRasterFont,
   readCompiledRasterFont,
   type RasterCodec,
-} from '@pmndrs/glyph/extend';
-import type { RasterFormatMetadata, TechniqueSchemaMetadata } from '@pmndrs/glyph/extend';
+} from '@pmndrs/glyph/core';
+import type { RasterFormatMetadata, TechniqueSchemaMetadata } from '@pmndrs/glyph/core';
 import type { SlugCpuReferenceData } from '../../benchmark/low-level/raster/slug-cpu-reference';
 
 const DENSE_GLYPH_RECORD_STRIDE = 20;

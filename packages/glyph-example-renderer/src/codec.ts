@@ -1,6 +1,6 @@
 /** This renderer's Codec: compiles the shared portable technique body plus this host's own system lanes into Codec bytes. */
 import { type CodecIdFactory, type CodecBufferId, type CodecCapabilitySet, type CodecDescriptor } from '@pmndrs/glyph';
-import { compileCodec, id, createRasterCodecProgram, defineCodecBuffers } from '@pmndrs/glyph/extend';
+import { compileCodec, id, createRasterCodecProgram, defineCodecBuffers } from '@pmndrs/glyph/core';
 import { glyphExampleCodec } from '@pmndrs/glyph-example-raster';
 
 const EXAMPLE_STABLE_GLYPH_BUFFER_ID: CodecBufferId = id.buffer('glyph-example-renderer/stable-glyph');

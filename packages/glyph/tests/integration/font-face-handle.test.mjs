@@ -12,7 +12,7 @@ import {
   createRasterCodecProgram,
   defineCodecBuffers,
   bitmapCodec,
-} from '@pmndrs/glyph/extend';
+} from '@pmndrs/glyph/core';
 import { defineThreeConfig, ThreeConfig } from '@pmndrs/glyph/three';
 
 const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);

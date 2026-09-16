@@ -8,7 +8,7 @@ import {
   type TextStyle,
   type bitmap,
 } from '@pmndrs/glyph';
-import { selectBitmapStrikePpem } from '@pmndrs/glyph/extend';
+import { selectBitmapStrikePpem } from '@pmndrs/glyph/core';
 import type { Text } from '@pmndrs/glyph/three';
 import * as THREE from 'three/webgpu';
 

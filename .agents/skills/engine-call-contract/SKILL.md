@@ -47,25 +47,25 @@ Prefer a shape that cannot express the mistake over a check that catches it.
 ## Where a name lives
 
 **A value or type an application can encounter lives at the root. A renderer-neutral helper only an integrator
-calls lives on `/extend`.**
+calls lives on `/core`.**
 
 `ParagraphMeasurement` and `GlyphConfig` are at the root because applications encounter them through `Text` and
-`glyph.handle()`. `defineGlyphConfig` lives at `/extend` because only an integration author calls it. Codec,
+`glyph.handle()`. `defineGlyphConfig` lives at `/core` because only an integration author calls it. Codec,
 schema, portable-resource, and raster-format construction helpers share that entry. Built-in `bitmap`, `msdf`, and `slug`
 format values and their public options/data types live at root; their schemas, codecs, and format interpretation helpers
-live on `/extend`. Internal engine,
+live on `/core`. Internal engine,
 planner, wire, projection, and binding machinery has no public subpath. Boundary and packed-package tests enforce all
 three facts.
 
 | entry                    | holds                                                                                                | audience     |
 | ------------------------ | ---------------------------------------------------------------------------------------------------- | ------------ |
 | `.`                      | `glyph`, fonts, built-in format selection, authoring, layout and measurement values, plus application-encountered types  | everyone     |
-| `./extend`               | renderer-neutral construction helpers for config, Codec, schema, resources, and raster formats | integrators  |
+| `./core`               | renderer-neutral construction helpers for config, Codec, schema, resources, and raster formats | integrators  |
 | `./three`, `./react`, `./typegpu`     | one integration's application surface                                                                | applications |
 | `./shaders/tsl`, `./shaders/typegpu` | reusable technique shaders, with no engine or scene                                         | any host     |
 
 The extension API is **additive to the root, not parallel to it**: an integrator imports application-encountered types
-from the root and construction helpers from `/extend`. Keep the extension entry as static ESM re-exports of focused
+from the root and construction helpers from `/core`. Keep the core entry as static ESM re-exports of focused
 implementation modules so unused helpers remain tree-shakeable. Do not re-export those helpers from the root;
 each helper has one public home.
 

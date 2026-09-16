@@ -14,7 +14,7 @@ import {
   type CodecProgram,
   type PortableResource,
 } from '@pmndrs/glyph';
-import { defineGlyphConfig, defineGlyphSchema, resourceLease } from '@pmndrs/glyph/extend';
+import { defineGlyphConfig, defineGlyphSchema, resourceLease } from '@pmndrs/glyph/core';
 import { glyphExample } from '@pmndrs/glyph-example-raster';
 
 import type { ExampleRendererDevice } from './device.js';

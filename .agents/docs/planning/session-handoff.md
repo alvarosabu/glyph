@@ -12,7 +12,7 @@ sources:
     title: Benchmarks we can trust
 generated:
   by: openai-codex/gpt-5
-  at: '2026-09-16T13:00:04Z'
+  at: '2026-09-16T13:27:39Z'
 ---
 
 # Session handoff
@@ -26,7 +26,7 @@ Codified in `.agents/skills/engine-call-contract/SKILL.md`. Two rules:
 
 **A call answers, or it throws where it was written.** No result union for a failure the caller cannot cause, no persistent broken state that outlives the call. A throw is the caller's arithmetic; a persistent failure is our defect; neither is a return value. This was reached by getting it wrong twice — a latch that made a rejected frame recompile forever, and a `{ ok }` union on measurement that made every caller guard a branch meaning "glyph is broken."
 
-**A type an application can encounter lives at the root; a thing only an integrator constructs lives on `/extend`.** `ParagraphMeasurement` is a root result type; renderer schema and Codec builders live on the shared extension entry. There is no second public core runtime, and `entry-point-boundaries.test.mjs` enforces that split.
+**A type an application can encounter lives at the root; a thing only an integrator constructs lives on `/core`.** `ParagraphMeasurement` is a root result type; renderer schema and Codec builders live on the shared core entry. There is no second public core runtime, and `entry-point-boundaries.test.mjs` enforces that split.
 
 ## Why measurement is two calls, and what they should be named
 
@@ -53,7 +53,7 @@ The fast `measure()` path may return `inkBounds: undefined` because it does not 
 
 ## Corrections this session paid for
 
-- Renderer-neutral integration helpers remain available on `/extend`, while TSL shaders remain available on `/tsl/*`. The retired `/core` surface is not a second engine-driving API.
+- Renderer-neutral integration helpers remain available on `/core`, while TSL shaders remain available on `/tsl/*`. The current `/core` contains integration construction; the former engine-driving surface remains retired.
 - `capacity.policy: 'fixed'` is not a failure. A caller declaring a hard glyph budget asked for rejection over growth; the update does not apply, the last complete revision stays visible, development warns once, `capacityExceeded` carries it for reporting, and it self-heals.
 - Every caller-reachable path to a frame rejection is closed at `set()` — span ranges, nesting, feature ranges, unpaired surrogates. What remains is our own invariant violations.
 - `FontLoader` names **two different classes** at the root and in `/three`. Four call sites use the first, nine the second. Rename `/three`'s to `ThreeFontLoader`. **Not done.**

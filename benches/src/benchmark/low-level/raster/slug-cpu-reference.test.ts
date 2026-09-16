@@ -1,5 +1,5 @@
 import type { GlyphLayout, SlugPageData } from '@pmndrs/glyph';
-import { defineRasterResourceId } from '@pmndrs/glyph/extend';
+import { defineRasterResourceId } from '@pmndrs/glyph/core';
 import { describe, expect, it } from 'vitest';
 
 import { renderFlatSlugCpuReference, type SlugCpuReferenceData } from './slug-cpu-reference';

@@ -130,6 +130,7 @@ test('the packed package exposes every ESM subpath and no CommonJS entry', async
     '@pmndrs/glyph/font-baker/validator',
     '@pmndrs/glyph/loader',
     '@pmndrs/glyph/config',
+    '@pmndrs/glyph/extend',
     '@pmndrs/glyph/raster',
     '@pmndrs/glyph/config/font-library',
     '@pmndrs/glyph/tsl',
@@ -229,7 +230,7 @@ async function verifyIsolatedPackedConsumers(archive, availableVersions, context
       name: 'core',
       dependencies: [],
       absentPeers: ['three', 'typegpu', '@typegpu/gl', '@typegpu/three'],
-      entry: ["import * as core from '@pmndrs/glyph';", 'export { core };'],
+      entry: publicSurfaceEntry(['@pmndrs/glyph', '@pmndrs/glyph/core']),
       missingPeerImports: [
         { specifier: '@pmndrs/glyph/three', peer: 'three' },
         { specifier: '@pmndrs/glyph/typegpu', peer: 'typegpu' },

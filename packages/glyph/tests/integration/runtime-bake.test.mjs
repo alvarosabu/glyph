@@ -441,7 +441,7 @@ test('external techniques bake through their own declared baker, never the Worke
     ],
   });
   const artifact = await readFile(stubOutput);
-  const { defineRasterFormat } = await import('@pmndrs/glyph/extend');
+  const { defineRasterFormat } = await import('@pmndrs/glyph/core');
   const { workerRasterKinds } = await import('../../dist/internal/runtime-bake-protocol.js');
   const external = defineRasterFormat({
     id: 'test.external-route',
@@ -495,7 +495,7 @@ test('external techniques bake through their own declared baker, never the Worke
 
 test('runtime technique artifacts are rejected when bytes contradict their stamp', async () => {
   const { source, artifact } = await fixturePromise;
-  const { defineRasterFormat } = await import('@pmndrs/glyph/extend');
+  const { defineRasterFormat } = await import('@pmndrs/glyph/core');
   const external = defineRasterFormat({
     id: 'test.invalid-runtime-fingerprint',
     kind: 'testInvalidFingerprint',

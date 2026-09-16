@@ -29,16 +29,16 @@ sources:
     title: Renderer integration guide
 generated:
   by: openai-codex/gpt-5.6
-  at: '2026-09-16T13:00:04Z'
+  at: '2026-09-16T13:27:39Z'
 ---
 
 # Glyph integration API
 
 Applications import the values and types they encounter from `@pmndrs/glyph`. Integration authors import the
-renderer-neutral construction helpers from `@pmndrs/glyph/extend`. The former
-public `/core` engine-driving surface was removed by D-308 and commit `1990ebf3d`; its low-level ownership model is now an
-implementation detail. This file retains its canonical path for existing documentation links, but specifies only the
-current root API.
+renderer-neutral construction helpers from `@pmndrs/glyph/core`. The engine-driving API formerly published at `/core`
+was removed by D-308 and commit `1990ebf3d`; its low-level ownership model remains private. The current `/core` exposes
+only the supported integration construction contract. This file retains its canonical path for existing documentation
+links and specifies the current root and integration API.
 
 Three and React are integrations over the same public contract available to third parties. Canvas, scene, GPU device,
 material, pipeline, and render pass remain renderer-owned.
@@ -79,7 +79,7 @@ boundary, root extension, and font formats.
 The external example is the canonical minimal configuration:
 
 ```ts
-import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/extend';
+import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/core';
 
 const config = defineGlyphConfig({
   schema: ExampleSchema,

@@ -5,7 +5,7 @@ description: Provides the shared interactive and automated benchmark product sur
 resource: ../../../benches
 workspace_package: '@pmndrs/glyph-benchmarks'
 documentation_type: reference
-source_digest: 'sha256:217914f58ad0fe1d4f9714b022bd377da61d3d3bcdff4bdb0f7f1646ed8d32be'
+source_digest: 'sha256:7ce4e5ac0c4b1d5a7e1235484586c683bfbd2c6d0f0214ede637436c593ef8ba'
 tags: [package, benchmarks, react, vite, product-e2e]
 sources:
   - id: manifest
@@ -211,13 +211,13 @@ sources:
     title: Realtime comparison product probe
 generated:
   by: openai-codex/gpt-6
-  at: '2026-09-16T13:00:04Z'
+  at: '2026-09-16T13:27:39Z'
 ---
 
 # Package reference: `@pmndrs/glyph-benchmarks`
 
 The core size fixture uses named root imports so it continues to measure core functionality independently of the
-separately measured raster formats now exported from the same entry. Integration helper fixtures import `/extend`.
+separately measured raster formats now exported from the same entry. Integration helper fixtures import `/core`.
 
 The benchmark workspace is rooted at `benches/`, alongside `apps/` and `packages/`. The root `dev`, `build`,
 `test`, `check`, and `scripts` commands include it explicitly. Fixtures and assets throughout the repository use
@@ -645,7 +645,7 @@ Run `pnpm scripts list benchmark` from the workspace root to discover current be
 
 The 0.1.0 export cleanup removes raw ABI re-exports from the baker size entries. The regenerated package-size report
 records the supported consumer surface, including the root format move. Relative to the original pre-cleanup build,
-core grows by 142 gzip bytes, while the TypeGPU integrations shrink by 2,003 and 3,074 bytes. Wasm artifacts are
+core grows by 217 gzip bytes, while the TypeGPU integrations shrink by 2,003 and 3,074 bytes. Wasm artifacts are
 byte-identical, and every existing size budget passes without raising a ceiling. Direct named-import comparisons
 separately prove that the root format move retains no additional modules or emitted assets.
 

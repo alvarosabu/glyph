@@ -5,7 +5,7 @@ description: Proves the root GlyphConfig integration surface through a real Type
 resource: ../../../packages/glyph-example-renderer
 workspace_package: '@pmndrs/glyph-example-renderer'
 documentation_type: reference
-source_digest: 'sha256:46f879989269d9c177f42604d78432319d73a812bc2744cfec1035587eca24fc'
+source_digest: 'sha256:3ff90c39c63912b1afaa74eff0bb5ac65a395bc34699829421799be770d0e6fb'
 tags: [package, glyph-config, codec, integration-proof, typegpu]
 sources:
   - id: manifest
@@ -43,12 +43,12 @@ sources:
     title: Real font, resource, geometry, and non-empty draw acceptance
 generated:
   by: openai-codex/gpt-6
-  at: '2026-09-16T13:00:04Z'
+  at: '2026-09-16T13:27:39Z'
 ---
 
 # Package reference: `@pmndrs/glyph-example-renderer`
 
-Application-encountered types come from the Glyph root; renderer-neutral construction helpers come from `/extend`.
+Application-encountered types come from the Glyph root; renderer-neutral construction helpers come from `/core`.
 
 Status: Active external-renderer proof. It drives a real immutable font through the public root `GlyphConfig`, Codec,
 resource realization, borrowed `CommandBufferView`, and concrete TypeGPU/WebGPU submission without Three.js.

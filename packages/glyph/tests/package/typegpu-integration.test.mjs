@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { glyph, msdf } from '@pmndrs/glyph';
 import { defineTypeGpuConfig } from '@pmndrs/glyph/typegpu';
-import { resourceLease, id, msdfSchema, slugSchema } from '@pmndrs/glyph/extend';
+import { resourceLease, id, msdfSchema, slugSchema } from '@pmndrs/glyph/core';
 import { codecDescriptor, TYPEGPU_PLACEMENT_SLOT_BUFFER_ID } from '../../dist/typegpu/internal/codec.js';
 
 const fontBytes = await readFile(

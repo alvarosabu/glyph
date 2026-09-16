@@ -1,4 +1,4 @@
-import { defineGlyphConfig, defineRasterFormat, defineTechniqueSchema } from '@pmndrs/glyph/extend';
+import { defineGlyphConfig, defineRasterFormat, defineTechniqueSchema } from '@pmndrs/glyph/core';
 import { useBitmap } from '@pmndrs/glyph/react';
 import { bitmap } from '@pmndrs/glyph';
 import { defineTextMaterial } from '@pmndrs/glyph/three';

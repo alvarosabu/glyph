@@ -1,7 +1,7 @@
 import type { ParagraphLayoutSummary } from '@pmndrs/glyph';
 import { TextGroup, type ThreeRoot } from '@pmndrs/glyph/three';
 import * as THREE from 'three/webgpu';
-import { selectBitmapStrikePpem } from '@pmndrs/glyph/extend';
+import { selectBitmapStrikePpem } from '@pmndrs/glyph/core';
 import type { BenchmarkFontFixture, RasterConformanceSpecimen } from '../../../benchmark/font-fixtures';
 import type { RuntimeLiveStats } from '../../../benchmark/runtime-world';
 import type { FontDelivery, RasterFormatName } from '../../../benchmark/url-state';

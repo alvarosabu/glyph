@@ -13,7 +13,7 @@ import {
   registerRasterCodec,
   defineTechniqueGeometryKind,
   defineTechniqueSchema,
-} from '@pmndrs/glyph/extend';
+} from '@pmndrs/glyph/core';
 import {
   createImmutableFontBacking,
   createImmutableFontLease,
