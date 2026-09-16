@@ -205,7 +205,6 @@ export type {
   BaselineMetrics,
   BorrowedGlyph,
   BorrowedGlyphLayout,
-  FontSlotRecord,
   LayoutBox,
   ParagraphIntrinsicWidths,
   GlyphLayout,
@@ -254,9 +253,6 @@ export type {
   UnboundSpanTag,
 } from './formatted-text.js';
 export { span, txt } from './formatted-text.js';
-
-export type { GlyphPaint, LinearRgba, ResolvedPaint } from './paint.js';
-
 export type {
   JsonValue,
   RasterKind,
@@ -289,4 +285,4 @@ export type {
 
 export type { RasterCoverage, RasterUnicodeRange } from './raster-coverage.js';
 
-export type { FontFeature, ResolvedFontFeature } from './font-feature.js';
+export type { FontFeature } from './font-feature.js';

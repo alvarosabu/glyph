@@ -4,20 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { loadFont } from '../../dist/loader.js';
-import { bakeFont } from '@pmndrs/glyph/bake';
+import { loadFont, FontLoader } from '../../dist/loader.js';
+import { bakeFont, createFontBaker, fontBakerWasmUrl } from '@pmndrs/glyph/bake';
 import { bakeFontInWorker } from '@pmndrs/glyph/runtime-bake';
-import { createFontBaker } from '@pmndrs/glyph/bake';
-import { fontBakerWasmUrl } from '@pmndrs/glyph/bake';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
+import { bitmap, msdf, slug } from '@pmndrs/glyph/raster';
 import bitmapBaker from '../../dist/bakers/bitmap.js';
 import msdfBaker from '../../dist/bakers/msdf.js';
 import slugBaker from '../../dist/bakers/slug.js';
 import { resolveRasterBakePlan } from '../../dist/internal/raster-bake-plan.js';
 import { cloneImmutableFont, immutableFontResources, immutableFontVariantIdentity } from '../../dist/loaded-font.js';
-import { FontLoader } from '../../dist/loader.js';
 import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerprint.js';
 
 const fixtureDirectory = new URL('../../../../benches/fixtures/fonts/inter-v4.1/', import.meta.url);
@@ -446,8 +441,8 @@ test('external techniques bake through their own declared baker, never the Worke
     ],
   });
   const artifact = await readFile(stubOutput);
-  const { defineRasterFormat } = await import('@pmndrs/glyph/config/raster-format');
-  const { workerRasterKinds } = await import('@pmndrs/glyph/runtime-bake');
+  const { defineRasterFormat } = await import('@pmndrs/glyph/config');
+  const { workerRasterKinds } = await import('../../dist/internal/runtime-bake-protocol.js');
   const external = defineRasterFormat({
     id: 'test.external-route',
     kind: 'testExternal',
@@ -500,7 +495,7 @@ test('external techniques bake through their own declared baker, never the Worke
 
 test('runtime technique artifacts are rejected when bytes contradict their stamp', async () => {
   const { source, artifact } = await fixturePromise;
-  const { defineRasterFormat } = await import('@pmndrs/glyph/config/raster-format');
+  const { defineRasterFormat } = await import('@pmndrs/glyph/config');
   const external = defineRasterFormat({
     id: 'test.invalid-runtime-fingerprint',
     kind: 'testInvalidFingerprint',

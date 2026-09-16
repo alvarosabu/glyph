@@ -7,7 +7,7 @@ import {
   type ParagraphLayoutSummary,
   type TextStyle,
 } from '@pmndrs/glyph';
-import type { msdf as mtsdf } from '@pmndrs/glyph/raster/msdf';
+import type { msdf as mtsdf } from '@pmndrs/glyph/raster';
 import type { Text, ThreeRoot } from '@pmndrs/glyph/three';
 import * as THREE from 'three/webgpu';
 

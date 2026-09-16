@@ -1,6 +1,6 @@
 import type { RasterDataOf, RasterFormatMetadata } from '../config/raster-format.js';
 import type { CompiledRasterFont, RasterCodec } from '../config/raster.js';
-import { isTechniqueSchema, type TechniqueSchemaMetadata } from '../config/schema.js';
+import { isTechniqueSchema, type TechniqueSchemaMetadata } from './schema.js';
 import { isRasterFormat } from './raster-format-registry.js';
 import {
   installRasterFormatCompiler,

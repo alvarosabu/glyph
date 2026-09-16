@@ -16,19 +16,7 @@ import {
   type RasterFormatId,
 } from '../config/raster-format.js';
 
-export {
-  BITMAP_EXTENSION,
-  BITMAP_FORMAT_VERSION,
-  BITMAP_GENERATOR_VERSION,
-  BITMAP_KIND,
-  MAX_BITMAP_PPEM,
-  bitmapDescriptor,
-  bitmapDescriptorRasterKey,
-  bitmapRasterKey,
-  canonicalizeBitmapDescriptor,
-  type BitmapDescriptor,
-  type BitmapOptions,
-} from '../internal/bitmap-contract.js';
+export { type BitmapDescriptor, type BitmapOptions } from '../internal/bitmap-contract.js';
 
 const RECORD_STRIDE = DENSE_GLYPH_RECORD_STRIDE;
 const MAX_RUNTIME_TEXTURE_BYTES = 256 * 1024 * 1024;

@@ -50,46 +50,6 @@
       "source": "./src/shaders/tsl/index.ts",
       "import": "./dist/shaders/tsl/index.js"
     },
-    "./shaders/tsl/bitmap": {
-      "types": {
-        "source": "./src/shaders/tsl/bitmap-shader.ts",
-        "default": "./dist/shaders/tsl/bitmap-shader.d.ts"
-      },
-      "source": "./src/shaders/tsl/bitmap-shader.ts",
-      "import": "./dist/shaders/tsl/bitmap-shader.js"
-    },
-    "./shaders/tsl/msdf": {
-      "types": {
-        "source": "./src/shaders/tsl/msdf-shader.ts",
-        "default": "./dist/shaders/tsl/msdf-shader.d.ts"
-      },
-      "source": "./src/shaders/tsl/msdf-shader.ts",
-      "import": "./dist/shaders/tsl/msdf-shader.js"
-    },
-    "./shaders/tsl/slug": {
-      "types": {
-        "source": "./src/shaders/tsl/slug/index.ts",
-        "default": "./dist/shaders/tsl/slug/index.d.ts"
-      },
-      "source": "./src/shaders/tsl/slug/index.ts",
-      "import": "./dist/shaders/tsl/slug/index.js"
-    },
-    "./shaders/tsl/decoration": {
-      "types": {
-        "source": "./src/shaders/tsl/decoration-shader.ts",
-        "default": "./dist/shaders/tsl/decoration-shader.d.ts"
-      },
-      "source": "./src/shaders/tsl/decoration-shader.ts",
-      "import": "./dist/shaders/tsl/decoration-shader.js"
-    },
-    "./shaders/tsl/packed-color": {
-      "types": {
-        "source": "./src/shaders/tsl/packed-color.ts",
-        "default": "./dist/shaders/tsl/packed-color.d.ts"
-      },
-      "source": "./src/shaders/tsl/packed-color.ts",
-      "import": "./dist/shaders/tsl/packed-color.js"
-    },
     "./shaders/tsl/internal/*": null,
     "./shaders/tsl/slug/internal/*": null,
     "./shaders/typegpu": {
@@ -99,46 +59,6 @@
       },
       "source": "./src/shaders/typegpu/index.ts",
       "import": "./dist/shaders/typegpu/index.js"
-    },
-    "./shaders/typegpu/bitmap": {
-      "types": {
-        "source": "./src/shaders/typegpu/bitmap-shader.ts",
-        "default": "./dist/shaders/typegpu/bitmap-shader.d.ts"
-      },
-      "source": "./src/shaders/typegpu/bitmap-shader.ts",
-      "import": "./dist/shaders/typegpu/bitmap-shader.js"
-    },
-    "./shaders/typegpu/bitmap-reference": {
-      "types": {
-        "source": "./src/shaders/typegpu/bitmap-reference.ts",
-        "default": "./dist/shaders/typegpu/bitmap-reference.d.ts"
-      },
-      "source": "./src/shaders/typegpu/bitmap-reference.ts",
-      "import": "./dist/shaders/typegpu/bitmap-reference.js"
-    },
-    "./shaders/typegpu/msdf": {
-      "types": {
-        "source": "./src/shaders/typegpu/msdf-shader.ts",
-        "default": "./dist/shaders/typegpu/msdf-shader.d.ts"
-      },
-      "source": "./src/shaders/typegpu/msdf-shader.ts",
-      "import": "./dist/shaders/typegpu/msdf-shader.js"
-    },
-    "./shaders/typegpu/slug": {
-      "types": {
-        "source": "./src/shaders/typegpu/slug/index.ts",
-        "default": "./dist/shaders/typegpu/slug/index.d.ts"
-      },
-      "source": "./src/shaders/typegpu/slug/index.ts",
-      "import": "./dist/shaders/typegpu/slug/index.js"
-    },
-    "./shaders/typegpu/decoration": {
-      "types": {
-        "source": "./src/shaders/typegpu/decoration-shader.ts",
-        "default": "./dist/shaders/typegpu/decoration-shader.d.ts"
-      },
-      "source": "./src/shaders/typegpu/decoration-shader.ts",
-      "import": "./dist/shaders/typegpu/decoration-shader.js"
     },
     "./shaders/typegpu/internal/*": null,
     "./shaders/typegpu/slug/internal/*": null,
@@ -167,74 +87,18 @@
     "./three/renderer-resources": null,
     "./three/text": null,
     "./three/transform-synchronizer": null,
-    "./three/*": {
-      "types": {
-        "source": "./src/three/*.ts",
-        "default": "./dist/three/*.d.ts"
-      },
-      "source": "./src/three/*.ts",
-      "import": "./dist/three/*.js"
-    },
     "./react": {
       "types": {
-        "source": "./src/react.ts",
-        "default": "./dist/react.d.ts"
+        "source": "./src/react/index.ts",
+        "default": "./dist/react/index.d.ts"
       },
-      "source": "./src/react.ts",
-      "import": "./dist/react.js"
-    },
-    "./react/*": {
-      "types": {
-        "source": "./src/react/*.ts",
-        "default": "./dist/react/*.d.ts"
-      },
-      "source": "./src/react/*.ts",
-      "import": "./dist/react/*.js"
-    },
-    "./raster/bitmap": {
-      "types": {
-        "source": "./src/raster/bitmap.ts",
-        "default": "./dist/raster/bitmap.d.ts"
-      },
-      "source": "./src/raster/bitmap.ts",
-      "import": "./dist/raster/bitmap.js"
-    },
-    "./raster/msdf": {
-      "types": {
-        "source": "./src/raster/msdf.ts",
-        "default": "./dist/raster/msdf.d.ts"
-      },
-      "source": "./src/raster/msdf.ts",
-      "import": "./dist/raster/msdf.js"
-    },
-    "./raster/slug": {
-      "types": {
-        "source": "./src/raster/slug.ts",
-        "default": "./dist/raster/slug.d.ts"
-      },
-      "source": "./src/raster/slug.ts",
-      "import": "./dist/raster/slug.js"
+      "source": "./src/react/index.ts",
+      "import": "./dist/react/index.js"
     },
     "./raster/internal/*": null,
-    "./raster/*": {
-      "types": {
-        "source": "./src/raster/*.ts",
-        "default": "./dist/raster/*.d.ts"
-      },
-      "source": "./src/raster/*.ts",
-      "import": "./dist/raster/*.js"
-    },
     "./config/font-library": null,
     "./config/raster-host": null,
     "./config/text-property": null,
-    "./config/*": {
-      "types": {
-        "source": "./src/config/*.ts",
-        "default": "./dist/config/*.d.ts"
-      },
-      "source": "./src/config/*.ts",
-      "import": "./dist/config/*.js"
-    },
     "./bakers/bitmap": {
       "types": {
         "source": "./src/bakers/bitmap.ts",
@@ -309,7 +173,23 @@
       "source": "./src/three/typegpu.ts",
       "import": "./dist/three/typegpu.js"
     },
-    "./three/typegpu/internal/*": null
+    "./three/typegpu/internal/*": null,
+    "./config": {
+      "types": {
+        "source": "./src/config.ts",
+        "default": "./dist/config.d.ts"
+      },
+      "source": "./src/config.ts",
+      "import": "./dist/config.js"
+    },
+    "./raster": {
+      "types": {
+        "source": "./src/raster/index.ts",
+        "default": "./dist/raster/index.d.ts"
+      },
+      "source": "./src/raster/index.ts",
+      "import": "./dist/raster/index.js"
+    }
   },
   "publishConfig": {
     "access": "public",

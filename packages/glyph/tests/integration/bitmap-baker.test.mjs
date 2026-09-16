@@ -2,15 +2,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import {
-  bitmapBakerAbi,
-  bitmapBakerFromCore,
-  createBitmapBaker,
-  createBitmapBakerFromInstance,
-} from '@pmndrs/glyph/bakers/bitmap';
-import { bitmap, bitmapDescriptor, bitmapRasterKey } from '@pmndrs/glyph/raster/bitmap';
+import { bitmapBakerFromCore, createBitmapBaker, createBitmapBakerFromInstance } from '@pmndrs/glyph/bakers/bitmap';
+import { bitmap } from '@pmndrs/glyph/raster';
 import { validateBitmapArtifact } from '../../dist/bakers/bitmap-validator.js';
 import { interShapingFingerprint, interSourceFingerprint } from '../support/inter-identity.mjs';
+import { bitmapBakerAbi } from '../../dist/generated/bitmap-baker-abi.js';
+import { bitmapDescriptor, bitmapRasterKey } from '../../dist/internal/bitmap-contract.js';
 
 const wasmUrl = new URL('../../dist/bitmap-baker.wasm', import.meta.url);
 const fontUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);

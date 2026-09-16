@@ -1,10 +1,7 @@
 /** Verifies edits reach the GPU-sampled packed instanced attributes, not just engine state (`layout`/`glyphs`/counts) — an edit can pass those while rendering the wrong glyph. Shared oracle lives in `../support/text-mutation-lanes.mjs`; sequences are seeded and deterministic. */
 import test, { after } from 'node:test';
 
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
-
+import { bitmap, msdf, slug } from '@pmndrs/glyph/raster';
 import {
   assertMatchesFreshBuild,
   createFontCache,

@@ -4,11 +4,16 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { glyph } from '@pmndrs/glyph';
 import { registerThreeRasterProgram, ThreeConfig } from '@pmndrs/glyph/three';
-import { f32, techniqueProgram, u32 } from '@pmndrs/glyph/config/codec-program';
-import { id } from '@pmndrs/glyph/config/codec';
-import { defineRasterFormat } from '@pmndrs/glyph/config/raster-format';
-import { registerRasterCodec } from '@pmndrs/glyph/config/raster';
-import { defineTechniqueGeometryKind, defineTechniqueSchema } from '@pmndrs/glyph/config/schema';
+import {
+  f32,
+  techniqueProgram,
+  u32,
+  id,
+  defineRasterFormat,
+  registerRasterCodec,
+  defineTechniqueGeometryKind,
+  defineTechniqueSchema,
+} from '@pmndrs/glyph/config';
 import {
   createImmutableFontBacking,
   createImmutableFontLease,

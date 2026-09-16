@@ -4,14 +4,15 @@ import test from 'node:test';
 import { Scene } from 'three/webgpu';
 
 import { GlyphFontError, glyph } from '@pmndrs/glyph';
-import { id } from '@pmndrs/glyph/config/codec';
-import { defineGlyphConfig, defineGlyphSchema, resourceLease } from '@pmndrs/glyph/config/glyph';
-import { createRasterCodecProgram } from '@pmndrs/glyph/config/raster';
-import { defineCodecBuffers } from '@pmndrs/glyph/config/schema';
-import { bitmap as portableBitmap, bitmapCodec } from '@pmndrs/glyph/raster/bitmap';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
+import {
+  id,
+  defineGlyphConfig,
+  defineGlyphSchema,
+  resourceLease,
+  createRasterCodecProgram,
+  defineCodecBuffers,
+} from '@pmndrs/glyph/config';
+import { bitmap as portableBitmap, bitmapCodec, bitmap, msdf, slug } from '@pmndrs/glyph/raster';
 import { defineThreeConfig, ThreeConfig } from '@pmndrs/glyph/three';
 
 const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);

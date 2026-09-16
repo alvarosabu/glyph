@@ -5,7 +5,7 @@ description: Provides the shared interactive and automated benchmark product sur
 resource: ../../../benches
 workspace_package: '@pmndrs/glyph-benchmarks'
 documentation_type: reference
-source_digest: 'sha256:4dbf1eab79fb3bc359a99bc96a1a5b9a086fdb162b4badb1db06daeb6ea44850'
+source_digest: 'sha256:6fe6ee7eb58c2061b0fefdb3361a9ea2d2315a401e7bb684ba86f02320378ec4'
 tags: [package, benchmarks, react, vite, product-e2e]
 sources:
   - id: manifest
@@ -211,7 +211,7 @@ sources:
     title: Realtime comparison product probe
 generated:
   by: openai-codex/gpt-6
-  at: '2026-09-15T19:11:33Z'
+  at: '2026-09-16T12:35:09Z'
 ---
 
 # Package reference: `@pmndrs/glyph-benchmarks`
@@ -639,6 +639,11 @@ A successful baked Presentation preload retains one application-lifetime `Font` 
 | `dev`   | Build the baker dependency and start the Vite application.                                                       |
 
 Run `pnpm scripts list benchmark` from the workspace root to discover current benchmark maintenance workflows.
+
+The 0.1.0 export cleanup removes raw ABI re-exports from the baker size entries. The regenerated package-size report
+records the supported consumer surface. Relative to the pre-edit build, fifteen of sixteen measured JavaScript graphs
+are unchanged or smaller under gzip; core grows by 20 B, while the TypeGPU integrations shrink by 2,039 and 3,097 B.
+Wasm artifacts are byte-identical, and every existing size budget passes without raising a ceiling.
 
 The size lane is also a package-graph gate. Its consumer builds inspect emitted module membership rather than relying only on source text or byte totals: the browser-core entry must retain runtime baking as a dynamic chunk while excluding React, bitmap rendering, Node hosts, the Worker, the validator implementation, and portable-baker hosts from its initial graph. The lightweight shared version contract remains intentionally present. These assertions run for both readable and minified builds before size evidence is accepted.
 

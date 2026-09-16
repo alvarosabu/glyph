@@ -1,12 +1,8 @@
-import { defineGlyphConfig } from '@pmndrs/glyph/config/glyph';
-import { defineRasterFormat } from '@pmndrs/glyph/config/raster-format';
-import { defineTechniqueSchema } from '@pmndrs/glyph/config/schema';
-import { useBitmap } from '@pmndrs/glyph/react/bitmap';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { defineTextMaterial } from '@pmndrs/glyph/three/material';
-import { unpackSrgbRgba } from '@pmndrs/glyph/shaders/tsl/packed-color';
-import { slugRender } from '@pmndrs/glyph/shaders/typegpu/slug';
-import { referenceBitmapAtlasUv } from '@pmndrs/glyph/shaders/typegpu/bitmap-reference';
+import { defineGlyphConfig, defineRasterFormat, defineTechniqueSchema } from '@pmndrs/glyph/config';
+import { useBitmap } from '@pmndrs/glyph/react';
+import { bitmap } from '@pmndrs/glyph/raster';
+import { defineTextMaterial } from '@pmndrs/glyph/three';
+import { slugRender } from '@pmndrs/glyph/shaders/typegpu';
 
 void defineGlyphConfig;
 void defineRasterFormat;
@@ -14,9 +10,7 @@ void defineTechniqueSchema;
 void useBitmap;
 void bitmap;
 void defineTextMaterial;
-void unpackSrgbRgba;
 void slugRender;
-void referenceBitmapAtlasUv;
 
 import {
   ThreeConfig as experimentalThreeConfig,

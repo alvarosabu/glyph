@@ -34,7 +34,7 @@ sources:
     title: End-to-end renderer acceptance
 generated:
   by: openai-codex/gpt-5.6
-  at: '2026-09-13T15:38:33Z'
+  at: '2026-09-16T12:35:09Z'
 ---
 
 # Portable raster-format implementation report
@@ -95,7 +95,7 @@ The raster layer validates one artifact extension and returns typed immutable da
 example's essential shape is:
 
 ```ts
-import { defineRasterFormat, defineRasterResourceId } from '@pmndrs/glyph/config/raster-format';
+import { defineRasterFormat, defineRasterResourceId } from '@pmndrs/glyph/config';
 
 export const glyphExample = defineRasterFormat({
   id: 'studio.glyph-example',
@@ -134,8 +134,8 @@ enters the retained font. Resource type is inferred later where the portable fon
 The schema is the source of truth shared by Codec authoring and shader variants. Its helpers use explicit config leaves:
 
 ```ts
-import { id } from '@pmndrs/glyph/config/codec';
-import { defineTechniqueSchema } from '@pmndrs/glyph/config/schema';
+import { id } from '@pmndrs/glyph/config';
+import { defineTechniqueSchema } from '@pmndrs/glyph/config';
 
 export const glyphExampleSchema = defineTechniqueSchema({
   technique: glyphExample.id,
@@ -175,7 +175,7 @@ The portable RasterCodec combines a constrained expression callback with cold pe
 
 ```ts
 import type { RasterCodec } from '@pmndrs/glyph';
-import { f32, techniqueProgram } from '@pmndrs/glyph/config/codec-program';
+import { f32, techniqueProgram } from '@pmndrs/glyph/config';
 
 export const glyphExampleCodecDefinition: RasterCodec<typeof glyphExample, typeof glyphExampleSchema> = {
   raster: glyphExample,
@@ -225,7 +225,7 @@ once per frame or glyph; its result is portable binding data and leased resource
 Register the portable Codec from the package's side-effectful main path:
 
 ```ts
-import { registerRasterCodec } from '@pmndrs/glyph/config/raster';
+import { registerRasterCodec } from '@pmndrs/glyph/config';
 import { glyphExampleCodecDefinition } from './portable.js';
 
 export const glyphExampleCodec = registerRasterCodec(glyphExampleCodecDefinition);
@@ -241,9 +241,9 @@ factory:
 
 ```ts
 import type { CodecCapabilitySet, CodecDescriptor, CodecIdFactory } from '@pmndrs/glyph';
-import { id } from '@pmndrs/glyph/config/codec';
-import { createRasterCodecProgram } from '@pmndrs/glyph/config/raster';
-import { defineCodecBuffers } from '@pmndrs/glyph/config/schema';
+import { id } from '@pmndrs/glyph/config';
+import { createRasterCodecProgram } from '@pmndrs/glyph/config';
+import { defineCodecBuffers } from '@pmndrs/glyph/config';
 
 const system = defineCodecBuffers({
   stableGlyphId: {
@@ -349,7 +349,7 @@ The public renderer boundary is config-only. `defineGlyphConfig()` ties the sche
 renderer result, boundary, and root API together:
 
 ```ts
-import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/config/glyph';
+import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/config';
 
 export type ExampleGlyphConfig = GlyphConfigFor<
   typeof ExampleSchema,
@@ -472,7 +472,7 @@ objects, then let the caller supply its canvas context, render pass, target, sha
 
 The current implementation proves:
 
-- raster-format and renderer production code use root application types, `/config/*` helpers, and explicit
+- raster-format and renderer production code use root application types, `/config` helpers, and explicit
   shader/baker subpaths only;
 - TypeGPU and TSL variants consume the same named buffers, geometry, resources, and edge behavior;
 - the example renderer composes its own Codec through `encode()`;

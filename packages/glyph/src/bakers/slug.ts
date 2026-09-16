@@ -5,7 +5,7 @@ import type {
   RasterBakerModule,
   SerializedBakeError,
 } from '../bake.js';
-import { slugBakerAbi, type SlugBakerAbi } from '../generated/slug-baker-abi.js';
+import { slugBakerAbi } from '../generated/slug-baker-abi.js';
 import {
   createDirectRasterBakerFromInstance,
   instantiateWasm,
@@ -22,9 +22,6 @@ import {
 import { cacheSuccessfulPromise } from '../internal/successful-promise-cache.js';
 import { GlyphError } from '../glyph-error.js';
 import type { Fingerprint, RasterKey } from '../identity.js';
-
-export { slugBakerAbi } from '../generated/slug-baker-abi.js';
-
 export type SlugBakerOptions = SlugOptions | undefined;
 
 export interface SlugBakerRequest {
@@ -50,7 +47,6 @@ export interface SlugBakerCore {
 }
 
 export type SlugBakerWasmSource = BufferSource | WebAssembly.Module;
-export type { SlugBakerAbi };
 
 export class SlugBakeError extends GlyphError<'bake-failed'> {
   readonly reason: string;

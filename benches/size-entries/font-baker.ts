@@ -1,5 +1,1 @@
-export {
-  createFontBaker,
-  createFontBakerFromInstance,
-  fontBakerAbi,
-} from '../../packages/glyph/dist/font-baker/index.js';
+export { createFontBaker, createFontBakerFromInstance } from '../../packages/glyph/dist/font-baker/index.js';

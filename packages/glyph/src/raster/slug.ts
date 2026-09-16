@@ -15,17 +15,8 @@ import {
 } from '../config/raster-format.js';
 
 export {
-  SLUG_DEFAULT_BAND_COUNT,
-  SLUG_EXTENSION,
-  SLUG_FORMAT_VERSION,
-  SLUG_GENERATOR_VERSION,
   SLUG_GLYPH_RECORD_STRIDE,
-  SLUG_KIND,
   SLUG_PLANE_UNITS_PER_EM,
-  slugDescriptor,
-  slugDescriptorRasterKey,
-  SLUG_CUBIC_SUBDIVISIONS,
-  SLUG_MAX_CUBIC_SUBDIVISIONS,
   type SlugDescriptor,
   type SlugOptions,
 } from '../internal/slug-contract.js';

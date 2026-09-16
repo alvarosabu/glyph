@@ -47,26 +47,26 @@ Prefer a shape that cannot express the mistake over a check that catches it.
 ## Where a name lives
 
 **A value or type an application can encounter lives at the root. A renderer-neutral helper only an integrator
-calls lives on the exact `/config/*` leaf that owns it.**
+calls lives on `/config`.**
 
 `ParagraphMeasurement` and `GlyphConfig` are at the root because applications encounter them through `Text` and
-`glyph.handle()`. `defineGlyphConfig` lives at `/config/glyph` because only an integration author calls it. Codec,
-schema, portable-resource, and raster-format construction helpers follow the same exact-leaf rule. Internal engine,
+`glyph.handle()`. `defineGlyphConfig` lives at `/config` because only an integration author calls it. Codec,
+schema, portable-resource, and raster-format construction helpers share that entry. Internal engine,
 planner, wire, projection, and binding machinery has no public subpath. Boundary and packed-package tests enforce all
 three facts.
 
 | entry                    | holds                                                                                                | audience     |
 | ------------------------ | ---------------------------------------------------------------------------------------------------- | ------------ |
 | `.`                      | `glyph`, fonts, authoring, layout and measurement values, plus application-encountered config types  | everyone     |
-| `./config/*`             | exact renderer-neutral construction helpers for config, Codec, schema, resources, and raster formats | integrators  |
+| `./config`               | renderer-neutral construction helpers for config, Codec, schema, resources, and raster formats | integrators  |
 | `./three`, `./react`, `./typegpu`     | one integration's application surface                                                                | applications |
-| `./three/*`, `./react/*` | independently importable integration features and raster formats                                     | applications |
-| `./tsl/*`, `./shaders/*` | independently importable technique shaders, with no engine or scene                                  | any host     |
+| `./raster`               | portable Bitmap, MSDF, and Slug formats, schemas, and codecs                                         | applications |
+| `./shaders/tsl`, `./shaders/typegpu` | reusable technique shaders, with no engine or scene                                         | any host     |
 
-Config leaves are **additive to the root, not parallel to it**: an integrator imports application-encountered types
-from the root and construction helpers from their one owning leaf. Do not add a config barrel or re-export those
-helpers from the root merely to shorten imports; that charges ordinary applications for the integration DSL and gives
-each helper multiple public homes.
+Config is **additive to the root, not parallel to it**: an integrator imports application-encountered types
+from the root and construction helpers from `/config`. Keep the config entry as static ESM re-exports of focused
+implementation modules so unused helpers remain tree-shakeable. Do not re-export those helpers from the root;
+each helper has one public home.
 
 An integration may re-export a root name **only when its own signatures use it** -- a caller should be able to name
 what `measureLayout()` returns without a second import, and nothing beyond that. Re-exporting more gives the

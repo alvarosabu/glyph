@@ -1,4 +1,4 @@
-/** A name has exactly one home: `.` for the application vocabulary, `./config/*` for renderer-neutral integration helpers, `./three` for the Three.js integration. An integration re-exports a root name only when it appears in its own signatures. */
+/** A name has exactly one home: `.` for the application vocabulary, `./config` for renderer-neutral integration helpers, `./three` for the Three.js integration. An integration re-exports a root name only when it appears in its own signatures. */
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -22,7 +22,7 @@ function published(source) {
   return names;
 }
 
-test('application types stay at root while integration construction lives on config leaves', async () => {
+test('application types stay at root while integration construction lives on config', async () => {
   const root = published(await declaration('index.d.ts'));
   const manifest = JSON.parse(await declaration('../package.json'));
   assert.equal(manifest.exports['./core'], undefined, 'handle/planner internals must not have a public subpath');
@@ -42,7 +42,7 @@ test('application types stay at root while integration construction lives on con
     null,
     'renderer-specific Codec packing must remain package-private',
   );
-  assert.ok(manifest.exports['./config/*'], 'renderer-neutral integration leaves must be public');
+  assert.ok(manifest.exports['./config'], 'renderer-neutral integration construction must be public');
 
   for (const name of ['GlyphConfig', 'Codec', 'TechniqueSchema', 'RasterFormat']) {
     assert.equal(root.has(name), true, `applications must be able to name ${name} from the root`);
@@ -72,10 +72,12 @@ test('application types stay at root while integration construction lives on con
     'config/resources.d.ts': ['assertPortableResource', 'definePortableVertexSemantic'],
     'config/schema.d.ts': ['defineCodecBuffers', 'defineTechniqueSchema'],
   };
+  const config = await import('@pmndrs/glyph/config');
   for (const [path, names] of Object.entries(leaves)) {
     const leaf = published(await declaration(path));
     for (const name of names) {
       assert.equal(leaf.has(name), true, `${path} must publish ${name}`);
+      assert.equal(typeof config[name], name === 'id' || name === 'f32' || name === 'u32' ? 'object' : 'function');
       assert.equal(root.has(name), false, `runtime integration helper ${name} must not leak through the root`);
     }
   }

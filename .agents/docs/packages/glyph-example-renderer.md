@@ -5,7 +5,7 @@ description: Proves the root GlyphConfig integration surface through a real Type
 resource: ../../../packages/glyph-example-renderer
 workspace_package: '@pmndrs/glyph-example-renderer'
 documentation_type: reference
-source_digest: 'sha256:316b1e2ddc822a2cad66a5cd33281a0e2bbc2d9750ec8d3298d7248ce736831e'
+source_digest: 'sha256:dc983daac617f1ba0385e77e71454aa3b4140b3f0df60769803f30f73c56e648'
 tags: [package, glyph-config, codec, integration-proof, typegpu]
 sources:
   - id: manifest
@@ -43,7 +43,7 @@ sources:
     title: Real font, resource, geometry, and non-empty draw acceptance
 generated:
   by: openai-codex/gpt-6
-  at: '2026-09-15T19:11:33Z'
+  at: '2026-09-16T12:35:09Z'
 ---
 
 # Package reference: `@pmndrs/glyph-example-renderer`

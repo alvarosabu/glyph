@@ -17,15 +17,17 @@ export interface SlugShaderPage {
   readonly referenceWidth: number;
 }
 
-export const slugCurveWidthAccessor: TgpuAccessor<d.U32> = tgpu.accessor(d.u32);
-export const slugHeaderWidthAccessor: TgpuAccessor<d.U32> = tgpu.accessor(d.u32);
-export const slugReferenceWidthAccessor: TgpuAccessor<d.U32> = tgpu.accessor(d.u32);
-export const slugCurveTexelSlot: TgpuSlot<SlugShaderPage['loadCurve']> = tgpu.slot<SlugShaderPage['loadCurve']>();
-export const slugHeaderTexelSlot: TgpuSlot<SlugShaderPage['loadHeader']> = tgpu.slot<SlugShaderPage['loadHeader']>();
+export const slugCurveWidthAccessor: TgpuAccessor<d.U32> = /* @__PURE__ */ tgpu.accessor(d.u32);
+export const slugHeaderWidthAccessor: TgpuAccessor<d.U32> = /* @__PURE__ */ tgpu.accessor(d.u32);
+export const slugReferenceWidthAccessor: TgpuAccessor<d.U32> = /* @__PURE__ */ tgpu.accessor(d.u32);
+export const slugCurveTexelSlot: TgpuSlot<SlugShaderPage['loadCurve']> =
+  /* @__PURE__ */ tgpu.slot<SlugShaderPage['loadCurve']>();
+export const slugHeaderTexelSlot: TgpuSlot<SlugShaderPage['loadHeader']> =
+  /* @__PURE__ */ tgpu.slot<SlugShaderPage['loadHeader']>();
 export const slugReferenceTexelSlot: TgpuSlot<SlugShaderPage['loadReference']> =
-  tgpu.slot<SlugShaderPage['loadReference']>();
+  /* @__PURE__ */ tgpu.slot<SlugShaderPage['loadReference']>();
 
-export const SlugShaderCurve: d.WgslStruct<{ p0: d.Vec2f; p1: d.Vec2f; p2: d.Vec2f }> = d.struct({
+export const SlugShaderCurve: d.WgslStruct<{ p0: d.Vec2f; p1: d.Vec2f; p2: d.Vec2f }> = /* @__PURE__ */ d.struct({
   p0: d.vec2f,
   p1: d.vec2f,
   p2: d.vec2f,

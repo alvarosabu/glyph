@@ -1,23 +1,15 @@
-import type { RasterDecodeArtifact, RasterDecodeFont, RasterKey } from '@pmndrs/glyph';
+import type { RasterDecodeArtifact, RasterDecodeFont } from '@pmndrs/glyph';
 import {
   validateMsdfArtifact,
   type MsdfArtifactValidationContext,
   type ValidatedMsdfArtifact,
 } from '../../dist/bakers/msdf-validator.js';
-import {
-  MSDF_KIND,
-  msdf,
-  msdfDescriptor,
-  msdfDescriptorRasterKey,
-  msdfRasterKey,
-  type MsdfData,
-  type MsdfOptions,
-} from '@pmndrs/glyph/raster/msdf';
+import { msdf, type MsdfData, type MsdfOptions } from '@pmndrs/glyph/raster';
 
-const descriptor = msdfDescriptor();
-const configuredDescriptor = msdfDescriptor({ emSize: 32, pixelRange: 6 });
+const descriptor = msdf.descriptor(undefined);
+const configuredDescriptor = msdf.descriptor({ emSize: 32, pixelRange: 6 });
 const configuredOptions: MsdfOptions = { emSize: 32, pixelRange: 6 };
-const kind: 'msdf' = MSDF_KIND;
+const kind: 'msdf' = msdf.kind;
 declare const font: RasterDecodeFont;
 declare const raster: RasterDecodeArtifact<'msdf'>;
 const data: Promise<MsdfData> = msdf.decode(font, raster);
@@ -31,13 +23,11 @@ void configuredOptions;
 void kind;
 void data;
 void validation;
-const descriptorRasterKey: RasterKey = msdfDescriptorRasterKey();
-const configuredRasterKey: RasterKey = msdfRasterKey({ emSize: 32, pixelRange: 4 });
-void descriptorRasterKey;
-void configuredRasterKey;
+const request = msdf({ emSize: 32, pixelRange: 4 });
+void request;
 
 // @ts-expect-error MSDF emSize is numeric.
-msdfDescriptor({ emSize: '32' });
+msdf.descriptor({ emSize: '32' });
 
 // @ts-expect-error MSDF options reject unknown fields.
-msdfDescriptor({ emSize: 32, quality: 'high' });
+msdf.descriptor({ emSize: 32, quality: 'high' });

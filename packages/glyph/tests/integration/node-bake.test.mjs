@@ -10,11 +10,11 @@ import test from 'node:test';
 import { bakeFont, bakeProject, NodeBakeError } from '@pmndrs/glyph/bake';
 import { bitmapBaker } from '@pmndrs/glyph/bakers/bitmap';
 import { validateBitmapArtifact } from '../../dist/bakers/bitmap-validator.js';
-import { bitmapDescriptor, bitmapRasterKey } from '@pmndrs/glyph/raster/bitmap';
 import { validateFontArtifact } from '@pmndrs/glyph/bake';
 
 import { runCli } from '../../dist/node/cli.js';
 import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerprint.js';
+import { bitmapDescriptor, bitmapRasterKey } from '../../dist/internal/bitmap-contract.js';
 
 const fontUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
 const iconFontUrl = new URL(

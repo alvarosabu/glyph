@@ -3,8 +3,8 @@ import test from 'node:test';
 
 import * as TSL from 'three/tsl';
 import * as THREE from 'three/webgpu';
-import { slugShader } from '../../dist/three/typegpu.js';
 import { compileNodeMaterialBackends } from '../support/node-material-shaders.mjs';
+import { slugShader } from '../../dist/three/typegpu/internal/slug-shader.js';
 
 /** Every host-agnostic core function the Three.js host is expected to call, per stage. */
 const CORE_FUNCTIONS = {

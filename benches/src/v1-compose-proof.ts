@@ -1,5 +1,5 @@
 import { type Font } from '@pmndrs/glyph';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { bitmap } from '@pmndrs/glyph/raster';
 import { defineTextMaterial, type Text } from '@pmndrs/glyph/three';
 
 import { loadBenchmarkFont as loadFont } from './workloads/font-assets/library';

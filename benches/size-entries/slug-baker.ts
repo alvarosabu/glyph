@@ -1,1 +1,1 @@
-export { createSlugBaker, createSlugBakerFromInstance, slugBaker, slugBakerAbi } from '@pmndrs/glyph/bakers/slug';
+export { createSlugBaker, createSlugBakerFromInstance, slugBaker } from '@pmndrs/glyph/bakers/slug';

@@ -28,11 +28,11 @@ describe('package boundary', () => {
       );
       const allowed = new Set([
         '@pmndrs/glyph',
-        '@pmndrs/glyph/config/codec',
-        '@pmndrs/glyph/config/glyph',
-        '@pmndrs/glyph/config/raster',
-        '@pmndrs/glyph/config/resources',
-        '@pmndrs/glyph/config/schema',
+        '@pmndrs/glyph/config',
+        '@pmndrs/glyph/config',
+        '@pmndrs/glyph/config',
+        '@pmndrs/glyph/config',
+        '@pmndrs/glyph/config',
       ]);
       for (const specifier of glyphImports) expect(allowed, `${file}: ${specifier}`).toContain(specifier);
       // No scene-graph integration or Three dependency.

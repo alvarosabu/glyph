@@ -23,7 +23,7 @@ import {
   type PortableResourceGroupPayload,
   type PortableTextureArrayPayload,
   type PortableTexturePayload,
-} from './resources.js';
+} from '../internal/resources.js';
 import { type CompiledCodecProgramBody, type CodecProgramSystemBuffers } from './codec-program.js';
 import { createHostRasterCodecProgram } from './raster-host.js';
 import {

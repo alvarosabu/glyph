@@ -16,7 +16,7 @@ export const TypeGpuBitmapInstance: d.WgslStruct<{
   uvSize: d.Vec2f;
   color: d.Vec4f;
   pageIndex: d.U32;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   /** Paragraph-local glyph origin, with y measured downward. */
   origin: d.vec2f,
   /** Glyph quad extent in paragraph-local units. */
@@ -35,16 +35,16 @@ export type TypeGpuBitmapInstance = d.InferGPU<typeof TypeGpuBitmapInstance>;
 /** Single-channel coverage pages uploaded in the atlas's own top-down row order — flipY-style host settings must stay disabled; read as exact clamped texels, no sampler. */
 export const TypeGpuBitmapPageLayout: TgpuBindGroupLayout<{
   page: TgpuLayoutTexture<d.WgslTexture2dArray<d.F32>> & { visibility?: readonly ['fragment'] };
-}> = tgpu.bindGroupLayout({
-  page: { texture: d.texture2dArray(d.f32), visibility: ['fragment'] },
+}> = /* @__PURE__ */ tgpu.bindGroupLayout({
+  page: { texture: /* @__PURE__ */ d.texture2dArray(d.f32), visibility: ['fragment'] },
 });
 
 /**
  * The default Bitmap page source. A direct TypeGPU host can replace it with a texture view, raw WebGPU view, or a
  * function returning either. The Three adapter replaces it with a `DataTexture` bridge from `@typegpu/three`.
  */
-export const bitmapPageAccessor: TgpuAccessor<d.WgslTexture2dArray<d.F32>> = tgpu.accessor(
-  d.texture2dArray(d.f32),
+export const bitmapPageAccessor: TgpuAccessor<d.WgslTexture2dArray<d.F32>> = /* @__PURE__ */ tgpu.accessor(
+  /* @__PURE__ */ d.texture2dArray(d.f32),
   () => TypeGpuBitmapPageLayout.$.page,
 );
 
@@ -55,7 +55,7 @@ export const TypeGpuBitmapVertexInput: d.WgslStruct<{
   instance: typeof TypeGpuBitmapInstance;
   modelViewProjection: d.Mat4x4f;
   screenSize: d.Vec2f;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   /** Unit-quad coordinate spanning `[0, 1]`, origin at upper-left — the coordinate `/tsl` reads from `positionLocal`; different geometry must preserve that correspondence. */
   quadPosition: d.vec2f,
   /** Unit-quad texture coordinate, the coordinate `/tsl` reads from `uv()`; equals `quadPosition` but carried separately since `/tsl` reads them independently. */
@@ -75,7 +75,7 @@ export const TypeGpuBitmapVertexOutput: d.WgslStruct<{
   atlasUv: d.Vec2f;
   color: d.Vec4f;
   pageLayer: d.U32;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   /** Glyph-quad position in paragraph space, y upward, z zero. */
   position: d.vec3f,
   /** Clip-space vertex position selected by the variant: default projection, or pixel-snapped. */
@@ -94,7 +94,7 @@ export const TypeGpuBitmapFragmentInput: d.WgslStruct<{
   atlasUv: d.Vec2f;
   color: d.Vec4f;
   pageLayer: d.U32;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   atlasUv: d.vec2f,
   color: d.vec4f,
   pageLayer: d.u32,
@@ -106,7 +106,7 @@ export const TypeGpuBitmapFragmentOutput: d.WgslStruct<{
   coverage: d.F32;
   color: d.Vec3f;
   opacity: d.F32;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   /** Sampled glyph coverage before paint alpha. */
   coverage: d.f32,
   color: d.vec3f,
@@ -146,7 +146,7 @@ export function projectClipPosition(modelViewProjection: d.m4x4f, position: d.v3
 
 /** The canonical Bitmap vertex stage under the default projection; a program wanting pixel snapping (sharp at rest, quantizes animated motion) binds `bitmapVertexSnapped` instead. */
 export const bitmapVertex: TgpuFn<(input: typeof TypeGpuBitmapVertexInput) => typeof TypeGpuBitmapVertexOutput> =
-  tgpu.fn(
+  /* @__PURE__ */ tgpu.fn(
     [TypeGpuBitmapVertexInput],
     TypeGpuBitmapVertexOutput,
   )((input) => {
@@ -165,7 +165,7 @@ export const bitmapVertex: TgpuFn<(input: typeof TypeGpuBitmapVertexInput) => ty
 
 /** The pixel-snapped Bitmap vertex stage: same graph with projected x/y rounded onto whole physical pixels — sharp at rest, but quantizes animated motion. */
 export const bitmapVertexSnapped: TgpuFn<(input: typeof TypeGpuBitmapVertexInput) => typeof TypeGpuBitmapVertexOutput> =
-  tgpu.fn(
+  /* @__PURE__ */ tgpu.fn(
     [TypeGpuBitmapVertexInput],
     TypeGpuBitmapVertexOutput,
   )((input) => {
@@ -235,11 +235,11 @@ function bitmapAccessorCoverage(atlasUv: d.v2f, pageLayer: number): number {
 }
 
 /** Override for procedural or host-indirected coverage; the default reads `bitmapPageAccessor`. */
-export const bitmapCoverageSlot: TgpuSlot<BitmapCoverageSource> = tgpu.slot(bitmapAccessorCoverage);
+export const bitmapCoverageSlot: TgpuSlot<BitmapCoverageSource> = /* @__PURE__ */ tgpu.slot(bitmapAccessorCoverage);
 
 /** The canonical Bitmap fragment stage: single-channel coverage fetched from the bound page array, then composed with the paint colour. */
 export const bitmapFragment: TgpuFn<(input: typeof TypeGpuBitmapFragmentInput) => typeof TypeGpuBitmapFragmentOutput> =
-  tgpu.fn(
+  /* @__PURE__ */ tgpu.fn(
     [TypeGpuBitmapFragmentInput],
     TypeGpuBitmapFragmentOutput,
   )((input) => {

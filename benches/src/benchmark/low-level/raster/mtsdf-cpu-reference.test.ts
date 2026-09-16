@@ -1,6 +1,6 @@
 import type { GlyphLayout } from '@pmndrs/glyph';
-import { defineRasterResourceId } from '@pmndrs/glyph/config/raster-format';
-import type { MsdfData as MtsdfData } from '@pmndrs/glyph/raster/msdf';
+import { defineRasterResourceId } from '@pmndrs/glyph/config';
+import type { MsdfData as MtsdfData } from '@pmndrs/glyph/raster';
 import { describe, expect, it } from 'vitest';
 
 import { compareRgba8Coverage, renderFlatMtsdfCpuReference } from './mtsdf-cpu-reference';

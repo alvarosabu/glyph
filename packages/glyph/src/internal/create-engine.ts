@@ -9,10 +9,6 @@ import type {
   ResolveContext,
   Retirement,
   ResourceLease,
-  TypedBuffer,
-  TypedMaterial,
-  TypedProgram,
-  TypedResource,
 } from '../config/glyph.js';
 import type { CodecBuffer, CodecDescriptor, CodecProgram } from '../config/codec.js';
 import { bindPatch, bindRetirement } from './bind-command-buffer.js';
@@ -22,6 +18,7 @@ import {
   type BorrowedTypedCommandTree,
   type TypedInstanceSpan,
 } from './typed-command-tree.js';
+import type { TypedBuffer, TypedMaterial, TypedProgram, TypedResource } from './typed-command-identity.js';
 
 /** Package-owned retained projector used by one root publication transaction. */
 export interface GlyphDisplayListProjector<Bindings extends GlyphBindingSet> {

@@ -5,7 +5,7 @@ description: Implements portable font loading, retained Rust shaping and layout,
 resource: ../../../packages/glyph
 workspace_package: '@pmndrs/glyph'
 documentation_type: reference
-source_digest: 'sha256:29b7662701f4d393d63d0d6c5215420c3513f7e6a4519d626e021c8760cdc876'
+source_digest: 'sha256:d6b33f7aac0c60a67e1b5eaf6f318affcafe8353d66d4c9395ee506417556a4d'
 tags: [package, public-api, rust, wasm, threejs, typography]
 sources:
   - id: manifest
@@ -109,7 +109,7 @@ sources:
     title: Pinned msdfgen CLI scanline and error-correction configuration
 generated:
   by: openai-codex/gpt-6
-  at: '2026-09-15T19:57:14Z'
+  at: '2026-09-16T12:35:09Z'
 ---
 
 # Package reference: `@pmndrs/glyph`
@@ -178,7 +178,7 @@ than a second application or integrator API. A consumer loads a FontFace selecti
 independent immutable Font lease needed by its engine binding. Portable compiled resources remain immutable payload data,
 while each renderer owns physical textures, buffers, geometry, and their device-relative leases.
 
-The `/config/*` leaves contain only renderer-neutral authoring operations. Package registries and identity maps, compiled
+The `/config` entry contains only renderer-neutral authoring operations. Package registries and identity maps, compiled
 Codec-body authentication, system-lane normalization, and Glyph's reserved built-in raster registration path stay under
 `src/internal`; they are neither root exports nor wildcard subpath APIs. Integrators can register their own portable raster
 Codecs through `registerRasterCodec()` and can normalize a renderer-owned capability set explicitly when composing
@@ -189,22 +189,19 @@ config helpers.
 | Subpath                         | Purpose                                                                                                                                |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `@pmndrs/glyph`                 | Root `glyph` runtime plus application-facing FontFace/font/raster contracts, fallback stacks, formatting helpers, and layout results.  |
-| `@pmndrs/glyph/config/*`        | Renderer-neutral GlyphConfig, Codec, schema, raster-format, and portable-resource helpers for integration authors.                     |
+| `@pmndrs/glyph/config`        | Renderer-neutral GlyphConfig, Codec, schema, raster-format, and portable-resource helpers for integration authors.                     |
 | `@pmndrs/glyph/three`           | Built-in `ThreeConfig`, handle-created `Text`/`TextGroup`, material factories, Codec registration, with the stable native TSL shaders. |
-| `@pmndrs/glyph/react`           | `GlyphProvider`, React `<Text>`/`<TextGroup>`, and generic `useFont`, reconciled through React Three Fiber.                            |
-| `@pmndrs/glyph/react/*`         | Typed `useBitmap`, `useMsdf`, and `useSlug` convenience hooks on their exact format leaves.                                            |
+| `@pmndrs/glyph/react`           | `GlyphProvider`, React `<Text>`/`<TextGroup>`, `useFont`, `useBitmap`, `useMsdf`, and `useSlug`, reconciled through React Three Fiber.      |
 | `@pmndrs/glyph/bake`            | Node programmatic font baking, glyph selection, and font inspection used by the `glyph` CLI.                                           |
 | `@pmndrs/glyph/runtime-bake`    | Explicit browser Worker host for optional runtime baking.                                                                              |
-| `@pmndrs/glyph/raster/*`        | Renderer-neutral Bitmap, MSDF, and Slug decoding and raster-format contracts.                                                          |
+| `@pmndrs/glyph/raster`        | Renderer-neutral Bitmap, MSDF, and Slug decoding and raster-format contracts.                                                          |
 | `@pmndrs/glyph/shaders/tsl`     | Stable native TSL raster-format shaders; no scene integration.                                                                         |
 | `@pmndrs/glyph/shaders/typegpu` | Canonical TypeGPU algorithms, schemas, slots, and accessors for every first-party raster format; no scene integration or engine.       |
 | `@pmndrs/glyph/typegpu`         | `defineTypeGpuConfig`, retained text, and bitmap/MSDF/Slug draws into caller-owned passes.                                             |
 | `@pmndrs/glyph/bakers/*`        | Optional portable raster bakers.                                                                                                       |
 
-The three renderer-neutral raster leaves retain portable Codec-registration side effects under tree shaking. Built-in
-Three configs select a private typed shader set carried by each handle's renderer resources, with no module-global switch. `/three` and `/shaders/tsl` preserve the native TSL implementation from `main`; `/three/typegpu` selects the migrated adapters over `/shaders/typegpu`. Both handle variants can coexist; the exact `/shaders/tsl/{bitmap,msdf,slug,decoration}` leaves remain the direct public shader surface for application
-composition. The unshipped `/three/bitmap`, `/three/msdf`, and `/three/slug` forwarding aliases were removed: applications
-import portable formats from `/raster/*` and shader builders from `/shaders/tsl/*` without paying for wrapper modules.
+The three renderer-neutral raster implementations retain portable Codec-registration side effects when selected from `/raster`. Built-in
+Three configs select a private typed shader set carried by each handle's renderer resources, with no module-global switch. `/three` and `/shaders/tsl` preserve the native TSL implementation from `main`; `/three/typegpu` selects the migrated adapters over `/shaders/typegpu`. Both handle variants can coexist. Applications import portable formats from `/raster` and shader builders from the shared backend entry, `/shaders/tsl` or `/shaders/typegpu`.
 Every TypeScript subpath also publishes a custom `source` condition. Workspace Vite applications opt into that condition
 for direct TS/TSX hot reload, while ordinary Node and package consumers continue to resolve built declarations and ESM.
 Wasm and `package.json` exports remain distribution artifacts because they have no TypeScript source equivalent.
@@ -793,7 +790,7 @@ artifact export, preventing Cargo's shared top-level artifact path from silently
 Renderer-facing types that applications can encounter publish from root `@pmndrs/glyph`, including `GlyphConfig`,
 `CommandBufferView`/`DisplayList`, constrained root services, and `GlyphRenderer.decode`. Runtime construction helpers
 such as `defineGlyphConfig`, Codec authoring, schema binding, raster-format definition, and resource leases live on
-explicit `@pmndrs/glyph/config/*` leaves. D-306 and D-308 supersede D-249's former public `/core` engine-driving layer. Internal projection,
+explicit `@pmndrs/glyph/config` leaves. D-306 and D-308 supersede D-249's former public `/core` engine-driving layer. Internal projection,
 identity mapping, planning, settlement, and Wasm transport are package machinery rather than an application or integrator
 API. The explicit `/shaders/tsl` and `/shaders/typegpu` subpaths own raster-format shader realizations and no scene, runtime, or root.
 
@@ -810,7 +807,7 @@ root publications, paragraphs, styles, materials, regions, exclusions, inline ob
 validated by package-owned handle state. Their scopes and the capability-set wire selection are unavailable from
 `/config/codec`, so a custom renderer cannot accidentally become a second engine-state owner.
 
-Three and `packages/glyph-example-renderer` consume the same public root types and `/config/*` helpers available to third-party integrations. The
+Three and `packages/glyph-example-renderer` consume the same public root types and `/config` helpers available to third-party integrations. The
 example is the standing second-engine proof: its Codec describes storage, the trusted internal projection supplies one
 borrowed ordered view, its renderer stages and commits host objects synchronously, exact identities govern retirement,
 and its caller-owned TypeGPU/WebGPU host later submits work. Portable font compilation retains only validated buffer,
@@ -821,13 +818,17 @@ package-private implementation data; the root exposes only renderer-facing seman
 The validator subpaths likewise had no consumer outside this package. Both sets of modules remain reachable by relative
 path from package-owned tests and scripts where wire-level verification is legitimate.
 
-Public implementation helpers use wildcard leaf exports under `/config`, `/three`, `/react`, and `/raster`. Shader
-realizations instead publish deliberate aggregate and technique barrels under `/shaders/tsl` and `/shaders/typegpu`,
-with exact utility leaves for packed color and Bitmap reference math. Slug's reusable primitives are exported from each
-`/slug` barrel without exposing its physical implementation files. Explicit `null` export-map entries block the
-package's `internal`, generated ABI, font-baker validator, Three executor, raster decoder, and TSL compatibility paths
-even though package-owned relative imports can still reach those files. Packed-package tests import every deliberate
-shader boundary and prove private deep paths fail with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+The 0.1.0 surface has 15 explicit ESM entry points and 149 distinct runtime export names, down from 40 and 239. There are no positive wildcard exports: adding a source file never
+publishes it. Renderer construction shares `/config`, portable formats share `/raster`, and React components and hooks share `/react`; Three helpers have one home on `/three`.
+Shader composition uses one entry per backend, `/shaders/tsl` and `/shaders/typegpu`, with complete stages, their input
+schemas, and resource slots/accessors. TypeGPU also retains MSDF coverage/compositing and Slug dilation for custom
+materials. Polynomial solvers, band addressing, texel loaders, CPU references, and Three bridge shaders stay private.
+
+Raster entries retain the format object, schema, codec, and the few constants/helpers needed to interpret public decoded
+data. Format metadata and descriptor construction are available on the format object. Baker factories remain public;
+raw generated ABI objects, validator implementation steps, Worker routing tables, preprojection identities, and legacy
+manual-register assembly do not. Explicit config barrels separate supported construction from host-only program
+assembly, resource normalization, and schema authentication. The existing packed consumer tests import every supported entry and prove retired paths are inaccessible.
 
 Configured rendering has one publication contract: `glyph.shape()` stages every dirty root, crosses the Wasm boundary
 once, and synchronously offers each root's borrowed command-buffer view to its renderer. `CommandBufferView.revision`
@@ -987,34 +988,28 @@ the decision register and append-only log retain its design and benchmark histor
 
 ## Current size and performance evidence
 
-The latest checked package-size record after the tsdown distribution cutover reports:
+The checked package-size record after public-export simplification reports:
 
-| Graph                                   |         Raw |      gzip |    Brotli |
-| --------------------------------------- | ----------: | --------: | --------: |
-| Core JavaScript plus shaper Wasm        | 1,524,942 B | 547,975 B | 429,901 B |
-| Three adapter plus core and shaper Wasm | 1,718,613 B | 594,736 B | 467,591 B |
+| Graph | Raw | gzip | Brotli |
+| --- | ---: | ---: | ---: |
+| Core JavaScript plus shaper Wasm | 1,637,762 B | 591,190 B | 464,795 B |
+| Three adapter plus core and shaper Wasm | 1,831,438 B | 639,273 B | 503,196 B |
 
-Three, React, and React Three Fiber are optional peers and excluded from these bundle totals. JavaScript and Wasm are
-measured independently and then summed because browsers transfer them as separate assets.
+Optional peers are excluded. Raw counts use readable JavaScript plus optimized Wasm; compressed counts use minified
+JavaScript and optimized Wasm compressed independently, as browsers transfer them as separate assets. The distribution
+keeps source-shaped declarations and private maintenance emit, with tsdown producing compact ESM and retaining tree-shaking annotations in TypeGPU shader modules. Explicit
+package exports remain authoritative for source/type/import conditions and Wasm assets.
 
-The distribution build keeps TypeScript's complete source-shaped declarations and private maintenance emit, then uses
-tsdown to bundle and minify every supported application entry with peer dependencies externalized. Source maps remain in
-the package for debugging; the hand-authored export map remains authoritative for source/type/import conditions, wildcard
-leaves, private-path guards, and Wasm assets. Compared with the preceding checked JavaScript graph, measured Core falls
-from 499,251 to 327,570 raw bytes and from 81,007 to 80,505 gzip bytes; Three falls from 802,390 to 521,241 raw bytes and
-from 127,744 to 127,266 gzip bytes. The fixed Three gzip ceiling remains unmet and is tracked as cleanup work rather than
-being raised.
+A same-host comparison against the pre-edit build isolates the complete export and tree-shaking change. Fifteen of
+sixteen measured JavaScript graphs are unchanged or smaller under gzip. Browser core moves from 85,612 to 85,632 B
+(+20 B); Three moves from 133,725 to 133,715 B; direct TypeGPU moves from 44,014 to 41,975 B; the experimental
+Three/TypeGPU graph moves from 146,959 to 143,862 B. The largest minified JavaScript increase is 13 B. Every measured
+Wasm artifact is byte-identical before and after; four previously stale baker rows were re-pinned to these already-existing
+build artifacts. All raw, minified, gzip, and Brotli measurements remain within the unchanged size ceilings.
 
-The optimized shaper is 1,101,396 raw / 425,300 gzip / 335,661 Brotli bytes after the shared sort kernel (D-243)
-replaced twelve per-type engine sort instantiations and the Binaryen merge pipeline landed (D-244); the pre-golf
-checkpoint measured 1,160,223 / 442,808 / 348,415. The renderer-neutral JavaScript graph is
-92,550 raw / 18,659 gzip / 16,177 Brotli, and the complete Three JavaScript graph is 334,488 raw / 57,253 gzip /
-48,250 Brotli. Deleting the legacy TypeScript raster packing/lifecycle path reduced the measured core total from 461,917
-to 460,901 gzip bytes and the complete Three total from 501,815 to 498,922 gzip bytes; the later shared-emitter and stable
-range-scan work reduces those totals to 460,416 and 498,437 gzip bytes. The homogeneous-policy dispatch and dirty-range
-alignment correction moved those totals to 460,458 and 498,479 gzip bytes; the focused planner deduplication and current
-Three graph measured 460,130 and 498,606 gzip bytes. The current source-response cache policy and publishing changes
-measure 460,943 and 499,537 gzip bytes respectively.
+Named-import consumer bundles verify the shared `/react`, `/raster`, and `/config` entries against direct implementation imports. The emitted module sets match in all eight cases. Selecting Bitmap, MSDF, or Slug from `/raster` excludes both other formats and their decoders. Selecting one React format hook excludes the other hooks; React's shared default Three runtime already includes all three formats before consolidation. Minor identifier-order differences affect compression but add no implementation modules.
+
+Single-function imports from `/shaders/typegpu` now prune unused stages within the selected technique, including Bitmap vertex versus fragment, MSDF vertex versus coverage, and Slug dilation versus rendering. TypeGPU metadata registrations and module-level constructors carry PURE annotations, and the shader-only build preserves them. The resulting Bitmap vertex, Bitmap fragment, and MSDF vertex consumer bundles also resolve successfully to WGSL. Other modules retain compact publication output. The shared `/shaders/tsl` entry also excludes unused techniques. The existing size workflow checks initial-versus-lazy module membership, and the registration smoke test proves required raster registration survives consumer tree shaking.
 
 WebGPU continues to alias canonical plan arrays directly. Three's WebGL2 PBO builder replaces a storage attribute's
 array with power-of-two-padded retained texture storage, so later Rust patches copy only their dirty byte ranges into

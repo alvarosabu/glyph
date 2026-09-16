@@ -3,7 +3,7 @@ import {
   MSDF_GLYPH_RECORD_STRIDE as MTSDF_GLYPH_RECORD_STRIDE,
   type MsdfData as MtsdfData,
   type MsdfPageData as MtsdfPageData,
-} from '@pmndrs/glyph/raster/msdf';
+} from '@pmndrs/glyph/raster';
 
 const ABSENT_PAGE = 0xffff;
 

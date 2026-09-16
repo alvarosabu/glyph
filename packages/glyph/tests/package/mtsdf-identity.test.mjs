@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
 import {
   MSDF_MAX_EM_SIZE,
   MSDF_MAX_PIXEL_RANGE,
   msdfDescriptor,
   msdfDescriptorRasterKey,
   msdfRasterKey,
-} from '@pmndrs/glyph/raster/msdf';
+} from '../../dist/internal/msdf-contract.js';
 
 test('derives canonical MSDF fingerprints for default and custom quality', async () => {
   const legacy = msdfDescriptor();

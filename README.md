@@ -60,10 +60,9 @@ const [x, y] = [glyphInkX[0], glyphInkY[0]];
 Use `@pmndrs/glyph/react` for @react-three/fiber integration.
 
 ```tsx
-import { GlyphProvider, Text, TextGroup } from '@pmndrs/glyph/react';
-import { useSlug } from '@pmndrs/glyph/react/slug';
+import { GlyphProvider, Text, TextGroup, useSlug } from '@pmndrs/glyph/react';
 
-useSlug.preload('/fonts/Inter.font.glb);
+useSlug.preload('/fonts/Inter.font.glb');
 
 <GlyphProvider handle="hud" fontFaces={{ Inter: '/fonts/Inter.font.glb' }}>
   <Text font="Inter">Hello, HUD</Text>
@@ -142,10 +141,8 @@ The TSL and TypeGPU shaders are exported from `@pmndrs/glyph/shaders/tsl` and `@
 You can import them into your custom engine and handle your own font shaping, batching, and loading, while still leveraging the core glyph shaders.
 
 ```ts
-import { bitmapShader } from '@pmndrs/glyph/shaders/tsl/bitmap';
-import { msdfShader } from '@pmndrs/glyph/shaders/tsl/msdf';
-import { slugShader } from '@pmndrs/glyph/shaders/tsl/slug';
-import { bitmapFragment, bitmapVertexSnapped } from '@pmndrs/glyph/shaders/typegpu/bitmap';
+import { bitmapShader, msdfShader, slugShader } from '@pmndrs/glyph/shaders/tsl';
+import { bitmapFragment, bitmapVertexSnapped } from '@pmndrs/glyph/shaders/typegpu';
 ```
 
 ## Roadmap

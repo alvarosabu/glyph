@@ -1,4 +1,4 @@
-import type { BitmapData } from '@pmndrs/glyph/raster/bitmap';
+import type { BitmapData } from '@pmndrs/glyph/raster';
 
 export interface BitmapAtlasPageStats {
   readonly strikePpem: number;

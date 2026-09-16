@@ -11,7 +11,7 @@ import {
   type TypeGpuBitmapInstance,
   type TypeGpuBitmapVertexInput,
   type TypeGpuBitmapVertexOutput,
-} from '@pmndrs/glyph/shaders/typegpu/bitmap';
+} from '@pmndrs/glyph/shaders/typegpu';
 import {
   msdfAtlasSizeAccessor,
   msdfFragment,
@@ -19,8 +19,7 @@ import {
   msdfSampleSlot,
 } from '@pmndrs/glyph/shaders/typegpu';
 
-// The technique-specific TypeGPU subpath is importable without any renderer, so a
-// WebGPU host pays only for the realization it selects.
+// The TypeGPU shader entry is importable without a renderer integration.
 declare const vertexInput: TypeGpuBitmapVertexInput;
 const vertexOut: TypeGpuBitmapVertexOutput = bitmapVertex(vertexInput);
 const snappedOut: TypeGpuBitmapVertexOutput = bitmapVertexSnapped(vertexInput);

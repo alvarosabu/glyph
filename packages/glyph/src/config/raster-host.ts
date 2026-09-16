@@ -12,6 +12,7 @@ import { isRegisteredRasterCodec } from '../internal/raster-codec-registry.js';
 import { assertCodecIdFactory, CodecIdScope } from '../internal/render-id.js';
 
 export { attachHostCodecProgramSystemBuffers } from '../internal/codec-program-contract.js';
+export { hostAbsoluteTechniqueProgram } from '../internal/codec-program.js';
 
 export interface RasterCodecHostOptions extends RasterCodecProgramOptions {
   readonly placementSlotTarget?: CodecProgramU32StoreTarget;

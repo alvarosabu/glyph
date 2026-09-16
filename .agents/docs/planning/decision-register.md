@@ -48,8 +48,8 @@ sources:
     title: Fragment-relative reflow and LayoutRun placement
 
 generated:
-  by: openai-codex/gpt-5.6
-  at: '2026-09-09T02:02:17Z'
+  by: openai-codex/gpt-6
+  at: '2026-09-16T12:35:09Z'
 ---
 
 # Decision register
@@ -485,6 +485,8 @@ An incremental text edit shipped displaced record slots holding the previous occ
 | D-364 | D-362's ordered-only planner removal is verified on the final committed cleanup head. The remote stack is a linear ten-PR chain with no rebase requirement; the package gate passes all 736 tests when its isolated packed consumer is allowed registry access, Rust passes 286 unit tests plus Unicode conformance, and the browser conformance matrix passes all sixteen targets. A same-host A/B/B/A against exact `origin/main` pools 202 samples per revision: ordinary Latin, justified Latin, mixed bidi, and dense CJK width reflow improve by 59.1%, 59.2%, 16.8%, and 21.8% at the median while retaining the ordered batch/draw topology. The final cleanup is also smaller than PR #175 in the shaper, browser core, Three, direct TypeGPU, and combined adapter graphs. No stable planner, order buffer, allocation-mode API, strategy wire field, or renderer logical-to-physical lookup remains. | Accepted; D-362 verification complete |
 
 Randomized input alone does not establish correctness. Mutation fuzzing asserts that malformed input fails safely and cannot observe valid operations producing wrong output; sequence property tests that compare two engine-derived lanes cannot observe a lane neither of them reads. D-261 is the oracle that makes randomness able to find wrongness.
+
+| D-365 | Minimize the 0.1.0 public surface before stabilizing it. Publish 15 exact ESM entries, with React components and hooks on `/react`, portable formats on `/raster`, renderer-neutral construction on `/config`, shader imports grouped by backend, and Three helpers on `/three`. Keep the public entries as static ESM re-exports over focused implementation modules. Preserve TypeGPU metadata PURE annotations and mark module-level shader construction as discardable so consumers can remove unused stages as well as unused techniques. Retire raw ABI objects, private validators and host helpers, shader math/reference implementations, redundant raster metadata helpers, and unused types. This supersedes the wildcard and utility-leaf publication rules in D-316, D-321, D-332, and D-346 without changing rendering, baking, or shader algorithms. | Accepted; implemented and verified with direct consumer tree-shaking checks |
 
 ## Decisions required before implementation
 

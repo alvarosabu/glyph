@@ -1,4 +1,4 @@
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { bitmap } from '@pmndrs/glyph/raster';
 
 import { loadBenchmarkFont as loadFont } from '../../../workloads/font-assets/library';
 

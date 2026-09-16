@@ -6,7 +6,7 @@ const library = vi.hoisted(() => ({
 
 vi.mock('./library', () => ({ benchmarkFontLibrary: library }));
 
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { bitmap } from '@pmndrs/glyph/raster';
 import { disposeBakedFontPreloads, preloadBakedFont } from './runtime';
 
 describe('baked benchmark font preloads', () => {

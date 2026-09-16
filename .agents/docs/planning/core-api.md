@@ -29,13 +29,13 @@ sources:
     title: Renderer integration guide
 generated:
   by: openai-codex/gpt-5.6
-  at: '2026-09-13T15:38:33Z'
+  at: '2026-09-16T12:35:09Z'
 ---
 
 # Glyph integration API
 
 Applications import the values and types they encounter from `@pmndrs/glyph`. Integration authors import the
-renderer-neutral construction helpers from explicit `@pmndrs/glyph/config/*` leaves. The former
+renderer-neutral construction helpers from explicit `@pmndrs/glyph/config` leaves. The former
 public `/core` engine-driving surface was removed by D-308 and commit `1990ebf3d`; its low-level ownership model is now an
 implementation detail. This file retains its canonical path for existing documentation links, but specifies only the
 current root API.
@@ -79,7 +79,7 @@ boundary, root extension, and font formats.
 The external example is the canonical minimal configuration:
 
 ```ts
-import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/config/glyph';
+import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/config';
 
 const config = defineGlyphConfig({
   schema: ExampleSchema,

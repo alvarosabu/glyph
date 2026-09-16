@@ -4,16 +4,17 @@ import { readFile } from 'node:fs/promises';
 import { glyph } from '@pmndrs/glyph';
 import * as stableThree from '@pmndrs/glyph/three';
 import * as experimentalThree from '@pmndrs/glyph/three/typegpu';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { bitmap } from '@pmndrs/glyph/raster';
 import { createThreeTestHandle } from '../support/three-handle.mjs';
 
 import * as d from 'typegpu/data';
 import * as TSL from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import { bitmapShader, decorationShader, msdfShader } from '../../dist/three/typegpu.js';
 import { msdfPosition } from '../../dist/shaders/typegpu/msdf-shader.js';
 import { compileNodeMaterialBackends } from '../support/node-material-shaders.mjs';
+import { bitmapShader } from '../../dist/three/typegpu/internal/bitmap-shader.js';
+import { decorationShader } from '../../dist/three/typegpu/internal/decoration-shader.js';
+import { msdfShader } from '../../dist/three/typegpu/internal/msdf-shader.js';
 
 test('MTSDF placement converts downward paragraph y to upward Three y', () => {
   assert.deepEqual(

@@ -3,7 +3,7 @@ import test, { after } from 'node:test';
 
 import * as THREE from 'three/webgpu';
 import { span, txt } from '@pmndrs/glyph';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { bitmap } from '@pmndrs/glyph/raster';
 import { defineThreeConfig } from '@pmndrs/glyph/three';
 
 import { createFontCache, mount, timeout, unmount } from '../support/text-mutation-lanes.mjs';

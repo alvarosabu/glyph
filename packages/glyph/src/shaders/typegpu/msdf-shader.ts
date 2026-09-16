@@ -12,7 +12,7 @@ export const TypeGpuMsdfInstance: d.WgslStruct<{
   shadowOffset: d.Vec2f;
   outlineWidth: d.F32;
   pageIndex: d.U32;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   origin: d.vec2f,
   size: d.vec2f,
   uvOrigin: d.vec2f,
@@ -31,7 +31,7 @@ export const TypeGpuMsdfVertexInput: d.WgslStruct<{
   unitPosition: d.Vec3f;
   unitUv: d.Vec2f;
   instance: typeof TypeGpuMsdfInstance;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   unitPosition: d.vec3f,
   unitUv: d.vec2f,
   instance: TypeGpuMsdfInstance,
@@ -48,7 +48,7 @@ export const TypeGpuMsdfVertexOutput: d.WgslStruct<{
   shadowColor: d.Vec4f;
   outlineWidth: d.F32;
   pageIndex: d.U32;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   position: d.vec3f,
   atlasCoordinate: d.vec2f,
   shadowCoordinate: d.vec2f,
@@ -69,7 +69,7 @@ export const TypeGpuMsdfFragmentOutput: d.WgslStruct<{
   shadowCoverage: d.F32;
   color: d.Vec3f;
   opacity: d.F32;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   fillCoverage: d.f32,
   outlineCoverage: d.f32,
   shadowCoverage: d.f32,
@@ -90,7 +90,7 @@ export const MsdfRenderInput: d.WgslStruct<{
   outlineColor: d.Vec4f;
   outlineWidth: d.F32;
   shadowColor: d.Vec4f;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   atlasCoordinate: d.vec2f,
   shadowCoordinate: d.vec2f,
   uvBounds: d.vec4f,
@@ -114,7 +114,7 @@ export const MsdfCoverageInput: d.WgslStruct<{
   baseSample: d.Vec4f;
   shadowSample: d.Vec4f;
   outlineWidth: d.F32;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   atlasCoordinate: d.vec2f,
   shadowCoordinate: d.vec2f,
   uvBounds: d.vec4f,
@@ -131,16 +131,16 @@ export const MsdfCompositeInput: d.WgslStruct<{
   fillColor: d.Vec4f;
   outlineColor: d.Vec4f;
   shadowColor: d.Vec4f;
-}> = d.struct({ coverage: d.vec3f, fillColor: d.vec4f, outlineColor: d.vec4f, shadowColor: d.vec4f });
+}> = /* @__PURE__ */ d.struct({ coverage: d.vec3f, fillColor: d.vec4f, outlineColor: d.vec4f, shadowColor: d.vec4f });
 export type MsdfCompositeInput = d.InferGPU<typeof MsdfCompositeInput>;
 
 /** Atlas constants can be literals, uniforms, buffers, or GPU functions. */
-export const msdfAtlasSizeAccessor: TgpuAccessor<d.Vec2f> = tgpu.accessor(d.vec2f);
-export const msdfPixelRangeAccessor: TgpuAccessor<d.F32> = tgpu.accessor(d.f32);
+export const msdfAtlasSizeAccessor: TgpuAccessor<d.Vec2f> = /* @__PURE__ */ tgpu.accessor(d.vec2f);
+export const msdfPixelRangeAccessor: TgpuAccessor<d.F32> = /* @__PURE__ */ tgpu.accessor(d.f32);
 
 export type MsdfSampleSource = (atlasCoordinate: d.v2f, pageIndex: number) => d.v4f;
 /** A host supplies texture sampling, a procedural field, or any other semantic sample source. */
-export const msdfSampleSlot: TgpuSlot<MsdfSampleSource> = tgpu.slot<MsdfSampleSource>();
+export const msdfSampleSlot: TgpuSlot<MsdfSampleSource> = /* @__PURE__ */ tgpu.slot<MsdfSampleSource>();
 
 /** Position one unit-quad vertex in paragraph space, converting the engine's downward y to Three's upward y. */
 export function msdfPosition(origin: d.v2f, size: d.v2f, unitPosition: d.v3f): d.v3f {
@@ -167,29 +167,30 @@ export function msdfClampedCoordinates(
   return d.vec4f(std.clamp(atlasCoordinate, minimum, maximum), std.clamp(shadowCoordinate, minimum, maximum));
 }
 
-export const msdfVertex: TgpuFn<(input: typeof TypeGpuMsdfVertexInput) => typeof TypeGpuMsdfVertexOutput> = tgpu.fn(
-  [TypeGpuMsdfVertexInput],
-  TypeGpuMsdfVertexOutput,
-)((input) => {
-  'use gpu';
-  const instance = input.instance;
-  const atlasCoordinate = msdfAtlasCoordinate(instance.uvOrigin, instance.uvSize, input.unitUv);
-  return TypeGpuMsdfVertexOutput({
-    position: msdfPosition(instance.origin, instance.size, input.unitPosition),
-    atlasCoordinate,
-    shadowCoordinate: atlasCoordinate.sub(instance.shadowOffset),
-    uvBounds: instance.uvBounds,
-    fillColor: instance.fillColor,
-    outlineColor: instance.outlineColor,
-    shadowColor: instance.shadowColor,
-    outlineWidth: instance.outlineWidth,
-    pageIndex: instance.pageIndex,
+export const msdfVertex: TgpuFn<(input: typeof TypeGpuMsdfVertexInput) => typeof TypeGpuMsdfVertexOutput> =
+  /* @__PURE__ */ tgpu.fn(
+    [TypeGpuMsdfVertexInput],
+    TypeGpuMsdfVertexOutput,
+  )((input) => {
+    'use gpu';
+    const instance = input.instance;
+    const atlasCoordinate = msdfAtlasCoordinate(instance.uvOrigin, instance.uvSize, input.unitUv);
+    return TypeGpuMsdfVertexOutput({
+      position: msdfPosition(instance.origin, instance.size, input.unitPosition),
+      atlasCoordinate,
+      shadowCoordinate: atlasCoordinate.sub(instance.shadowOffset),
+      uvBounds: instance.uvBounds,
+      fillColor: instance.fillColor,
+      outlineColor: instance.outlineColor,
+      shadowColor: instance.shadowColor,
+      outlineWidth: instance.outlineWidth,
+      pageIndex: instance.pageIndex,
+    });
   });
-});
 
 /** Reconstruct and composite one filtered MTSDF fragment from the configured semantic resources. */
 export const msdfFragment: TgpuFn<(input: typeof TypeGpuMsdfFragmentInput) => typeof TypeGpuMsdfFragmentOutput> =
-  tgpu.fn(
+  /* @__PURE__ */ tgpu.fn(
     [TypeGpuMsdfFragmentInput],
     TypeGpuMsdfFragmentOutput,
   )((input) => {

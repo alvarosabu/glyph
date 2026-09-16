@@ -1,11 +1,10 @@
 import typegpu from 'unplugin-typegpu/rolldown';
 import { defineConfig } from 'tsdown';
 
-export default defineConfig({
+const shared = defineConfig({
   // Preserve one emitted module per source file so package-owned integration tests can
   // exercise private contracts without turning them into public package exports.
   // `unbundle` keeps the graph source-shaped for consumer tree shaking and attribution.
-  entry: ['src/**/*.ts', '!src/**/*.d.ts'],
   root: 'src',
   tsconfig: 'tsconfig.build.json',
   platform: 'neutral',
@@ -17,15 +16,34 @@ export default defineConfig({
     chunkFileNames: 'internal/[name]-[hash].js',
   },
   clean: false,
-  // Wildcard public leaves require stable source-shaped declaration paths. TypeScript
+  // Public entries require stable source-shaped declaration paths. TypeScript
   // emits those with isolated declarations before tsdown bundles the JavaScript graph.
   dts: false,
   deps: {
     neverBundle: true,
   },
   exports: false,
-  minify: true,
   sourcemap: true,
   report: false,
-  plugins: [typegpu({ exclude: [/\.d\.ts$/] })],
+  // Auto-naming wraps constructor calls outside their PURE annotations, preventing
+  // unused shader stages from being removed. Shader function metadata retains names.
+  plugins: [typegpu({ exclude: [/\.d\.ts$/], autoNamingEnabled: false })],
 });
+
+export default defineConfig([
+  {
+    ...shared,
+    entry: ['src/**/*.ts', '!src/**/*.d.ts', '!src/shaders/typegpu/**'],
+    // The second build owns these modules and preserves their annotations.
+    // Keeping imports external here prevents two builds from emitting the same file.
+    inputOptions: { external: (id) => id.includes('/shaders/typegpu/') },
+    minify: true,
+  },
+  {
+    ...shared,
+    entry: ['src/shaders/typegpu/**/*.ts', '!src/**/*.d.ts'],
+    // Oxc's whitespace minification strips PURE annotations. Preserve them so
+    // consumer bundlers can remove unused TypeGPU functions and their metadata.
+    minify: { codegen: { removeWhitespace: false } },
+  },
+]);

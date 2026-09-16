@@ -4,13 +4,11 @@ import test from 'node:test';
 
 import bitmapBaker from '@pmndrs/glyph/bakers/bitmap';
 import msdfBaker from '@pmndrs/glyph/bakers/msdf';
-import { bitmap, bitmapDescriptor, bitmapRasterKey } from '@pmndrs/glyph/raster/bitmap';
-import { msdf, msdfDescriptor, msdfRasterKey } from '@pmndrs/glyph/raster/msdf';
-import { normalizeBitmapOptions } from '../../dist/internal/bitmap-contract.js';
-import { normalizeMsdfOptions } from '../../dist/internal/msdf-contract.js';
+import { bitmap, msdf } from '@pmndrs/glyph/raster';
+import { normalizeBitmapOptions, bitmapDescriptor, bitmapRasterKey } from '../../dist/internal/bitmap-contract.js';
+import { normalizeMsdfOptions, msdfDescriptor, msdfRasterKey } from '../../dist/internal/msdf-contract.js';
 import { startRasterBakeWorker } from '../../dist/internal/raster-bake-worker-entry.js';
 import { interShapingFingerprint, interSourceFingerprint } from '../support/inter-identity.mjs';
-
 const sourceFingerprint = '0'.repeat(32);
 const shapingFingerprint = '1'.repeat(32);
 const rasterKey = '2'.repeat(32);

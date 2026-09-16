@@ -17,7 +17,7 @@ export const SlugShaderGlyph: d.WgslStruct<{
   horizontalBandCount: d.U32;
   verticalBandCount: d.U32;
   bandTransform: d.Vec4f;
-}> = d.struct({
+}> = /* @__PURE__ */ d.struct({
   curveBaseTexel: d.u32,
   horizontalHeaderBase: d.u32,
   verticalHeaderBase: d.u32,
@@ -29,7 +29,7 @@ export const SlugShaderGlyph: d.WgslStruct<{
 
 export type SlugShaderGlyph = d.InferGPU<typeof SlugShaderGlyph>;
 
-export const SlugBandEvaluation: d.WgslStruct<{ coverage: d.F32; weight: d.F32 }> = d.struct({
+export const SlugBandEvaluation: d.WgslStruct<{ coverage: d.F32; weight: d.F32 }> = /* @__PURE__ */ d.struct({
   coverage: d.f32,
   weight: d.f32,
 });
@@ -46,7 +46,7 @@ type SlugCurveContribution = (
   thickenFactor: number,
 ) => d.v3f;
 
-const contributeSlot = tgpu.slot<SlugCurveContribution>();
+const contributeSlot = /* @__PURE__ */ tgpu.slot<SlugCurveContribution>();
 
 /**
  * @note Uses `contributeSlot`
@@ -61,13 +61,13 @@ function curveContribution(
   return contributeSlot.$(curve.p0, curve.p1, curve.p2, renderCoordinate, pixelsPerEm, thickenFactor);
 }
 
-const getCurveContribution = tgpu.comptime((axis: 'vertical' | 'horizontal') =>
+const getCurveContribution = /* @__PURE__ */ tgpu.comptime((axis: 'vertical' | 'horizontal') =>
   tgpu
     .fn(curveContribution)
     .with(contributeSlot, axis === 'horizontal' ? slugHorizontalCurveContribution : slugVerticalCurveContribution),
 );
 
-const axisSlot = tgpu.slot<'vertical' | 'horizontal'>();
+const axisSlot = /* @__PURE__ */ tgpu.slot<'vertical' | 'horizontal'>();
 
 /** Uses the Slug resource slots and width accessors declared by `slug-texture`. */
 function genericEvaluateBand(
@@ -111,6 +111,7 @@ function genericEvaluateBand(
   return SlugBandEvaluation({ coverage, weight });
 }
 
-export const evaluateBand: (axis: 'vertical' | 'horizontal') => typeof genericEvaluateBand = tgpu.comptime(
-  (axis: 'vertical' | 'horizontal'): typeof genericEvaluateBand => tgpu.fn(genericEvaluateBand).with(axisSlot, axis),
-);
+export const evaluateBand: (axis: 'vertical' | 'horizontal') => typeof genericEvaluateBand =
+  /* @__PURE__ */ tgpu.comptime((axis: 'vertical' | 'horizontal'): typeof genericEvaluateBand =>
+    tgpu.fn(genericEvaluateBand).with(axisSlot, axis),
+  );

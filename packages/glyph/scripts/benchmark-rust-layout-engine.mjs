@@ -8,10 +8,6 @@ import { textShaperAbi as abi } from '../dist/text-shaper-abi.js';
 import { validateBitmapArtifact } from '../dist/bakers/bitmap-validator.js';
 import { validateMsdfArtifact } from '../dist/bakers/msdf-validator.js';
 import { validateSlugArtifact } from '../dist/bakers/slug-validator.js';
-import { bitmapDescriptor } from '@pmndrs/glyph/raster/bitmap';
-import { msdfDescriptor } from '@pmndrs/glyph/raster/msdf';
-import { slugDescriptor } from '@pmndrs/glyph/raster/slug';
-
 import { paragraphTextForGlyphs } from './support/paragraph-benchmark-fixture.mts';
 import { copyIntoAllocation, engineFrameUpdateBytes } from '../tests/support/engine-abi.mjs';
 import { techniqueProof } from './support/render-technique-proof.mjs';
@@ -22,6 +18,9 @@ import {
   rustLayoutBenchmarkGeometry,
   rustLayoutBenchmarkInitialGeometry,
 } from './support/rust-layout-benchmark-cases.mjs';
+import { bitmapDescriptor } from '../dist/internal/bitmap-contract.js';
+import { msdfDescriptor } from '../dist/internal/msdf-contract.js';
+import { slugDescriptor } from '../dist/internal/slug-contract.js';
 
 const options = parseRustLayoutBenchmarkArguments(process.argv.slice(2));
 const rootId = 1;

@@ -6,9 +6,7 @@ import { gunzipSync } from 'node:zlib';
 import { Constraints, createFontStack, glyph, ParagraphLayout, TextStyle, txt } from '@pmndrs/glyph';
 import { createFontLibrary, loadFont } from '../../dist/loader.js';
 import { GlyphHandleState } from '../../dist/internal/handle-state.js';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
+import { bitmap, msdf, slug } from '@pmndrs/glyph/raster';
 import {
   defineThreeConfig,
   defineTextMaterial,

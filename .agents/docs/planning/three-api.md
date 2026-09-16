@@ -32,7 +32,7 @@ sources:
     title: Three.js Object3D
 generated:
   by: openai-codex/gpt-5.6
-  at: '2026-09-13T15:38:33Z'
+  at: '2026-09-16T12:35:09Z'
 ---
 
 # Three.js text API
@@ -44,9 +44,9 @@ uploads dirty ranges, and updates draw proxies.
 ```ts
 import { glyph } from '@pmndrs/glyph';
 import { ThreeConfig, defineTextMaterial } from '@pmndrs/glyph/three';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
+import { bitmap } from '@pmndrs/glyph/raster';
+import { msdf } from '@pmndrs/glyph/raster';
+import { slug } from '@pmndrs/glyph/raster';
 
 await glyph.init();
 const three = glyph.handle('main', ThreeConfig);

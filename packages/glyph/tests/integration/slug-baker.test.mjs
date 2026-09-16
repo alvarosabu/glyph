@@ -6,13 +6,13 @@ import {
   createSlugBaker,
   createSlugBakerFromInstance,
   SlugBakeError,
-  slugBakerAbi,
   slugBakerFromCore,
 } from '../../dist/bakers/slug.js';
 import { validateSlugArtifact } from '../../dist/bakers/slug-validator.js';
 import { SLUG_EXTENSION, slugDescriptor, slugDescriptorRasterKey } from '../../dist/internal/slug-contract.js';
 import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerprint.js';
 import { interShapingFingerprint } from '../support/inter-identity.mjs';
+import { slugBakerAbi } from '../../dist/slug-baker-abi.js';
 
 const wasmUrl = new URL('../../dist/slug-baker.wasm', import.meta.url);
 const fontUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);
@@ -37,7 +37,6 @@ test('ships the generated generic direct/segmented Slug ABI', async () => {
   assert.deepEqual(WebAssembly.Module.imports(module), [
     { module: 'env', name: 'pmndrs_glyph_bake_progress', kind: 'function' },
   ]);
-  assert.deepEqual(slugBakerAbi, slugBakerAbi);
   assert.equal(slugBakerAbi.response.magic, 'PMSL');
   assert.equal(slugBakerAbi.segmented.chunkByteLength, 8 * 1024 * 1024);
   assert.deepEqual(slugBakerAbi.versions, {

@@ -1,15 +1,15 @@
 import tgpu, { d, std, type TgpuFn } from 'typegpu';
 
-export const TypeGpuDecorationInput: d.WgslStruct<{ rect: d.Vec4f; packed: d.Vec2u; unitPosition: d.Vec3f }> = d.struct(
-  { rect: d.vec4f, packed: d.vec2u, unitPosition: d.vec3f },
-);
+export const TypeGpuDecorationInput: d.WgslStruct<{ rect: d.Vec4f; packed: d.Vec2u; unitPosition: d.Vec3f }> =
+  /* @__PURE__ */ d.struct({ rect: d.vec4f, packed: d.vec2u, unitPosition: d.vec3f });
 export type TypeGpuDecorationInput = d.InferGPU<typeof TypeGpuDecorationInput>;
 
-export const TypeGpuDecorationOutput: d.WgslStruct<{ position: d.Vec3f; color: d.Vec3f; opacity: d.F32 }> = d.struct({
-  position: d.vec3f,
-  color: d.vec3f,
-  opacity: d.f32,
-});
+export const TypeGpuDecorationOutput: d.WgslStruct<{ position: d.Vec3f; color: d.Vec3f; opacity: d.F32 }> =
+  /* @__PURE__ */ d.struct({
+    position: d.vec3f,
+    color: d.vec3f,
+    opacity: d.f32,
+  });
 export type TypeGpuDecorationOutput = d.InferGPU<typeof TypeGpuDecorationOutput>;
 
 export function decorationPosition(rect: d.v4f, unitPosition: d.v3f): d.v3f {
@@ -46,7 +46,7 @@ export function decorationPaint(packed: d.v2u): d.v4f {
  * EOTF into the renderer's linear working space. Alpha stays linear.
  */
 export const decorationShader: TgpuFn<(input: typeof TypeGpuDecorationInput) => typeof TypeGpuDecorationOutput> =
-  tgpu.fn(
+  /* @__PURE__ */ tgpu.fn(
     [TypeGpuDecorationInput],
     TypeGpuDecorationOutput,
   )((input) => {

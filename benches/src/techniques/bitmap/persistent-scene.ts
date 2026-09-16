@@ -7,7 +7,7 @@ import {
   type ParagraphLayoutSummary,
   type TextStyle,
 } from '@pmndrs/glyph';
-import { selectBitmapStrikePpem, type bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { selectBitmapStrikePpem, type bitmap } from '@pmndrs/glyph/raster';
 import type { Text } from '@pmndrs/glyph/three';
 import * as THREE from 'three/webgpu';
 

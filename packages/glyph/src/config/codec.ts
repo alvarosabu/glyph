@@ -140,88 +140,6 @@ registerCodecIdFactory(authoredId);
 export const id: IdFactory = Object.freeze(authoredId);
 
 export type CodecTransformMode = 'direct' | 'indexed';
-export interface ProgramContext {
-  readonly inputs: CodecInput[];
-  readonly operations: CodecOperation[];
-  readonly f32InputCount: number;
-  readonly u32InputCount: number;
-  readonly loadF32: (count: number) => void;
-  readonly loadU32: (target: number, field: number) => void;
-  readonly binary: (
-    name: 'addF32' | 'subtractF32' | 'multiplyF32',
-    target: number,
-    left: number,
-    right: number,
-  ) => void;
-  readonly constantF32: (target: number, value: number) => void;
-  readonly constantU32: (target: number, value: number) => void;
-  readonly storeF32: (buffer: CodecBufferId, lane: number, register: number) => void;
-  readonly storeU32: (buffer: CodecBufferId, lane: number, register: number) => void;
-}
-
-export function programContext(
-  bindingScope: CodecInputScope,
-  bindingF32Count: number,
-  bindingU32Count: number,
-  inverseFontSize = false,
-): ProgramContext {
-  const operations: CodecOperation[] = [];
-  const semantic = textShaperAbi.engine.semanticF32Fields;
-  const semanticU32 = textShaperAbi.engine.semanticU32Fields;
-  const inputs: CodecInput[] = [
-    { scope: 'semantic', field: semantic.inlineOrigin },
-    { scope: 'semantic', field: semantic.blockOrigin },
-    { scope: 'semantic', field: semantic.fontSize },
-    { scope: 'semantic', field: semantic.foregroundRed },
-    { scope: 'semantic', field: semantic.foregroundGreen },
-    { scope: 'semantic', field: semantic.foregroundBlue },
-    { scope: 'semantic', field: semantic.foregroundAlpha },
-    ...(inverseFontSize ? [{ scope: 'semantic' as const, field: semantic.inverseFontSize }] : []),
-    ...Array.from({ length: bindingF32Count }, (_, field) => ({ scope: bindingScope, field })),
-    { scope: 'semantic', field: semanticU32.transformIndex },
-    { scope: 'semantic', field: semanticU32.stableGlyphId },
-    ...Array.from({ length: bindingU32Count }, (_, field) => ({ scope: bindingScope, field })),
-  ];
-  return {
-    inputs,
-    operations,
-    f32InputCount: 7 + (inverseFontSize ? 1 : 0) + bindingF32Count,
-    u32InputCount: bindingU32Count + 2,
-    loadF32(count) {
-      for (let field = 0; field < count; field += 1) {
-        operations.push({ opcode: textShaperAbi.codec.opcodes.loadF32, target: field, operand0: field });
-      }
-    },
-    loadU32(target, field) {
-      operations.push({ opcode: textShaperAbi.codec.opcodes.loadU32, target, operand0: field });
-    },
-    binary(name, target, left, right) {
-      operations.push({ opcode: textShaperAbi.codec.opcodes[name], target, operand0: left, operand1: right });
-    },
-    constantF32(target, value) {
-      operations.push({ opcode: textShaperAbi.codec.opcodes.constantF32, target, immediate0: f32Bits(value) });
-    },
-    constantU32(target, value) {
-      operations.push({ opcode: textShaperAbi.codec.opcodes.constantU32, target, immediate0: value });
-    },
-    storeF32(buffer, lane, register) {
-      operations.push({
-        opcode: textShaperAbi.codec.opcodes.storeF32,
-        operand0: register,
-        operand1: lane,
-        immediate0: buffer,
-      });
-    },
-    storeU32(buffer, lane, register) {
-      operations.push({
-        opcode: textShaperAbi.codec.opcodes.storeU32,
-        operand0: register,
-        operand1: lane,
-        immediate0: buffer,
-      });
-    },
-  };
-}
 
 export interface ProgramBody {
   readonly inputs: CodecInput[];
@@ -305,15 +223,6 @@ export function createCodecProgram(
       batch.order |
       (transformMode === 'direct' ? batch.transform : 0),
   });
-}
-
-export function stores(
-  write: (buffer: CodecBufferId, lane: number, register: number) => void,
-  groups: readonly (readonly [CodecBufferId, readonly number[]])[],
-): void {
-  for (const [buffer, registers] of groups) {
-    for (const [lane, register] of registers.entries()) write(buffer, lane, register);
-  }
 }
 
 export function compileCodec(descriptor: CodecDescriptor): Uint8Array {
@@ -1009,13 +918,6 @@ function checkedProduct(left: number, right: number, label: string): number {
   const value = left * right;
   if (!Number.isSafeInteger(value) || value > MAX_U32) throw new RangeError(`${label} exceeds u32`);
   return value;
-}
-
-function f32Bits(value: number): number {
-  const bytes = new ArrayBuffer(4);
-  const view = new DataView(bytes);
-  view.setFloat32(0, value, true);
-  return view.getUint32(0, true);
 }
 
 function isNonArrayObject(value: unknown): value is Record<string, unknown> {

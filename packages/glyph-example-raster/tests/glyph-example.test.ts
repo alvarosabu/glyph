@@ -3,15 +3,25 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
-import { glyph, fingerprint, type RasterFormatMetadata, type RasterKey, type Fingerprint } from '@pmndrs/glyph';
+import {
+  glyph,
+  fingerprint,
+  type RasterFormatMetadata,
+  type RasterKey,
+  type Fingerprint,
+  type PortableGeometryPayload,
+} from '@pmndrs/glyph';
 import { bakeFont } from '@pmndrs/glyph/bake';
 import { rasterBake } from '@pmndrs/glyph/baker';
-import { type PortableGeometryPayload } from '@pmndrs/glyph';
-import { f32, techniqueProgram } from '@pmndrs/glyph/config/codec-program';
-import { defineGlyphConfig } from '@pmndrs/glyph/config/glyph';
-import { defineRasterFormat, defineRasterResourceId } from '@pmndrs/glyph/config/raster-format';
-import { registerRasterCodec } from '@pmndrs/glyph/config/raster';
-import { defineTechniqueSchema } from '@pmndrs/glyph/config/schema';
+import {
+  f32,
+  techniqueProgram,
+  defineGlyphConfig,
+  defineRasterFormat,
+  defineRasterResourceId,
+  registerRasterCodec,
+  defineTechniqueSchema,
+} from '@pmndrs/glyph/config';
 import {
   registerThreeRasterProgram,
   defineTextMaterial,

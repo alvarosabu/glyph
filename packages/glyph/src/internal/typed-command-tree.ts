@@ -10,13 +10,15 @@ import type {
   InstanceIdentity,
   InstanceSpanIdentity,
   SemanticIdentity,
+} from '../config/glyph.js';
+import { createTypedCommandIdentity } from './typed-command-identity.js';
+import type {
   TransformIdentity,
   TypedBuffer,
   TypedMaterial,
   TypedProgram,
   TypedResource,
-} from '../config/glyph.js';
-import { createTypedCommandIdentity } from './typed-command-identity.js';
+} from './typed-command-identity.js';
 
 declare const typedCommandTreeBrand: unique symbol;
 

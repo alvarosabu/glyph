@@ -1,6 +1,1 @@
-export {
-  createMsdfBaker,
-  createMsdfBakerFromInstance,
-  msdfBakerAbi,
-  msdfBakerFromCore,
-} from '@pmndrs/glyph/bakers/msdf';
+export { createMsdfBaker, createMsdfBakerFromInstance, msdfBakerFromCore } from '@pmndrs/glyph/bakers/msdf';

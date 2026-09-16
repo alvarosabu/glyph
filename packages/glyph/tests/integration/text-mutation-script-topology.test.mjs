@@ -2,9 +2,7 @@
 import assert from 'node:assert/strict';
 import test, { after } from 'node:test';
 
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { slug } from '@pmndrs/glyph/raster/slug';
-
+import { bitmap, slug } from '@pmndrs/glyph/raster';
 import {
   assertMatchesFreshBuild,
   assertShaped,

@@ -3,10 +3,8 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { glyph } from '@pmndrs/glyph';
 import { defineTypeGpuConfig } from '@pmndrs/glyph/typegpu';
-import { resourceLease } from '@pmndrs/glyph/config/glyph';
-import { id } from '@pmndrs/glyph/config/codec';
-import { msdf, msdfSchema } from '@pmndrs/glyph/raster/msdf';
-import { slugSchema } from '@pmndrs/glyph/raster/slug';
+import { resourceLease, id } from '@pmndrs/glyph/config';
+import { msdf, msdfSchema, slugSchema } from '@pmndrs/glyph/raster';
 import { codecDescriptor, TYPEGPU_PLACEMENT_SLOT_BUFFER_ID } from '../../dist/typegpu/internal/codec.js';
 
 const fontBytes = await readFile(

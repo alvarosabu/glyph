@@ -19,17 +19,22 @@ export {
   FontBakeError,
   createFontBaker,
   createFontBakerFromInstance,
-  fontBakerAbi,
   type FontBakeCore,
   type FontBakeDescriptor,
   type FontBakeRequest,
   type FontBakeResult,
-  type FontBakerAbi,
   type FontBakerWasmSource,
   type SerializedBakeError,
 } from '../font-baker/index.js';
 export { fontBakerWasmUrl } from '../font-baker/wasm-url.js';
-export * from '../font-baker/validator.js';
+export {
+  validateFontArtifact,
+  FontArtifactValidationError,
+  type FontArtifactValidationIssue,
+  type KhronosValidationMessage,
+  type KhronosValidationReport,
+  type ValidatedFontArtifact,
+} from '../font-baker/validator.js';
 
 import type { BakeArtifact, BakeWarning, FontPayloadReport, RasterBakePlan, RasterBakerModule } from '../bake.js';
 import type { JsonValue } from '../raster.js';

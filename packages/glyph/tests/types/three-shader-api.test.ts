@@ -2,7 +2,7 @@ import { mul, vec3 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 import type { Node } from 'three/webgpu';
 
-import { bitmapShader as threeBitmapShader, defineTextMaterial } from '../../src/three/typegpu.js';
+import { defineTextMaterial } from '../../src/three/typegpu.js';
 import {
   bitmapShader,
   msdfShader,
@@ -14,6 +14,7 @@ import {
   type TslSlugInstanceNodes,
   type TslSlugShaderResources,
 } from '../../src/shaders/tsl/index.js';
+import { bitmapShader as threeBitmapShader } from '../../src/three/typegpu/internal/bitmap-shader.js';
 
 declare const bitmapInstance: TslBitmapInstanceNodes;
 declare const bitmapResources: TslBitmapShaderResources;

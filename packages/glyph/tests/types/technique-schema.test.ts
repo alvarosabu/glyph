@@ -10,7 +10,7 @@ import {
 } from '../../dist/config/schema.js';
 import * as SchemaApi from '../../dist/config/schema.js';
 import { schemaFieldTable, type FontBindingFieldTable } from '../../dist/internal/font-binding.js';
-import { bitmapSchema } from '@pmndrs/glyph/raster/bitmap';
+import { bitmapSchema } from '@pmndrs/glyph/raster';
 
 // A technique schema is the single authority: buffer ids, scalar kinds, and lane
 // meanings are declared once and every consumer derives from the declaration.

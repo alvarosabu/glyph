@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { normalizeRasterCoverage, RasterCoverageError } from '../../dist/raster-coverage.js';
-import { bitmapDescriptor, bitmapRasterKey } from '@pmndrs/glyph/raster/bitmap';
-import { msdfDescriptor, msdfRasterKey } from '@pmndrs/glyph/raster/msdf';
 import { normalizeBitmapOptions } from '../../dist/internal/bitmap-contract.js';
 import { assertRasterCoverage } from '../../dist/internal/raster-coverage-artifact.js';
+import { bitmapDescriptor, bitmapRasterKey } from '../../dist/internal/bitmap-contract.js';
+import { msdfDescriptor, msdfRasterKey } from '../../dist/internal/msdf-contract.js';
 
 const authored = {
   unicodeRanges: [

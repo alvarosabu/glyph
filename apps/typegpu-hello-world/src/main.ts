@@ -1,8 +1,6 @@
 import { glyph } from '@pmndrs/glyph';
 import { defineTypeGpuConfig, type TypeGpuText } from '@pmndrs/glyph/typegpu';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
+import { bitmap, msdf, slug } from '@pmndrs/glyph/raster';
 import tgpu, { d, std } from 'typegpu';
 import fontUrl from '../assets/inter-latin.font.glb?url';
 import './style.css';

@@ -5,9 +5,9 @@ import test, { before } from 'node:test';
 
 import { bitmapBakerFromCore, createBitmapBaker } from '@pmndrs/glyph/bakers/bitmap';
 import { BitmapArtifactValidationError, validateBitmapArtifact } from '../../dist/bakers/bitmap-validator.js';
-import { bitmapDescriptor, bitmapRasterKey } from '@pmndrs/glyph/raster/bitmap';
 import { interShapingFingerprint, interSourceFingerprint } from '../support/inter-identity.mjs';
 import { compatibilityFingerprint } from '../../dist/internal/raster-identity.js';
+import { bitmapDescriptor, bitmapRasterKey } from '../../dist/internal/bitmap-contract.js';
 
 const GLB_MAGIC = 0x4654_6c67;
 const JSON_CHUNK = 0x4e4f_534a;

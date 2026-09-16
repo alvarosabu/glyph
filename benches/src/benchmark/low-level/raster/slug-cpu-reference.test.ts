@@ -1,6 +1,6 @@
 import type { GlyphLayout } from '@pmndrs/glyph';
-import { defineRasterResourceId } from '@pmndrs/glyph/config/raster-format';
-import type { SlugPageData } from '@pmndrs/glyph/raster/slug';
+import { defineRasterResourceId } from '@pmndrs/glyph/config';
+import type { SlugPageData } from '@pmndrs/glyph/raster';
 import { describe, expect, it } from 'vitest';
 
 import { renderFlatSlugCpuReference, type SlugCpuReferenceData } from './slug-cpu-reference';

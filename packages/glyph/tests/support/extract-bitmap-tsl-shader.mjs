@@ -1,7 +1,6 @@
 import { attribute } from 'three/tsl';
 import * as THREE from 'three/webgpu';
-
-import { bitmapShader } from '../../dist/three/typegpu.js';
+import { bitmapShader } from '../../dist/three/typegpu/internal/bitmap-shader.js';
 
 /** Compiles `/three/typegpu` Bitmap to WGSL without a GPU device. `renderer.hasFeature` is stubbed because data-texture texel loads do not depend on optional filtering. */
 export function extractBitmapTslShader({ pixelSnapping }) {

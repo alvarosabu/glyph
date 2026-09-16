@@ -4,7 +4,7 @@ import { createElement } from 'react';
 
 import { glyph, span, txt } from '@pmndrs/glyph';
 import { Text as R3fText } from '@pmndrs/glyph/react';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { bitmap } from '@pmndrs/glyph/raster';
 
 import { createFontCache, mount, timeout, unmount } from '../support/text-mutation-lanes.mjs';
 import { findGraphemeBoundaries } from '../../dist/internal/graphemes.js';

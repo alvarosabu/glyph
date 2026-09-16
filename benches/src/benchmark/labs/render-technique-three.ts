@@ -1,5 +1,5 @@
 import { type Font, type RasterFormatMetadata } from '@pmndrs/glyph';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { bitmap } from '@pmndrs/glyph/raster';
 import type { Text, TextGroup } from '@pmndrs/glyph/three';
 import { glyphExample } from '@pmndrs/glyph-example-raster';
 import * as THREE from 'three/webgpu';

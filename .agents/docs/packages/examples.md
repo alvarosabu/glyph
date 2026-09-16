@@ -5,7 +5,7 @@ description: Demonstrates matching public imperative Three.js and React Three Fi
 resource: ../../../apps/r3f-hello-world
 workspace_package: '@pmndrs/glyph-examples'
 documentation_type: reference
-source_digest: 'sha256:2c69a1d7483d8652f831e40c5ffb134d95a482a97151ffc4e97caf3c1e17d26d'
+source_digest: 'sha256:7efaf395b6fd2a21b4249bef4d1c091669e374599f023b5cc19c8b8ae789ce71'
 tags: [package, example, three, react, react-three-fiber, vite]
 sources:
   - id: manifest
@@ -22,7 +22,7 @@ sources:
     title: Public R3F raster-format and nested font-span lifecycle
 generated:
   by: openai-codex/gpt-6
-  at: '2026-09-15T19:11:33Z'
+  at: '2026-09-16T12:35:09Z'
 ---
 
 # Package reference: `@pmndrs/glyph-examples`
@@ -37,7 +37,7 @@ The imperative route uses the complete ordinary contract: `await glyph.init()`, 
 `WebGPURenderer.init()` is awaited. The renderer, its canvas, and the camera are therefore application-owned host state,
 not inputs to Glyph resource resolution.
 
-The R3F route uses the module-owned default Three handle unless a `GlyphProvider` selects another immutable handle.
+The R3F route imports components and format hooks from `@pmndrs/glyph/react`, and portable formats from `@pmndrs/glyph/raster`. It uses the module-owned default Three handle unless a `GlyphProvider` selects another immutable handle.
 Module-scoped `useBitmap.preload()`, `useMsdf.preload()`, and `useSlug.preload()` calls start the three format loads;
 the matching hooks consume those stable operations, suspend only while unresolved, and own their mounted immutable Font
 leases. Each hook declares through `glyph.fontFace()` rather than introducing another loader. Three React `Activity`

@@ -1,5 +1,6 @@
-import type { BufferPatch, Retirement, TypedBuffer, TypedResource } from '../config/glyph.js';
+import type { BufferPatch, Retirement } from '../config/glyph.js';
 import type { TypedPatchCommand, TypedRetirementCommand } from './typed-command-tree.js';
+import type { TypedBuffer, TypedResource } from './typed-command-identity.js';
 
 /** @internal Explicitly constructs a renderer-bound patch from one trusted decoded view. */
 export function bindPatch<Buffer extends object>(

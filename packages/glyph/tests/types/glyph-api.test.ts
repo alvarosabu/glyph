@@ -9,8 +9,8 @@ import {
   type GlyphSchema,
   type PortableResource,
 } from '@pmndrs/glyph';
-import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/config/glyph';
-import * as GlyphConfigApi from '@pmndrs/glyph/config/glyph';
+import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/config';
+import * as GlyphConfigApi from '@pmndrs/glyph/config';
 
 // @ts-expect-error Handle construction is package-owned, not part of the public GlyphConfig DSL.
 void GlyphConfigApi.createConfiguredGlyphHandle;

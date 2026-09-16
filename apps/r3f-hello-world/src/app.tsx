@@ -1,11 +1,6 @@
 import type { Font } from '@pmndrs/glyph';
-import { Text, TextGroup } from '@pmndrs/glyph/react';
-import { useBitmap } from '@pmndrs/glyph/react/bitmap';
-import { useMsdf } from '@pmndrs/glyph/react/msdf';
-import { useSlug } from '@pmndrs/glyph/react/slug';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
+import { Text, TextGroup, useBitmap, useMsdf, useSlug } from '@pmndrs/glyph/react';
+import { bitmap, msdf, slug } from '@pmndrs/glyph/raster';
 import { useThree, type ThreeEvent } from '@react-three/fiber/webgpu';
 import { Activity, useState } from 'react';
 import { float, fwidth, smoothstep, uv, vec2 } from 'three/tsl';

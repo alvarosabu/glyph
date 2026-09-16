@@ -1,11 +1,6 @@
 import type { Font } from '@pmndrs/glyph';
-import { Text, useFont } from '@pmndrs/glyph/react';
-import { useBitmap } from '@pmndrs/glyph/react/bitmap';
-import { useMsdf } from '@pmndrs/glyph/react/msdf';
-import { useSlug } from '@pmndrs/glyph/react/slug';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
+import { Text, useFont, useBitmap, useMsdf, useSlug } from '@pmndrs/glyph/react';
+import { bitmap, msdf, slug } from '@pmndrs/glyph/raster';
 import type { Text as ThreeText } from '@pmndrs/glyph/three';
 
 function HookTypeAssertions() {

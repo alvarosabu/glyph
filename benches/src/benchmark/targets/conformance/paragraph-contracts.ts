@@ -5,7 +5,7 @@ import {
   type GlyphLayoutInspection,
   type TextStyle,
 } from '@pmndrs/glyph';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { bitmap } from '@pmndrs/glyph/raster';
 import type { Text } from '@pmndrs/glyph/three';
 
 import { loadBenchmarkFont as loadFont } from '../../../workloads/font-assets/library';

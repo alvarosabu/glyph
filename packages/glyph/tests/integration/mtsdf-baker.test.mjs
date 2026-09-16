@@ -2,25 +2,18 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import {
-  createMsdfBaker,
-  createMsdfBakerFromInstance,
-  msdfBakerAbi,
-  msdfBakerFromCore,
-} from '@pmndrs/glyph/bakers/msdf';
+import { createMsdfBaker, createMsdfBakerFromInstance, msdfBakerFromCore } from '@pmndrs/glyph/bakers/msdf';
 import { MsdfArtifactValidationError, validateMsdfArtifact } from '../../dist/bakers/msdf-validator.js';
-import {
-  MSDF_EM_SIZE,
-  MSDF_EXTENSION,
-  MSDF_PIXEL_RANGE,
-  MSDF_PLANE_UNITS_PER_EM,
-  msdf,
-  msdfDescriptor,
-  msdfDescriptorRasterKey,
-} from '@pmndrs/glyph/raster/msdf';
-import { mtsdfBakerAbi } from '../../dist/mtsdf-baker-abi.js';
+import { MSDF_EM_SIZE, MSDF_PIXEL_RANGE, msdf } from '@pmndrs/glyph/raster';
+import { mtsdfBakerAbi, mtsdfBakerAbi as msdfBakerAbi } from '../../dist/mtsdf-baker-abi.js';
 import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerprint.js';
 import { interShapingFingerprint, interSourceFingerprint } from '../support/inter-identity.mjs';
+import {
+  MSDF_EXTENSION,
+  MSDF_PLANE_UNITS_PER_EM,
+  msdfDescriptor,
+  msdfDescriptorRasterKey,
+} from '../../dist/internal/msdf-contract.js';
 
 const wasmUrl = new URL('../../dist/mtsdf-baker.wasm', import.meta.url);
 const fontUrl = new URL('../../../../benches/fixtures/fonts/inter-v4.1/Inter-Regular.ttf', import.meta.url);

@@ -1,4 +1,4 @@
-import type { MsdfData } from '@pmndrs/glyph/raster/msdf';
+import type { MsdfData } from '@pmndrs/glyph/raster';
 
 export interface MtsdfRasterConfiguration {
   readonly emSize: number;

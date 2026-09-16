@@ -6,28 +6,27 @@ import {
   type TslBitmapShaderOptions,
   type TslBitmapShaderOutput,
   type TslBitmapShaderResources,
-} from '@pmndrs/glyph/shaders/tsl/bitmap';
+} from '@pmndrs/glyph/shaders/tsl';
 import {
   decorationShader,
   type TslDecorationInstanceNodes,
   type TslDecorationShaderOutput,
-} from '@pmndrs/glyph/shaders/tsl/decoration';
+} from '@pmndrs/glyph/shaders/tsl';
 import {
   msdfShader,
   type TslMsdfInstanceNodes,
   type TslMsdfShaderOutput,
   type TslMsdfShaderResources,
-} from '@pmndrs/glyph/shaders/tsl/msdf';
+} from '@pmndrs/glyph/shaders/tsl';
 import {
   slugShader,
   type TslSlugFillRule,
   type TslSlugInstanceNodes,
   type TslSlugPageResources,
   type TslSlugShaderOutput,
-} from '@pmndrs/glyph/shaders/tsl/slug';
+} from '@pmndrs/glyph/shaders/tsl';
 
-// Each technique node graph has a package subpath, so renderer integrations can
-// reuse one shader without importing the other built-in realizations.
+// The TSL shader entry exposes each technique graph without a renderer integration.
 declare const bitmapInstance: TslBitmapInstanceNodes;
 declare const bitmapResources: TslBitmapShaderResources;
 declare const bitmapOptions: TslBitmapShaderOptions;

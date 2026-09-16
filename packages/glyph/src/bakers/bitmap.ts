@@ -6,7 +6,7 @@ import type {
   SerializedBakeError,
 } from '../bake.js';
 import { createDirectRasterBakerFromInstance, instantiateWasm } from '../internal/raster-baker-wasm.js';
-import { bitmapBakerAbi, type BitmapBakerAbi } from '../generated/bitmap-baker-abi.js';
+import { bitmapBakerAbi } from '../generated/bitmap-baker-abi.js';
 import { cacheSuccessfulPromise } from '../internal/successful-promise-cache.js';
 import {
   BITMAP_EXTENSION,
@@ -18,8 +18,6 @@ import {
 import type { RasterCoverage } from '../raster-coverage.js';
 import { GlyphError } from '../glyph-error.js';
 import type { Fingerprint, RasterKey } from '../identity.js';
-
-export { bitmapBakerAbi } from '../generated/bitmap-baker-abi.js';
 
 export interface BitmapBakerOptions {
   readonly strikes: readonly [number, ...number[]];
@@ -49,8 +47,6 @@ export interface BitmapBakerCore {
 }
 
 export type BitmapBakerWasmSource = BufferSource | WebAssembly.Module;
-
-export type { BitmapBakerAbi };
 
 export class BitmapBakeError extends GlyphError<'bake-failed'> {
   readonly reason: string;

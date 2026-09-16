@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
 import {
   BITMAP_EXTENSION,
   BITMAP_FORMAT_VERSION,
@@ -9,7 +8,7 @@ import {
   MAX_BITMAP_PPEM,
   bitmapDescriptor,
   bitmapRasterKey,
-} from '@pmndrs/glyph/raster/bitmap';
+} from '../../dist/internal/bitmap-contract.js';
 
 test('canonicalizes bitmap strikes and owns its compatibility versions', async () => {
   const descriptor = bitmapDescriptor({ strikes: [32, 16] });

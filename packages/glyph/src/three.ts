@@ -72,3 +72,10 @@ export function defineThreeConfig(options: ThreeConfigOptions = {}): ThreeGlyphC
 
 /** Built-in indexed/ordered Three adapter. Spreading it preserves hooks without shared handle state. */
 export const ThreeConfig: ThreeGlyphConfig = defineThreeConfig();
+
+export type {
+  ThreeRasterBufferCapabilities,
+  ThreeRasterResourceCapability,
+  ThreeRasterResourceCapabilities,
+  ThreeCodecAbi,
+} from './three/raster-program.js';

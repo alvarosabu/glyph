@@ -2,14 +2,9 @@ import { createElement, type ReactElement } from 'react';
 
 import { glyph, type Font, type FontStack } from '@pmndrs/glyph';
 import * as ReactApi from '@pmndrs/glyph/react';
-import { GlyphProvider, Text, TextGroup, useFont } from '@pmndrs/glyph/react';
+import { GlyphProvider, Text, TextGroup, useFont, useBitmap, useMsdf, useSlug } from '@pmndrs/glyph/react';
 import type { R3fTextChild, R3fTextProps } from '@pmndrs/glyph/react';
-import { useBitmap } from '@pmndrs/glyph/react/bitmap';
-import { useMsdf } from '@pmndrs/glyph/react/msdf';
-import { useSlug } from '@pmndrs/glyph/react/slug';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
+import { bitmap, msdf, slug } from '@pmndrs/glyph/raster';
 import { ThreeConfig, type Text as ThreeText, type ThreeHandle, type ThreeTextMaterial } from '@pmndrs/glyph/three';
 
 declare const bitmapFont: Font<typeof bitmap>;

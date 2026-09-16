@@ -15,19 +15,8 @@ import {
 } from '../config/raster-format.js';
 
 export {
-  MSDF_EXTENSION,
-  MSDF_FORMAT_VERSION,
-  MSDF_GENERATOR_VERSION,
-  MSDF_KIND,
   MSDF_EM_SIZE,
-  MSDF_MAX_EM_SIZE,
-  MSDF_MAX_OUTLINE_ATLAS_PIXELS,
-  MSDF_MAX_PIXEL_RANGE,
   MSDF_PIXEL_RANGE,
-  MSDF_PLANE_UNITS_PER_EM,
-  msdfDescriptor,
-  msdfDescriptorRasterKey,
-  msdfRasterKey,
   type MsdfConfiguration,
   type MsdfDescriptor,
   type MsdfOptions,

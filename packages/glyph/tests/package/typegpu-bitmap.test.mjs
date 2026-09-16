@@ -171,7 +171,7 @@ test('paint composition scales unpremultiplied alpha by coverage and keeps rgb',
 
 test('every shipped Bitmap stage resolves to WGSL without consumer-side tooling', () => {
   for (const [name, fn] of Object.entries({ bitmapVertex, bitmapVertexSnapped, bitmapFragment })) {
-    const wgsl = tgpu.resolve([fn]);
+    const wgsl = tgpu.resolve([fn.$name(name)]);
     assert.match(wgsl, new RegExp(`fn ${name}\\(`), `${name} must resolve as a WGSL function`);
   }
   const fragmentWgsl = tgpu.resolve([bitmapFragment]);

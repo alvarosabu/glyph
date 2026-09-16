@@ -1,7 +1,18 @@
 import type { Font } from '@pmndrs/glyph';
-import { bitmap, bitmapCodec, type BitmapData, type BitmapStrikeData } from '@pmndrs/glyph/raster/bitmap';
-import { msdf, msdfCodec, type MsdfConfiguration, type MsdfData } from '@pmndrs/glyph/raster/msdf';
-import { SLUG_PLANE_UNITS_PER_EM, slug, slugCodec, type SlugPageData } from '@pmndrs/glyph/raster/slug';
+import {
+  bitmap,
+  bitmapCodec,
+  type BitmapData,
+  type BitmapStrikeData,
+  msdf,
+  msdfCodec,
+  type MsdfConfiguration,
+  type MsdfData,
+  SLUG_PLANE_UNITS_PER_EM,
+  slug,
+  slugCodec,
+  type SlugPageData,
+} from '@pmndrs/glyph/raster';
 import {
   type CompiledRasterFont,
   type CompiledRasterFontResource,
@@ -10,10 +21,8 @@ import {
   type PortableTextureArrayPayload,
   type PortableTexturePayload,
 } from '@pmndrs/glyph';
-import { compileRasterFont, readCompiledRasterFont, type RasterCodec } from '@pmndrs/glyph/config/raster';
-import type { RasterFormatMetadata } from '@pmndrs/glyph/config/raster-format';
-import type { TechniqueSchemaMetadata } from '@pmndrs/glyph/config/schema';
-
+import { compileRasterFont, readCompiledRasterFont, type RasterCodec } from '@pmndrs/glyph/config';
+import type { RasterFormatMetadata, TechniqueSchemaMetadata } from '@pmndrs/glyph/config';
 import type { SlugCpuReferenceData } from '../../benchmark/low-level/raster/slug-cpu-reference';
 
 const DENSE_GLYPH_RECORD_STRIDE = 20;

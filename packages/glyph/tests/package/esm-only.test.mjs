@@ -43,20 +43,12 @@ test('the published contract is ESM-only', async () => {
   for (const subpath of [
     './baker',
     './shaders/tsl',
-    './shaders/tsl/bitmap',
-    './shaders/tsl/msdf',
-    './shaders/tsl/slug',
-    './shaders/tsl/decoration',
     './shaders/typegpu',
-    './shaders/typegpu/bitmap',
-    './shaders/typegpu/msdf',
-    './shaders/typegpu/slug',
-    './shaders/typegpu/decoration',
-    './three/*',
+    './three',
     './three/typegpu',
-    './react/*',
-    './raster/*',
-    './config/*',
+    './react',
+    './raster',
+    './config',
   ]) {
     assert.ok(subpath in manifest.exports, `${subpath} must remain a tree-shakeable package boundary`);
   }
@@ -98,7 +90,7 @@ test('the published contract is ESM-only', async () => {
   // The typed ABI subpaths published struct offsets for pointer arithmetic and the validator subpaths
   // published bake-time artifact checks; neither had a consumer outside this package. The modules are still built
   // and packed — only the entry points are withdrawn, so a re-added name is a decision to make, not an
-  // accident to ship. Public `/config/*` leaves are the GlyphConfig integration surface a custom renderer builds on.
+  // accident to ship. Public `/config` is the GlyphConfig integration surface a custom renderer builds on.
   for (const removed of [
     './text-shaper-abi',
     './bitmap-baker-abi',

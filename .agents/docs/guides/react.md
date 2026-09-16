@@ -22,7 +22,7 @@ sources:
     title: React font lease lifecycle proof
 generated:
   by: openai-codex/gpt-5.6
-  at: '2026-09-04T00:50:50Z'
+  at: '2026-09-16T12:35:09Z'
 ---
 
 # React font loading
@@ -44,7 +44,7 @@ Declare a face once and pass the declaration or one of its inferred format selec
 ```tsx
 import { glyph } from '@pmndrs/glyph';
 import { Text } from '@pmndrs/glyph/react';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
+import { msdf } from '@pmndrs/glyph/raster';
 
 const Inter = glyph.fontFace('/fonts/Inter.font.glb', { format: msdf });
 
@@ -66,15 +66,12 @@ independent immutable Font leases and release those leases on unmount.[^react-li
 
 ## Let a hook own the declaration
 
-`useFont(source, config?)` is the generic hook. The format-specific leaves preserve exact return types and format
+`useFont(source, config?)` is the generic hook. The format-specific hooks share the `/react` entry and preserve exact return types and format
 options without requiring an explicit generic:[^react-format-hooks]
 
 ```tsx
-import { Text, useFont } from '@pmndrs/glyph/react';
-import { useBitmap } from '@pmndrs/glyph/react/bitmap';
-import { useMsdf } from '@pmndrs/glyph/react/msdf';
-import { useSlug } from '@pmndrs/glyph/react/slug';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
+import { Text, useFont, useBitmap, useMsdf, useSlug } from '@pmndrs/glyph/react';
+import { msdf } from '@pmndrs/glyph/raster';
 
 export function Labels() {
   const custom = useFont('/fonts/Custom.font.glb', { format: msdf });
@@ -115,8 +112,8 @@ leases.[^react-adapter][^react-contract]
 ```tsx
 import { glyph } from '@pmndrs/glyph';
 import { GlyphProvider, Text } from '@pmndrs/glyph/react';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
+import { msdf } from '@pmndrs/glyph/raster';
+import { slug } from '@pmndrs/glyph/raster';
 
 const ExistingTitle = glyph.fontFace('/fonts/Title.font.glb', { format: slug });
 

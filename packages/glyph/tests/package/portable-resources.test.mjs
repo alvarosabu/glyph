@@ -1,13 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  assertPortableResource,
-  normalizePortableResource,
-  portableResourceKinds,
-  portableTopologies,
-} from '../../dist/config/resources.js';
+import { assertPortableResource, portableResourceKinds, portableTopologies } from '../../dist/config/resources.js';
 import { indexedQuadGeometry } from '../support/portable-geometry.mjs';
+import { normalizePortableResource } from '../../dist/internal/resources.js';
 
 function mutate(geometry, patch) {
   const next = structuredClone(geometry);

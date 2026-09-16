@@ -20,11 +20,6 @@ export type {
   InstanceIdentity,
   InstanceSpanIdentity,
   SemanticIdentity,
-  TransformIdentity,
-  TypedBuffer,
-  TypedMaterial,
-  TypedProgram,
-  TypedResource,
 } from '../internal/typed-command-identity.js';
 
 /** One lazily projected borrowed sequence. Values expire with their command buffer. */

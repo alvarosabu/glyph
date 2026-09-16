@@ -4,14 +4,14 @@ import { readFile } from 'node:fs/promises';
 import test, { before } from 'node:test';
 
 import { createFontBaker } from '@pmndrs/glyph/bake';
-import { parseGlb, validateFontArtifact } from '@pmndrs/glyph/bake';
+import { validateFontArtifact } from '@pmndrs/glyph/bake';
 import { bitmapBakerFromCore, createBitmapBaker } from '@pmndrs/glyph/bakers/bitmap';
 import { validateBitmapArtifact } from '../../dist/bakers/bitmap-validator.js';
-import { bitmapDescriptor, bitmapRasterKey } from '@pmndrs/glyph/raster/bitmap';
-
 import { BakeCompositionError, composeFontBake } from '../../dist/internal/compose-bake.js';
 import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerprint.js';
 import { compatibilityFingerprint } from '../../dist/internal/raster-identity.js';
+import { bitmapDescriptor, bitmapRasterKey } from '../../dist/internal/bitmap-contract.js';
+import { parseGlb } from '../../dist/font-baker/validator.js';
 
 let core;
 let bitmapEmbedded;

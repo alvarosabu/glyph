@@ -4,13 +4,11 @@ import { readFile } from 'node:fs/promises';
 import test, { after } from 'node:test';
 import { Fragment, StrictMode, Suspense, createElement, useLayoutEffect } from 'react';
 
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
+import { bitmap, msdf } from '@pmndrs/glyph/raster';
 import { glyph, GlyphFontError } from '@pmndrs/glyph';
 import { ThreeConfig, defineTextMaterial } from '@pmndrs/glyph/three';
 
-import { GlyphProvider, Text, TextGroup, useFont } from '@pmndrs/glyph/react';
-import { useBitmap } from '@pmndrs/glyph/react/bitmap';
+import { GlyphProvider, Text, TextGroup, useFont, useBitmap } from '@pmndrs/glyph/react';
 import * as THREE from 'three/webgpu';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
