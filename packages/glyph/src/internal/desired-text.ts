@@ -2,7 +2,7 @@ import type { RasterFormatMetadata } from '../config/raster-format.js';
 import type { TextInput } from '../formatted-text.js';
 import { mergePropertyList } from '../property-list.js';
 import type { PropertyList } from '../text-properties.js';
-import type { StandaloneTextProperties, TextUpdate } from '../three/text.js';
+import type { StandaloneTextProperties, TextGroup, TextUpdate } from '../three/text.js';
 
 /** Read through reactive property records during render and retain a detached snapshot for later comparison. */
 export function snapshotPropertyList<Value extends object>(value: PropertyList<Value>, label: string): Value {
@@ -67,4 +67,25 @@ export function sameSnapshot(left: unknown, right: unknown): boolean {
   const keys = Object.keys(leftRecord);
   if (keys.length !== Object.keys(rightRecord).length) return false;
   return keys.every((key) => key in rightRecord && sameSnapshot(leftRecord[key], rightRecord[key]));
+}
+
+/** Committed group props are complete desired state; `renderOrder` and `material` reset to Three's defaults when omitted. */
+export interface DesiredTextGroupOptions {
+  readonly material?: TextGroup['material'] | undefined;
+  readonly renderOrder?: number | undefined;
+}
+
+/** Apply committed group props to the retained Three group; returns whether anything changed and a frame is due. */
+export function applyTextGroupOptions(group: TextGroup, options: DesiredTextGroupOptions): boolean {
+  let changed = false;
+  if (group.material !== options.material) {
+    group.material = options.material;
+    changed = true;
+  }
+  const renderOrder = options.renderOrder ?? 0;
+  if (group.renderOrder !== renderOrder) {
+    group.renderOrder = renderOrder;
+    changed = true;
+  }
+  return changed;
 }

@@ -35,7 +35,13 @@ import { glyph } from './glyph.js';
 import { GlyphFontError } from './loader.js';
 import { type FontSelection, type FontStack } from './loaded-font.js';
 import { mergePropertyList } from './property-list.js';
-import { desiredTextUpdate, sameDesiredText, snapshotProperty, snapshotPropertyList } from './internal/desired-text.js';
+import {
+  applyTextGroupOptions,
+  desiredTextUpdate,
+  sameDesiredText,
+  snapshotProperty,
+  snapshotPropertyList,
+} from './internal/desired-text.js';
 import { fontResourceKey } from './internal/font-resource-key.js';
 import {
   type Constraints,
@@ -680,10 +686,9 @@ function TextObject({
 
   useLayoutEffect(() => {
     if (object === undefined) return;
-    if (!sameDesiredText(appliedRef.current, desired)) {
-      object.set(desiredTextUpdate(desired));
-      appliedRef.current = desired;
-    }
+    if (sameDesiredText(appliedRef.current, desired)) return;
+    object.set(desiredTextUpdate(desired));
+    appliedRef.current = desired;
     invalidate();
   }, [desired, invalidate, object]);
 
@@ -734,12 +739,23 @@ function TextGroupObject({
     },
     threeRootHost(root),
   ]);
+  const [store] = useState(() => createObjectStore<ThreeTextGroup>());
+  const object = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  const invalidate = useThree((state) => state.invalidate);
   const publishObject = useMemo(
     () => (value: ThreeTextGroup | null) => {
+      store.publish(value ?? undefined);
       publishCommittedObject(value);
     },
-    [publishCommittedObject],
+    [publishCommittedObject, store],
   );
+  const { material, renderOrder } = options;
+
+  // Group presentation is complete desired state owned here, not by r3f prop diffing, so a removed prop resets.
+  useLayoutEffect(() => {
+    if (object === undefined) return;
+    if (applyTextGroupOptions(object, { material, renderOrder })) invalidate();
+  }, [invalidate, material, object, renderOrder]);
 
   return createElement<ThreeElement<typeof ThreeTextGroup>>(
     'pmndrsGlyphTextGroup',
@@ -1211,7 +1227,7 @@ function objectProperties<Technique extends RasterFormatMetadata>(
 
 function groupObjectProperties(properties: R3fTextGroupProps): TextGroupElementProps {
   const object = { ...properties } as Record<string, unknown>;
-  for (const key of ['pixelSnapping', 'children', 'onError', 'ref']) delete object[key];
+  for (const key of ['material', 'renderOrder', 'pixelSnapping', 'children', 'onError', 'ref']) delete object[key];
   return object as TextGroupElementProps;
 }
 

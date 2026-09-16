@@ -34,9 +34,15 @@ import type { Font } from './font.js';
 import { glyph } from './glyph.js';
 import { GlyphFontError } from './loader.js';
 import type { FontSelection, FontStack } from './loaded-font.js';
-import { desiredTextUpdate, sameDesiredText, snapshotPropertyList } from './internal/desired-text.js';
+import {
+  applyTextGroupOptions,
+  desiredTextUpdate,
+  sameDesiredText,
+  snapshotProperty,
+  snapshotPropertyList,
+} from './internal/desired-text.js';
 import { fontResourceKey } from './internal/font-resource-key.js';
-import type { Constraints, ParagraphLayout, PropertyList, TextStyle } from './text-properties.js';
+import type { Constraints, ParagraphLayout, PropertyList, TextFlow, TextStyle } from './text-properties.js';
 import type { RasterFormatMetadata } from './config/raster-format.js';
 import {
   acquireThreeHandleFont,
@@ -112,6 +118,8 @@ export interface VueTextProps<Technique extends RasterFormatMetadata> {
   readonly layout?: PropertyList<ParagraphLayout>;
   /** Bounds imposed on this root Text paragraph. */
   readonly constraints?: PropertyList<Constraints>;
+  /** Explicit sequential 2D flow regions and exclusions; nested Text spans cannot set this property. */
+  readonly flow?: TextFlow;
   readonly rasterPixelRatio?: number;
   readonly material?: ThreeTextMaterial;
   readonly pixelSnapping?: boolean;
@@ -631,6 +639,7 @@ const textPropDefinitions = {
   textStyle: { type: null as unknown as PropType<PropertyList<TextStyle>>, required: false },
   layout: { type: null as unknown as PropType<PropertyList<ParagraphLayout>>, required: false },
   constraints: { type: null as unknown as PropType<PropertyList<Constraints>>, required: false },
+  flow: { type: null as unknown as PropType<TextFlow>, required: false },
   rasterPixelRatio: { type: Number, required: false },
   material: { type: null as unknown as PropType<ThreeTextMaterial>, required: false },
   // A Boolean-typed prop coerces absence to `false`; an untyped prop keeps `undefined` so Three's default rules.
@@ -737,6 +746,7 @@ function desiredText(
     textStyle?: PropertyList<TextStyle> | undefined;
     layout?: PropertyList<ParagraphLayout> | undefined;
     constraints?: PropertyList<Constraints> | undefined;
+    flow?: TextFlow | undefined;
     rasterPixelRatio?: number | undefined;
     material?: ThreeTextMaterial | undefined;
     pixelSnapping?: boolean | undefined;
@@ -755,6 +765,7 @@ function desiredText(
     style: snapshotPropertyList(props.textStyle, 'Text style'),
     layout: snapshotPropertyList(props.layout, 'Text layout'),
     constraints: snapshotPropertyList(props.constraints, 'Text constraints'),
+    ...(props.flow === undefined ? {} : { flow: snapshotProperty(props.flow) }),
     ...(props.rasterPixelRatio === undefined ? {} : { rasterPixelRatio: props.rasterPixelRatio }),
     ...(props.material === undefined ? {} : { material: props.material }),
     ...(props.pixelSnapping === undefined ? {} : { pixelSnapping: props.pixelSnapping }),
@@ -786,11 +797,7 @@ export const TextGroup: TextGroupComponent = defineComponent({
     const apply = (): void => {
       const object = instance.value;
       if (object === undefined) return;
-      if (object.material !== props.material) object.material = props.material;
-      if (props.renderOrder !== undefined && object.renderOrder !== props.renderOrder) {
-        object.renderOrder = props.renderOrder;
-      }
-      invalidate();
+      if (applyTextGroupOptions(object, props)) invalidate();
     };
     onMounted(apply);
     onUpdated(apply);

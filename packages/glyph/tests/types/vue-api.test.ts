@@ -19,6 +19,11 @@ const three: ThreeHandle = glyph.handle('three:vue-type-fixture', ThreeConfig);
 const msdfFace = glyph.fontFace('/fonts/Inter.font.glb', { format: msdf });
 
 const inline = h(Text, { textStyle: { color: '#ff00ff' } }, () => 'span');
+const flowed = h(
+  Text,
+  { font: bitmapFont, flow: { regions: [{ key: 'main', shape: { kind: 'rectangle', bounds: [0, 0, 200, 100] } }] } },
+  () => 'Flowed',
+);
 const label = h(Text, { font: bitmapFont, material, pixelSnapping: true, position: [0, 1, 0] }, () => [
   'Typed ',
   inline,
@@ -37,7 +42,7 @@ const declared = h(
   { fontFaces: { Inter: '/fonts/Inter.font.glb', Title: { src: '/fonts/Title.font.glb', format: 'slug' } } },
   () => h(Text, { font: 'Inter' }, () => h(Text, { font: 'Title' }, () => 'Named provider fonts')),
 );
-void [label, selected, selectedFace, provided, aliased, namedRootProvided, defaultNamedRootProvided, declared];
+void [flowed, label, selected, selectedFace, provided, aliased, namedRootProvided, defaultNamedRootProvided, declared];
 
 // The template-ref instance exposes the retained Three object with the technique the font selection implies.
 declare const typedLabel: InstanceType<typeof Text<Font<typeof bitmap>>>;

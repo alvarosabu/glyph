@@ -132,6 +132,68 @@ export function adapterBehavior(name, mount) {
     assert.equal(object.disposed, true);
   });
 
+  test(`${name}: a re-render with an identical paragraph snapshot does not request a frame`, async () => {
+    const font = await adapterFont();
+    const initial = {
+      font: font.face,
+      text: 'same',
+      style: { fontSize: 16 },
+      constraints: { width: { mode: 'exact', size: 200 } },
+    };
+    const host = await mount(initial);
+    try {
+      host.resetFrameRequests();
+      await host.update({ ...initial, style: { fontSize: 16 }, constraints: { width: { mode: 'exact', size: 200 } } });
+      assert.equal(host.frameRequests, 0, 'an unchanged paragraph must not request a frame');
+    } finally {
+      await host.unmount();
+      font.dispose();
+    }
+  });
+
+  test(`${name}: flow is paragraph state that survives unrelated updates and clears on removal`, async () => {
+    const font = await adapterFont();
+    const flow = { regions: [{ key: 'main', shape: { kind: 'rectangle', bounds: [0, 0, 200, 100] } }] };
+    const initial = { font: font.face, text: 'flow', flow };
+    const host = await mount(initial);
+    const object = host.text;
+    try {
+      assert.deepEqual(object.flow, flow);
+      await host.update({ ...initial, text: 'flow changed' });
+      assert.equal(host.text, object);
+      assert.deepEqual(object.flow, flow, 'an unrelated paragraph update must not clear flow');
+      await host.update({ font: font.face, text: 'flow changed' });
+      assert.equal(object.flow, undefined, 'removing the flow prop restores the default');
+    } finally {
+      await host.unmount();
+      font.dispose();
+    }
+  });
+
+  test(`${name}: removing group material and renderOrder restores the defaults`, async () => {
+    const font = await adapterFont();
+    const material = defineTextMaterial((context) => context.createDefaultMaterial());
+    const initial = { font: font.face, text: 'group', group: { material, renderOrder: 3 } };
+    const host = await mount(initial);
+    const group = host.group;
+    try {
+      assert.equal(group.material, material);
+      assert.equal(group.renderOrder, 3);
+      host.resetFrameRequests();
+      await host.update({ ...initial, group: {} });
+      assert.equal(host.group, group, 'removing group props must not remount the group');
+      assert.equal(group.material, undefined);
+      assert.equal(group.renderOrder, 0);
+      assert.ok(host.frameRequests > 0, 'a group change must request a frame');
+      host.resetFrameRequests();
+      await host.update({ ...initial, group: {} });
+      assert.equal(host.frameRequests, 0, 'an unchanged group must not request a frame');
+    } finally {
+      await host.unmount();
+      font.dispose();
+    }
+  });
+
   test(`${name}: nested property replacements publish new values without mutating prior state`, async () => {
     const font = await adapterFont();
     const initial = {
