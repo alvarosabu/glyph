@@ -1,6 +1,38 @@
 import type { RasterFormatMetadata } from '../config/raster-format.js';
 import type { TextInput } from '../formatted-text.js';
-import type { StandaloneTextProperties } from '../three/text.js';
+import { mergePropertyList } from '../property-list.js';
+import type { PropertyList } from '../text-properties.js';
+import type { StandaloneTextProperties, TextUpdate } from '../three/text.js';
+
+/** Read through reactive property records during render and retain a detached snapshot for later comparison. */
+export function snapshotPropertyList<Value extends object>(value: PropertyList<Value>, label: string): Value {
+  return snapshotProperty(mergePropertyList(value, label));
+}
+
+/** Text-property data contains only records, arrays, and primitives; font and material identities never enter here. */
+export function snapshotProperty<Value>(value: Value): Value {
+  if (typeof value !== 'object' || value === null) return value;
+  if (Array.isArray(value)) return Object.freeze(value.map(snapshotProperty)) as Value;
+  return Object.freeze(
+    Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, snapshotProperty(entry)])),
+  ) as Value;
+}
+
+/** Component props describe complete state; omitted props must reset Three's otherwise partial update. */
+export function desiredTextUpdate<Technique extends RasterFormatMetadata>(
+  desired: Partial<StandaloneTextProperties<Technique>> & { readonly text: TextInput<Technique> },
+): TextUpdate<Technique> {
+  const { pixelSnapping: _pixelSnapping, ...update } = desired;
+  return {
+    ...update,
+    style: desired.style ?? {},
+    layout: desired.layout ?? {},
+    constraints: desired.constraints ?? {},
+    flow: desired.flow,
+    material: desired.material,
+    rasterPixelRatio: desired.rasterPixelRatio ?? 1,
+  };
+}
 
 /** Framework adapters republish only when the desired paragraph snapshot changed; fonts compare by identity, everything else structurally. */
 export function sameDesiredText<Technique extends RasterFormatMetadata>(

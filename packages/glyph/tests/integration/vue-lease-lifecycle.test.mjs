@@ -14,7 +14,7 @@ import { ThreeConfig, defineTextMaterial } from '@pmndrs/glyph/three';
 import { GlyphProvider, Text, TextGroup, clearFont, preloadFont, useFont } from '@pmndrs/glyph/vue';
 import { clearBitmap, preloadBitmap, useBitmap } from '@pmndrs/glyph/vue/bitmap';
 
-const fontUrl = new URL('../../../../apps/benchmarks/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
+const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const multiFormatFontUrl = new URL('../../../../apps/r3f-hello-world/assets/inter-latin.font.glb', import.meta.url);
 await glyph.init();
 const vueHandle = glyph.handle('three:vue-lease-tests', ThreeConfig);
@@ -220,7 +220,11 @@ test('Text reports a failed FontFace load once and does not restart it on re-ren
     h(GlyphProvider, { handle: vueHandle }, () =>
       h(
         Text,
-        { font: face.bitmap, constraints: { width: { mode: 'exact', size: width.value } }, onError: (e) => errors.push(e) },
+        {
+          font: face.bitmap,
+          constraints: { width: { mode: 'exact', size: width.value } },
+          onError: (e) => errors.push(e),
+        },
         () => 'broken',
       ),
     ),

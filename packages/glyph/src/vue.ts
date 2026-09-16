@@ -34,7 +34,7 @@ import type { Font } from './font.js';
 import { glyph } from './glyph.js';
 import { GlyphFontError } from './loader.js';
 import type { FontSelection, FontStack } from './loaded-font.js';
-import { sameDesiredText } from './internal/desired-text.js';
+import { desiredTextUpdate, sameDesiredText, snapshotPropertyList } from './internal/desired-text.js';
 import { fontResourceKey } from './internal/font-resource-key.js';
 import type { Constraints, ParagraphLayout, PropertyList, TextStyle } from './text-properties.js';
 import type { RasterFormatMetadata } from './config/raster-format.js';
@@ -647,6 +647,7 @@ export const Text: TextComponent = defineComponent({
   },
   setup(props, { slots, attrs, emit, expose }) {
     const context = useSelectedGlyphContext();
+    const { invalidate } = useTresContext().renderer;
     const instance = shallowRef<ThreeText<RasterFormatMetadata> | undefined>();
     const reportError = (error: unknown): void => emit('error', error);
     const loads = createFontLoadTracker(reportError);
@@ -660,9 +661,9 @@ export const Text: TextComponent = defineComponent({
       const object = instance.value;
       if (object === undefined || publication === undefined || desired === undefined) return;
       if (!sameDesiredText(publication.applied, desired)) {
-        const { pixelSnapping: _pixelSnapping, ...update } = desired;
-        object.set(update);
+        object.set(desiredTextUpdate(desired));
         publication.applied = desired;
+        invalidate();
       }
       leases.prune(desiredSelections);
     };
@@ -684,27 +685,27 @@ export const Text: TextComponent = defineComponent({
         isFontFaceSelection,
       });
       const selections = collectFontFaceSelections(outerFont, flattened.fontFaces);
-      if (!loads.ensureLoaded(handle, selections)) return null;
+      if (loads.ensureLoaded(handle, selections)) {
+        const loaded = new Map<FontFaceSelection, Font<RasterFormatMetadata>>();
+        for (const selection of selections) loaded.set(selection, leases.acquire(handle, selection));
+        desiredSelections = new Set(selections);
+        desired = desiredText(props, outerFont, flattened, loaded);
 
-      const loaded = new Map<FontFaceSelection, Font<RasterFormatMetadata>>();
-      for (const selection of selections) loaded.set(selection, leases.acquire(handle, selection));
-      desiredSelections = new Set(selections);
-      desired = desiredText(props, outerFont, flattened, loaded);
-
-      const key = `${rootId(root)}:${props.pixelSnapping === true ? 'pixel-snapped' : 'unsnapped'}`;
-      if (publication?.key !== key) {
-        // Tres rebuilds an instance when `args` change, so the array is created once per key and never replaced;
-        // a root or snapping change remounts through the key instead.
-        publication = {
-          key,
-          args: [threeTextConstructionToken, desired, [], threeRootHost(root)],
-          applied: desired,
-        };
+        const key = `${rootId(root)}:${props.pixelSnapping === true ? 'pixel-snapped' : 'unsnapped'}`;
+        if (publication?.key !== key) {
+          // Keep args stable while mounted. Pending fonts retain this publication and its host object.
+          publication = {
+            key,
+            args: [threeTextConstructionToken, desired, [], threeRootHost(root)],
+            applied: desired,
+          };
+        }
       }
+      if (publication === undefined) return null;
       const { key: _key, ref: _ref, ...passThrough } = attrs;
       return h(`Tres${textTag}`, {
         ...passThrough,
-        key,
+        key: publication.key,
         args: publication.args,
         ref: (node: unknown) => {
           const object = node instanceof ThreeText ? (node as ThreeText<RasterFormatMetadata>) : undefined;
@@ -751,9 +752,9 @@ function desiredText(
   return Object.freeze({
     font: loadedFont(outerFont, loaded),
     text: Object.freeze({ text: flattened.text, spans: Object.freeze(spans) }) as FormattedText<RasterFormatMetadata>,
-    ...(props.textStyle === undefined ? {} : { style: props.textStyle }),
-    ...(props.layout === undefined ? {} : { layout: props.layout }),
-    ...(props.constraints === undefined ? {} : { constraints: props.constraints }),
+    style: snapshotPropertyList(props.textStyle, 'Text style'),
+    layout: snapshotPropertyList(props.layout, 'Text layout'),
+    constraints: snapshotPropertyList(props.constraints, 'Text constraints'),
     ...(props.rasterPixelRatio === undefined ? {} : { rasterPixelRatio: props.rasterPixelRatio }),
     ...(props.material === undefined ? {} : { material: props.material }),
     ...(props.pixelSnapping === undefined ? {} : { pixelSnapping: props.pixelSnapping }),
@@ -776,6 +777,7 @@ export const TextGroup: TextGroupComponent = defineComponent({
   },
   setup(props, { slots, attrs, emit, expose }) {
     const context = useSelectedGlyphContext();
+    const { invalidate } = useTresContext().renderer;
     const instance = shallowRef<ThreeTextGroup | undefined>();
     const reportError = (error: unknown): void => emit('error', error);
     let publication: Readonly<{ key: string; args: TextGroupConstructorArguments }> | undefined;
@@ -788,6 +790,7 @@ export const TextGroup: TextGroupComponent = defineComponent({
       if (props.renderOrder !== undefined && object.renderOrder !== props.renderOrder) {
         object.renderOrder = props.renderOrder;
       }
+      invalidate();
     };
     onMounted(apply);
     onUpdated(apply);

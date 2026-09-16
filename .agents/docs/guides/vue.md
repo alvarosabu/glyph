@@ -42,6 +42,11 @@ still loading mounts nothing, starts every missing load at once, and constructs 
 settles. A later change to an unloaded selection keeps the current paragraph on screen until the new font loads.
 Callers who want `<Suspense>` await the `ready` promise a composable returns.
 
+`textStyle`, `layout`, and `constraints` support nested Vue reactive records as well as replacement objects. The
+adapter snapshots their values during render, including property-list arrays. Removing an optional paragraph prop
+restores its default instead of retaining the previous value. Text and TextGroup updates invalidate an on-demand
+canvas, so callers do not need to request an extra frame after changing component props.
+
 ## Pass a caller-owned FontFace directly
 
 ```vue

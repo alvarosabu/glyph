@@ -341,6 +341,18 @@ missing loads together, and keeps the current paragraph while a later selection 
 `{ font, error, ready }` shallow refs plus a promise for async setup; the format leaves compose it exactly like the
 React hooks. See [Vue and TresJS font loading](../guides/vue.md).
 
+Both component adapters snapshot paragraph property data and treat each committed prop set as complete desired state:
+removing style, layout, constraints, material, or raster pixel ratio restores the corresponding default. Vue reads
+through nested reactive records while taking those snapshots, so in-place changes trigger updates without retaining
+mutable comparison state. Paragraph and group updates request a frame on demand-rendered canvases. A pending Vue font
+switch keeps the current Three object and its leases until replacement fonts are ready; constructor arguments remain
+valid for that mounted object's lifetime. React retains its ordinary Suspense lifecycle.
+
+`pnpm scripts run glyph:adapters-check` runs the shared React/Vue behavior cases and each framework's lifecycle tests
+against a freshly built distribution, plus adapter formatting, lint, and source declaration checks. Shared cases cover
+prop removal, nested property replacement, frame requests, loaded-to-pending font switches, and lease disposal; Vue
+also proves in-place reactive updates. Three's `Text.set({ material: undefined })` explicitly clears an override.
+
 The public `ThreeRoot` contract stops at that retained scene API: identity and disposal, Text/TextGroup construction,
 counts, and mutable material presentation. The renderer draw object, discovered Three Scene, root services, command
 boundary, and Font lease acquisition belong to the package-owned root host. They are unavailable through both source

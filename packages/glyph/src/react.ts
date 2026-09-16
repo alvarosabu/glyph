@@ -35,7 +35,7 @@ import { glyph } from './glyph.js';
 import { GlyphFontError } from './loader.js';
 import { type FontSelection, type FontStack } from './loaded-font.js';
 import { mergePropertyList } from './property-list.js';
-import { sameDesiredText } from './internal/desired-text.js';
+import { desiredTextUpdate, sameDesiredText, snapshotProperty, snapshotPropertyList } from './internal/desired-text.js';
 import { fontResourceKey } from './internal/font-resource-key.js';
 import {
   type Constraints,
@@ -680,9 +680,8 @@ function TextObject({
 
   useLayoutEffect(() => {
     if (object === undefined) return;
-    const { pixelSnapping: _pixelSnapping, ...update } = desired;
     if (!sameDesiredText(appliedRef.current, desired)) {
-      object.set(update);
+      object.set(desiredTextUpdate(desired));
       appliedRef.current = desired;
     }
     invalidate();
@@ -1179,10 +1178,10 @@ function textProperties<Technique extends RasterFormatMetadata>(
       text: flattened.text,
       spans: flattened.spans,
     }) as FormattedText<Technique>,
-    ...(properties.style === undefined ? {} : { style: properties.style }),
-    ...(properties.layout === undefined ? {} : { layout: properties.layout }),
-    ...(properties.constraints === undefined ? {} : { constraints: properties.constraints }),
-    ...(properties.flow === undefined ? {} : { flow: properties.flow }),
+    style: snapshotPropertyList(properties.style, 'Text style'),
+    layout: snapshotPropertyList(properties.layout, 'Text layout'),
+    constraints: snapshotPropertyList(properties.constraints, 'Text constraints'),
+    ...(properties.flow === undefined ? {} : { flow: snapshotProperty(properties.flow) }),
     ...(properties.rasterPixelRatio === undefined ? {} : { rasterPixelRatio: properties.rasterPixelRatio }),
     ...(properties.material === undefined ? {} : { material: properties.material }),
     ...(properties.pixelSnapping === undefined ? {} : { pixelSnapping: properties.pixelSnapping }),

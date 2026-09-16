@@ -3,7 +3,7 @@ import { Comment, Fragment, Text as TextVNode, isVNode, type VNode, type VNodeAr
 import type { FontFaceSelection } from '../../font-face.js';
 import { resolveRangesToClusters } from '../../formatted-text.js';
 import type { FontSelection } from '../../loaded-font.js';
-import { mergePropertyList } from '../../property-list.js';
+import { snapshotPropertyList } from '../../internal/desired-text.js';
 import type { PropertyList, TextStyle } from '../../text-properties.js';
 import type { RasterFormatMetadata } from '../../config/raster-format.js';
 import type { ThreeTextMaterial } from '../../three/material.js';
@@ -143,7 +143,7 @@ function camelize(key: string): string {
 }
 
 function inlineProperties(properties: StatedInlineProperties, inherited: InlineProperties): InlineProperties {
-  const statedStyle = mergePropertyList(properties.textStyle, 'nested Text textStyle');
+  const statedStyle = snapshotPropertyList(properties.textStyle, 'nested Text textStyle');
   const style =
     Object.keys(statedStyle).length === 0 ? inherited.style : Object.freeze({ ...inherited.style, ...statedStyle });
   const font = properties.font ?? inherited.font;
