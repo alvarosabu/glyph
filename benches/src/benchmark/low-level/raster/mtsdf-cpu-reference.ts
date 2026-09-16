@@ -1,10 +1,6 @@
 import type { GlyphLayout } from '@pmndrs/glyph';
-import {
-  MSDF_GLYPH_RECORD_STRIDE as MTSDF_GLYPH_RECORD_STRIDE,
-  type MsdfData as MtsdfData,
-  type MsdfPageData as MtsdfPageData,
-} from '@pmndrs/glyph/raster';
-
+import { MSDF_GLYPH_RECORD_STRIDE as MTSDF_GLYPH_RECORD_STRIDE } from '@pmndrs/glyph/extend';
+import { type MsdfData as MtsdfData, type MsdfPageData as MtsdfPageData } from '@pmndrs/glyph';
 const ABSENT_PAGE = 0xffff;
 
 export interface MtsdfCpuReferenceBounds {

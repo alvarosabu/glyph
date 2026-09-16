@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { Scene } from 'three/webgpu';
 
-import { GlyphFontError, glyph } from '@pmndrs/glyph';
+import { GlyphFontError, glyph, bitmap as portableBitmap, bitmap, msdf, slug } from '@pmndrs/glyph';
 import {
   id,
   defineGlyphConfig,
@@ -11,8 +11,8 @@ import {
   resourceLease,
   createRasterCodecProgram,
   defineCodecBuffers,
-} from '@pmndrs/glyph/config';
-import { bitmap as portableBitmap, bitmapCodec, bitmap, msdf, slug } from '@pmndrs/glyph/raster';
+  bitmapCodec,
+} from '@pmndrs/glyph/extend';
 import { defineThreeConfig, ThreeConfig } from '@pmndrs/glyph/three';
 
 const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);

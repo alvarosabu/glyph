@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { glyph } from '@pmndrs/glyph';
+import { glyph, msdf } from '@pmndrs/glyph';
 import { defineTypeGpuConfig } from '@pmndrs/glyph/typegpu';
-import { resourceLease, id } from '@pmndrs/glyph/config';
-import { msdf, msdfSchema, slugSchema } from '@pmndrs/glyph/raster';
+import { resourceLease, id, msdfSchema, slugSchema } from '@pmndrs/glyph/extend';
 import { codecDescriptor, TYPEGPU_PLACEMENT_SLOT_BUFFER_ID } from '../../dist/typegpu/internal/codec.js';
 
 const fontBytes = await readFile(

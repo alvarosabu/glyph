@@ -4,7 +4,7 @@ import test from 'node:test';
 
 import bitmapBaker from '@pmndrs/glyph/bakers/bitmap';
 import msdfBaker from '@pmndrs/glyph/bakers/msdf';
-import { bitmap, msdf } from '@pmndrs/glyph/raster';
+import { bitmap, msdf } from '@pmndrs/glyph';
 import { normalizeBitmapOptions, bitmapDescriptor, bitmapRasterKey } from '../../dist/internal/bitmap-contract.js';
 import { normalizeMsdfOptions, msdfDescriptor, msdfRasterKey } from '../../dist/internal/msdf-contract.js';
 import { startRasterBakeWorker } from '../../dist/internal/raster-bake-worker-entry.js';

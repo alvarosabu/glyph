@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import test, { after } from 'node:test';
 
 import * as THREE from 'three/webgpu';
-import { span, txt } from '@pmndrs/glyph';
-import { bitmap } from '@pmndrs/glyph/raster';
+import { span, txt, bitmap } from '@pmndrs/glyph';
 import { defineThreeConfig } from '@pmndrs/glyph/three';
 
 import { createFontCache, mount, timeout, unmount } from '../support/text-mutation-lanes.mjs';

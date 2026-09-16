@@ -13,7 +13,7 @@
     "dist/index.d.ts",
     "dist/bake.d.ts",
     "dist/bakers/*.d.ts",
-    "dist/config.d.ts",
+    "dist/extend.d.ts",
     "dist/config/*.d.ts",
     "dist/node/bake.d.ts",
     "dist/raster/*.d.ts",

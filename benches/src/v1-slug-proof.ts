@@ -1,5 +1,4 @@
-import { glyph, type FontFace } from '@pmndrs/glyph';
-import { slug } from '@pmndrs/glyph/raster';
+import { glyph, type FontFace, slug } from '@pmndrs/glyph';
 import type { Text } from '@pmndrs/glyph/three';
 import * as THREE from 'three/webgpu';
 import interCompressedFontUrl from '../fixtures/rendering/inter-slug.font.glb.gz?url';

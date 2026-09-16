@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { bitmapBakerFromCore, createBitmapBaker, createBitmapBakerFromInstance } from '@pmndrs/glyph/bakers/bitmap';
-import { bitmap } from '@pmndrs/glyph/raster';
+import { bitmap } from '@pmndrs/glyph';
 import { validateBitmapArtifact } from '../../dist/bakers/bitmap-validator.js';
 import { interShapingFingerprint, interSourceFingerprint } from '../support/inter-identity.mjs';
 import { bitmapBakerAbi } from '../../dist/generated/bitmap-baker-abi.js';

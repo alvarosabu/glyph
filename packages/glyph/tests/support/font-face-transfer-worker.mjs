@@ -1,8 +1,6 @@
 import { parentPort } from 'node:worker_threads';
 
-import { glyph } from '@pmndrs/glyph';
-import { bitmap } from '@pmndrs/glyph/raster';
-
+import { glyph, bitmap } from '@pmndrs/glyph';
 if (parentPort === null) throw new Error('FontFace transfer fixture requires a Worker parent port');
 
 parentPort.once('message', async (serialized) => {

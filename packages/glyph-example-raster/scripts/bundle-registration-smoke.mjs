@@ -19,7 +19,7 @@ try {
     'portable',
     `
       import { glyphExampleCodec } from '@pmndrs/glyph-example-raster';
-      import { registerRasterCodec } from '@pmndrs/glyph/config';
+      import { registerRasterCodec } from '@pmndrs/glyph/extend';
       if (glyphExampleCodec.raster.id !== ${JSON.stringify(glyphExample.id)} ||
           registerRasterCodec(glyphExampleCodec) !== glyphExampleCodec) {
         throw new Error('portable root registration was tree-shaken');

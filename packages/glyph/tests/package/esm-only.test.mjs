@@ -47,8 +47,7 @@ test('the published contract is ESM-only', async () => {
     './three',
     './three/typegpu',
     './react',
-    './raster',
-    './config',
+    './extend',
   ]) {
     assert.ok(subpath in manifest.exports, `${subpath} must remain a tree-shakeable package boundary`);
   }
@@ -90,7 +89,7 @@ test('the published contract is ESM-only', async () => {
   // The typed ABI subpaths published struct offsets for pointer arithmetic and the validator subpaths
   // published bake-time artifact checks; neither had a consumer outside this package. The modules are still built
   // and packed — only the entry points are withdrawn, so a re-added name is a decision to make, not an
-  // accident to ship. Public `/config` is the GlyphConfig integration surface a custom renderer builds on.
+  // accident to ship. Public `/extend` is the GlyphConfig integration surface a custom renderer builds on.
   for (const removed of [
     './text-shaper-abi',
     './bitmap-baker-abi',
@@ -174,7 +173,7 @@ test('the public FontFace graph hides loader and mutable registration machinery'
   );
   assert.doesNotMatch(initialGraph.source, /new Worker/);
   assert.doesNotMatch(initialGraph.source, /(?:\.\/node\/|\.\/bakers\/)/);
-  assert.doesNotMatch(initialGraph.source, /(?:PMNDRS_font_slug|\.\/raster\/slug|slug-shaders)/);
+  assert.doesNotMatch(initialGraph.source, /(?:shaders\/tsl|shaders\/typegpu|slug-shaders)/);
   assert.doesNotMatch(entry, /(?:three\/|three["'])/, 'core entry must not import Three');
   assert.match(runtimeGraph.source, /workerUrl:\s*new URL\(["'`]\.\.\/dist\/runtime-bake-worker\.js["'`]/);
   assert.match(runtimeGraph.source, /new Worker\(/);

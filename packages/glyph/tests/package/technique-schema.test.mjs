@@ -4,7 +4,7 @@ import test from 'node:test';
 import { id } from '../../dist/config/codec.js';
 import { defineTechniqueGeometryKind, defineTechniqueSchema, schemaCodecBuffers } from '../../dist/config/schema.js';
 import { textShaperAbi } from '../../dist/generated/text-shaper-abi.js';
-import { bitmapSchema, msdfSchema, slugSchema } from '@pmndrs/glyph/raster';
+import { bitmapSchema, msdfSchema, slugSchema } from '@pmndrs/glyph/extend';
 const ORIGIN_BUFFER_ID = id.buffer('test.technique/origin');
 const FLAGS_BUFFER_ID = id.buffer('test.technique/flags');
 const THIN_BUFFER_ID = id.buffer('test.technique/thin');

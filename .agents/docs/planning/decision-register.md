@@ -49,7 +49,7 @@ sources:
 
 generated:
   by: openai-codex/gpt-6
-  at: '2026-09-16T12:35:09Z'
+  at: '2026-09-16T13:00:04Z'
 ---
 
 # Decision register
@@ -487,6 +487,8 @@ An incremental text edit shipped displaced record slots holding the previous occ
 Randomized input alone does not establish correctness. Mutation fuzzing asserts that malformed input fails safely and cannot observe valid operations producing wrong output; sequence property tests that compare two engine-derived lanes cannot observe a lane neither of them reads. D-261 is the oracle that makes randomness able to find wrongness.
 
 | D-365 | Minimize the 0.1.0 public surface before stabilizing it. Publish 15 exact ESM entries, with React components and hooks on `/react`, portable formats on `/raster`, renderer-neutral construction on `/config`, shader imports grouped by backend, and Three helpers on `/three`. Keep the public entries as static ESM re-exports over focused implementation modules. Preserve TypeGPU metadata PURE annotations and mark module-level shader construction as discardable so consumers can remove unused stages as well as unused techniques. Retire raw ABI objects, private validators and host helpers, shader math/reference implementations, redundant raster metadata helpers, and unused types. This supersedes the wildcard and utility-leaf publication rules in D-316, D-321, D-332, and D-346 without changing rendering, baking, or shader algorithms. | Accepted; implemented and verified with direct consumer tree-shaking checks |
+
+| D-366 | Built-in `bitmap`, `msdf`, and `slug` format selection is ordinary application vocabulary and lives at the root, together with its public options and decoded-data types. Rename the renderer-neutral `/config` construction entry to `/extend` and move built-in schemas, codecs, and format interpretation helpers there. Remove `/raster`; each runtime name has one public home. This refines D-365 to 14 exact JavaScript entries while preserving the existing bake entry points. Direct named-import consumer bundles must retain the same implementation modules and assets as before this move. | Accepted; implemented with direct consumer bundle and packed-package verification |
 
 ## Decisions required before implementation
 

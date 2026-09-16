@@ -1,5 +1,4 @@
-import { bitmap } from '@pmndrs/glyph/raster';
-
+import { bitmap } from '@pmndrs/glyph';
 import { loadBenchmarkFont as loadFont } from '../../../workloads/font-assets/library';
 
 import canonicalFontUrl from '../../../../fixtures/fonts/inter-v4.1/Inter-Regular.ttf?url';

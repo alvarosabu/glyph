@@ -6,8 +6,7 @@ import { join, resolve } from 'node:path';
 
 import { bakeFont } from '@pmndrs/glyph/bake';
 import { msdfBaker } from '@pmndrs/glyph/bakers/msdf';
-import { MSDF_EM_SIZE, MSDF_PIXEL_RANGE } from '@pmndrs/glyph/raster';
-
+import { MSDF_EM_SIZE, MSDF_PIXEL_RANGE } from '@pmndrs/glyph/extend';
 import { exactBaseTextureArrayBytes } from '../src/benchmark/texture-memory.ts';
 
 const outputDirectory = resolve('fixtures/rendering');

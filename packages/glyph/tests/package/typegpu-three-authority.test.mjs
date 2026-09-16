@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
-import { glyph } from '@pmndrs/glyph';
+import { glyph, bitmap } from '@pmndrs/glyph';
 import * as stableThree from '@pmndrs/glyph/three';
 import * as experimentalThree from '@pmndrs/glyph/three/typegpu';
-import { bitmap } from '@pmndrs/glyph/raster';
 import { createThreeTestHandle } from '../support/three-handle.mjs';
 
 import * as d from 'typegpu/data';

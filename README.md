@@ -3,13 +3,13 @@
 Portable font baking, Unicode shaping, paragraph layout, and batched text rendering for every Canvas.
 
 ```ts
-import { glyph } from '@pmndrs/glyph';
+import { glyph, msdf } from '@pmndrs/glyph';
 import { ThreeConfig } from '@pmndrs/glyph/three';
 
 await glyph.init();
 const three = glyph.handle('main', ThreeConfig);
 
-const Inter = await glyph.fontFace('/fonts/Inter.font.glb').load();
+const Inter = await glyph.fontFace('/fonts/Inter.font.glb', { format: msdf }).load();
 
 const label = three.createText({
   font: Inter,

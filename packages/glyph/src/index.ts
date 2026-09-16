@@ -286,3 +286,23 @@ export type {
 export type { RasterCoverage, RasterUnicodeRange } from './raster-coverage.js';
 
 export type { FontFeature } from './font-feature.js';
+
+export {
+  bitmap,
+  type BitmapData,
+  type BitmapDescriptor,
+  type BitmapFormatOptions,
+  type BitmapOptions,
+  type BitmapPageData,
+  type BitmapStrikeData,
+} from './raster/bitmap.js';
+export {
+  msdf,
+  type MsdfBinding,
+  type MsdfConfiguration,
+  type MsdfData,
+  type MsdfDescriptor,
+  type MsdfOptions,
+  type MsdfPageData,
+} from './raster/msdf.js';
+export { slug, type SlugData, type SlugDescriptor, type SlugOptions, type SlugPageData } from './raster/slug.js';

@@ -2,8 +2,8 @@ import { createRoot, flushSync, type RootStore } from '@react-three/fiber/webgpu
 import React, { createRef, StrictMode } from 'react';
 import * as THREE from 'three/webgpu';
 
-import { glyph, type Constraints, type GlyphLayout } from '@pmndrs/glyph';
-import { bitmap, bitmapSchema } from '@pmndrs/glyph/raster';
+import { glyph, type Constraints, type GlyphLayout, bitmap } from '@pmndrs/glyph';
+import { bitmapSchema } from '@pmndrs/glyph/extend';
 import { Text } from '@pmndrs/glyph/react';
 import type { Text as CoreText } from '@pmndrs/glyph/three';
 

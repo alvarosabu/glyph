@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { span, txt } from '@pmndrs/glyph';
-import { bitmap } from '@pmndrs/glyph/raster';
+import { span, txt, bitmap } from '@pmndrs/glyph';
 import { loadFont } from '../../dist/loader.js';
 import { createThreeTestHandle } from '../support/three-handle.mjs';
 import { reconstructPostNarrowRelative, summarizeRealCorpusPlacement } from '../support/layout-run-real-corpus.mjs';

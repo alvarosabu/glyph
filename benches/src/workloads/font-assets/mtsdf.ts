@@ -1,4 +1,5 @@
-import { msdf as mtsdfFormat, MSDF_EM_SIZE, MSDF_PIXEL_RANGE } from '@pmndrs/glyph/raster';
+import { msdf as mtsdfFormat } from '@pmndrs/glyph';
+import { MSDF_EM_SIZE, MSDF_PIXEL_RANGE } from '@pmndrs/glyph/extend';
 import amiriCompressedFontUrl from '../../../fixtures/rendering/amiri-mtsdf.font.glb.gz?url';
 import dancingScriptCompressedFontUrl from '../../../fixtures/rendering/dancing-script-mtsdf.font.glb.gz?url';
 import dotGothicCompressedFontUrl from '../../../fixtures/rendering/dot-gothic-16-mtsdf.font.glb.gz?url';

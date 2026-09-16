@@ -1,5 +1,4 @@
-import { bitmap } from '@pmndrs/glyph/raster';
-import { glyph, type FontFace } from '@pmndrs/glyph';
+import { bitmap, glyph, type FontFace } from '@pmndrs/glyph';
 import type { Text } from '@pmndrs/glyph/three';
 import * as THREE from 'three/webgpu';
 import { proveDetachedRasterParity } from './v1-detached-proof';

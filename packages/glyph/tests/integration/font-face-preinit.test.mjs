@@ -3,9 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { Worker } from 'node:worker_threads';
 
-import { glyph } from '@pmndrs/glyph';
-import { bitmap } from '@pmndrs/glyph/raster';
-
+import { glyph, bitmap } from '@pmndrs/glyph';
 const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
 const bytes = await readFile(fontUrl);
 

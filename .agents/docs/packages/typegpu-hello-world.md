@@ -5,7 +5,7 @@ description: Demonstrates retained bitmap, MSDF, and Slug text rendering in call
 resource: ../../../apps/typegpu-hello-world
 workspace_package: '@pmndrs/glyph-typegpu-hello-world'
 documentation_type: reference
-source_digest: 'sha256:7abb2945f10bf6ed7ee40baa63f56020f3865143ee434ef66ab223ec42a79b3f'
+source_digest: 'sha256:3035a16ecb9b2625f707ac70e4756ce334661ecb57ebef1de0c1e93d5e86aaaf'
 tags: [package, example, typegpu, webgpu, vite]
 sources:
   - id: manifest
@@ -22,13 +22,14 @@ sources:
     title: GPU pixel and update verification
 generated:
   by: openai-codex/gpt-6
-  at: '2026-09-16T12:35:09Z'
+  at: '2026-09-16T13:00:04Z'
 ---
 
 # Package reference: `@pmndrs/glyph-typegpu-hello-world`
 
 This Vite application uses `defineTypeGpuConfig`, `handle.createText()`, `glyph.shape()`, and `handle.draw()` from public
 Glyph exports. It owns its TypeGPU root, canvas context, command encoder, pass attachments, and queue submission.
+The built-in `bitmap`, `msdf`, and `slug` format values are imported alongside `glyph` from the package root.
 Reusable shader functions come from the explicit `@pmndrs/glyph/shaders/typegpu` sibling; native Three.js Shading
 Language functions remain isolated at `@pmndrs/glyph/shaders/tsl`.
 The UI edits content, font size, color, raster format, and tilt. The tilt uniform drives optional GPU position and color

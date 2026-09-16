@@ -7,7 +7,7 @@ import type {
   RasterFormat,
   RasterFormatId,
 } from '@pmndrs/glyph';
-import { defineRasterFormat, defineRasterResourceId } from '@pmndrs/glyph/config';
+import { defineRasterFormat, defineRasterResourceId } from '@pmndrs/glyph/extend';
 import { compatibilityFingerprint } from '@pmndrs/glyph';
 
 import { isGlyphExampleHeader, type GlyphExampleExtension } from './artifact.js';

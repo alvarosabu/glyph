@@ -21,7 +21,7 @@ import {
   defineRasterResourceId,
   registerRasterCodec,
   defineTechniqueSchema,
-} from '@pmndrs/glyph/config';
+} from '@pmndrs/glyph/extend';
 import {
   registerThreeRasterProgram,
   defineTextMaterial,

@@ -5,7 +5,7 @@ description: Proves the portable raster boundary and ships matching TypeGPU and 
 resource: ../../../packages/glyph-example-raster
 workspace_package: '@pmndrs/glyph-example-raster'
 documentation_type: reference
-source_digest: 'sha256:ff1cdda41089d0f8333c6829d0781a2190ef949430607e50dcb389bc94f9ebb5'
+source_digest: 'sha256:a5e345531cdffe1306a9a3243209b0f8477077e7e12ea355ceb7c45801dab188'
 tags: [package, raster, extension-proof, typegpu, tsl]
 sources:
   - id: manifest
@@ -49,7 +49,7 @@ sources:
     title: Dual-backend product rendering probe
 generated:
   by: openai-codex/gpt-6
-  at: '2026-09-16T12:35:09Z'
+  at: '2026-09-16T13:00:04Z'
 ---
 
 # Package reference: `@pmndrs/glyph-example-raster`
@@ -63,6 +63,7 @@ runtime baker, declarative Rust packing expressions, matching TypeGPU and TSL sh
 paragraph/local-run render-order
 inheritance, abort behavior, and disposal. Rust owns retained instance storage, dirty-range publication, and overflow handling.
 A source boundary test rejects imports from core internals or the Three first-party raster and baker subpaths.
+Renderer-neutral format, schema, and Codec construction uses the public `/extend` entry.
 
 The raster format makes the proof observable by assigning each source-local glyph ID a deterministic color and drawing a framed
 em-relative diagnostic cell at the position produced by core shaping and paragraph layout. Its visual output is deliberately

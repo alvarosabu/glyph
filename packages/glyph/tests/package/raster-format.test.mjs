@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { defineRasterResourceId, defineRasterFormat } from '@pmndrs/glyph/config';
+import { defineRasterResourceId, defineRasterFormat } from '@pmndrs/glyph/extend';
 
 function format(id) {
   return defineRasterFormat({

@@ -1,11 +1,12 @@
-import type { BakeProgressListener, Font } from '@pmndrs/glyph';
 import type {
+  BakeProgressListener,
+  Font,
   bitmap as bitmapFormat,
   BitmapData,
   msdf as mtsdfFormat,
   MsdfData,
   slug as slugFormat,
-} from '@pmndrs/glyph/raster';
+} from '@pmndrs/glyph';
 import type { BenchmarkFontFixture } from '../../benchmark/font-fixtures';
 import type { SlugCpuReferenceData } from '../../benchmark/low-level/raster/slug-cpu-reference';
 import type { FontDelivery, RasterFormatName } from '../../benchmark/url-state';

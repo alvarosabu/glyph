@@ -1,6 +1,4 @@
-import { glyph, type Font, type GlyphConfigBindings, type PortableResource } from '@pmndrs/glyph';
-import { msdf } from '@pmndrs/glyph/raster';
-
+import { glyph, type Font, type GlyphConfigBindings, type PortableResource, msdf } from '@pmndrs/glyph';
 import { glyphExample } from '@pmndrs/glyph-example-raster';
 import {
   defineExampleConfig,

@@ -22,7 +22,7 @@ sources:
     title: React font lease lifecycle proof
 generated:
   by: openai-codex/gpt-5.6
-  at: '2026-09-16T12:35:09Z'
+  at: '2026-09-16T13:00:04Z'
 ---
 
 # React font loading
@@ -44,7 +44,7 @@ Declare a face once and pass the declaration or one of its inferred format selec
 ```tsx
 import { glyph } from '@pmndrs/glyph';
 import { Text } from '@pmndrs/glyph/react';
-import { msdf } from '@pmndrs/glyph/raster';
+import { msdf } from '@pmndrs/glyph';
 
 const Inter = glyph.fontFace('/fonts/Inter.font.glb', { format: msdf });
 
@@ -71,7 +71,7 @@ options without requiring an explicit generic:[^react-format-hooks]
 
 ```tsx
 import { Text, useFont, useBitmap, useMsdf, useSlug } from '@pmndrs/glyph/react';
-import { msdf } from '@pmndrs/glyph/raster';
+import { msdf } from '@pmndrs/glyph';
 
 export function Labels() {
   const custom = useFont('/fonts/Custom.font.glb', { format: msdf });
@@ -112,8 +112,8 @@ leases.[^react-adapter][^react-contract]
 ```tsx
 import { glyph } from '@pmndrs/glyph';
 import { GlyphProvider, Text } from '@pmndrs/glyph/react';
-import { msdf } from '@pmndrs/glyph/raster';
-import { slug } from '@pmndrs/glyph/raster';
+import { msdf } from '@pmndrs/glyph';
+import { slug } from '@pmndrs/glyph';
 
 const ExistingTitle = glyph.fontFace('/fonts/Title.font.glb', { format: slug });
 

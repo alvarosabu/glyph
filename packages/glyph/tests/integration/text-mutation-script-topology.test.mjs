@@ -1,8 +1,7 @@
 /** Extends `text-mutation-gpu-lanes.test.mjs`'s differential/packed-lane oracle to scripts where slot reassignment (bidi reorder, ligature absorption, cluster reordering, conjunct formation) can desync the engine's identity-space change mask from the gather's slot-space read. Seeded and deterministic. */
 import assert from 'node:assert/strict';
 import test, { after } from 'node:test';
-
-import { bitmap, slug } from '@pmndrs/glyph/raster';
+import { bitmap, slug } from '@pmndrs/glyph';
 import {
   assertMatchesFreshBuild,
   assertShaped,

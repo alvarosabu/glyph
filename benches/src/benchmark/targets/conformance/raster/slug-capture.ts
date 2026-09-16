@@ -1,5 +1,4 @@
-import { type Font, type GlyphLayout } from '@pmndrs/glyph';
-import { slug } from '@pmndrs/glyph/raster';
+import { type Font, type GlyphLayout, slug } from '@pmndrs/glyph';
 import type { Text, ThreeRoot } from '@pmndrs/glyph/three';
 
 import { loadBenchmarkFont as loadGlyphFont } from '../../../../workloads/font-assets/library';

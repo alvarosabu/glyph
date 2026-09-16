@@ -174,21 +174,13 @@
       "import": "./dist/three/typegpu.js"
     },
     "./three/typegpu/internal/*": null,
-    "./config": {
+    "./extend": {
       "types": {
-        "source": "./src/config.ts",
-        "default": "./dist/config.d.ts"
+        "source": "./src/extend.ts",
+        "default": "./dist/extend.d.ts"
       },
-      "source": "./src/config.ts",
-      "import": "./dist/config.js"
-    },
-    "./raster": {
-      "types": {
-        "source": "./src/raster/index.ts",
-        "default": "./dist/raster/index.d.ts"
-      },
-      "source": "./src/raster/index.ts",
-      "import": "./dist/raster/index.js"
+      "source": "./src/extend.ts",
+      "import": "./dist/extend.js"
     }
   },
   "publishConfig": {

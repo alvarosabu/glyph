@@ -4,7 +4,8 @@ import test from 'node:test';
 
 import { createMsdfBaker, createMsdfBakerFromInstance, msdfBakerFromCore } from '@pmndrs/glyph/bakers/msdf';
 import { MsdfArtifactValidationError, validateMsdfArtifact } from '../../dist/bakers/msdf-validator.js';
-import { MSDF_EM_SIZE, MSDF_PIXEL_RANGE, msdf } from '@pmndrs/glyph/raster';
+import { MSDF_EM_SIZE, MSDF_PIXEL_RANGE } from '@pmndrs/glyph/extend';
+import { msdf } from '@pmndrs/glyph';
 import { mtsdfBakerAbi, mtsdfBakerAbi as msdfBakerAbi } from '../../dist/mtsdf-baker-abi.js';
 import { fingerprint128, fingerprintDomain } from '../../dist/internal/fingerprint.js';
 import { interShapingFingerprint, interSourceFingerprint } from '../support/inter-identity.mjs';

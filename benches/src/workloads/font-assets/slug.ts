@@ -1,5 +1,4 @@
-import { slug as slugFormat } from '@pmndrs/glyph/raster';
-
+import { slug as slugFormat } from '@pmndrs/glyph';
 import amiriCompressedFontUrl from '../../../fixtures/rendering/amiri-slug.font.glb.gz?url';
 import dancingScriptCompressedFontUrl from '../../../fixtures/rendering/dancing-script-slug.font.glb.gz?url';
 import dotGothicCompressedFontUrl from '../../../fixtures/rendering/dot-gothic-16-slug.font.glb.gz?url';

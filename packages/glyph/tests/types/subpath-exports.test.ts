@@ -1,6 +1,6 @@
-import { defineGlyphConfig, defineRasterFormat, defineTechniqueSchema } from '@pmndrs/glyph/config';
+import { defineGlyphConfig, defineRasterFormat, defineTechniqueSchema } from '@pmndrs/glyph/extend';
 import { useBitmap } from '@pmndrs/glyph/react';
-import { bitmap } from '@pmndrs/glyph/raster';
+import { bitmap } from '@pmndrs/glyph';
 import { defineTextMaterial } from '@pmndrs/glyph/three';
 import { slugRender } from '@pmndrs/glyph/shaders/typegpu';
 

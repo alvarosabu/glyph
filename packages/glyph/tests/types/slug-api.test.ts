@@ -1,6 +1,5 @@
 import type { RasterDecodeArtifact, RasterDecodeFont } from '@pmndrs/glyph';
-import { slug, type SlugData } from '@pmndrs/glyph/raster';
-
+import { slug, type SlugData } from '@pmndrs/glyph';
 const descriptor = slug.descriptor(undefined);
 const kind: 'slug' = slug.kind;
 declare const font: RasterDecodeFont;

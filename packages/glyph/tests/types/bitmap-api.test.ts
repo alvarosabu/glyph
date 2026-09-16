@@ -1,6 +1,5 @@
 import type { RasterDecodeArtifact, RasterDecodeFont } from '@pmndrs/glyph';
-import { bitmap, type BitmapData, type BitmapOptions } from '@pmndrs/glyph/raster';
-
+import { bitmap, type BitmapData, type BitmapOptions } from '@pmndrs/glyph';
 const inline = bitmap.descriptor({ strikes: [16, 32] });
 const tuple = [16, 32] as const;
 const fromTuple = bitmap.descriptor({ strikes: tuple });

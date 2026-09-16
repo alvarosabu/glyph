@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import { loadFont } from '../../dist/loader.js';
-import { bitmap } from '@pmndrs/glyph/raster';
+import { bitmap } from '@pmndrs/glyph';
 import { defineTextMaterial } from '@pmndrs/glyph/three';
 import * as TSL from 'three/tsl';
 import * as THREE from 'three/webgpu';

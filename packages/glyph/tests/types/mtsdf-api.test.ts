@@ -4,8 +4,7 @@ import {
   type MsdfArtifactValidationContext,
   type ValidatedMsdfArtifact,
 } from '../../dist/bakers/msdf-validator.js';
-import { msdf, type MsdfData, type MsdfOptions } from '@pmndrs/glyph/raster';
-
+import { msdf, type MsdfData, type MsdfOptions } from '@pmndrs/glyph';
 const descriptor = msdf.descriptor(undefined);
 const configuredDescriptor = msdf.descriptor({ emSize: 32, pixelRange: 6 });
 const configuredOptions: MsdfOptions = { emSize: 32, pixelRange: 6 };

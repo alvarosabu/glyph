@@ -1,6 +1,4 @@
-import type { GlyphLayout } from '@pmndrs/glyph';
-import type { SlugPageData } from '@pmndrs/glyph/raster';
-
+import type { GlyphLayout, SlugPageData } from '@pmndrs/glyph';
 const ABSENT_PAGE = 0xffff;
 const MAX_SAFE_BAND_CURVES = 512;
 const MINIMUM_FOOTPRINT = 1 / 65_536;

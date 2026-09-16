@@ -3,9 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test, { after } from 'node:test';
 import { Fragment, StrictMode, Suspense, createElement, useLayoutEffect } from 'react';
-
-import { bitmap, msdf } from '@pmndrs/glyph/raster';
-import { glyph, GlyphFontError } from '@pmndrs/glyph';
+import { bitmap, msdf, glyph, GlyphFontError } from '@pmndrs/glyph';
 import { ThreeConfig, defineTextMaterial } from '@pmndrs/glyph/three';
 
 import { GlyphProvider, Text, TextGroup, useFont, useBitmap } from '@pmndrs/glyph/react';

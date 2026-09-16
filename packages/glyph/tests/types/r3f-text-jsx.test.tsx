@@ -1,6 +1,6 @@
 import type { Font } from '@pmndrs/glyph';
 import { Text, useFont, useBitmap, useMsdf, useSlug } from '@pmndrs/glyph/react';
-import { bitmap, msdf, slug } from '@pmndrs/glyph/raster';
+import { bitmap, msdf, slug } from '@pmndrs/glyph';
 import type { Text as ThreeText } from '@pmndrs/glyph/three';
 
 function HookTypeAssertions() {

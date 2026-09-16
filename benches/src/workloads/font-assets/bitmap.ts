@@ -1,5 +1,4 @@
-import { bitmap as bitmapFormat } from '@pmndrs/glyph/raster';
-
+import { bitmap as bitmapFormat } from '@pmndrs/glyph';
 import amiriBitmapFontUrl from '../../../fixtures/rendering/amiri-bitmap-16.font.glb?url';
 import amiriBitmapDensityFontUrl from '../../../fixtures/rendering/amiri-bitmap-16-32.font.glb?url';
 import dancingScriptBitmapFontUrl from '../../../fixtures/rendering/dancing-script-bitmap-16.font.glb?url';

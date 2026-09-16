@@ -1,4 +1,4 @@
-import { registerRasterCodec } from '@pmndrs/glyph/config';
+import { registerRasterCodec } from '@pmndrs/glyph/extend';
 
 import { glyphExampleCodecDefinition } from './portable.js';
 

@@ -1,5 +1,6 @@
 import type { Font, GlyphLayout } from '@pmndrs/glyph';
-import { selectBitmapStrikePpem, type bitmap, type BitmapData } from '@pmndrs/glyph/raster';
+import { selectBitmapStrikePpem } from '@pmndrs/glyph/extend';
+import { type bitmap, type BitmapData } from '@pmndrs/glyph';
 import type { Text, ThreeRoot } from '@pmndrs/glyph/three';
 import * as THREE from 'three/webgpu';
 

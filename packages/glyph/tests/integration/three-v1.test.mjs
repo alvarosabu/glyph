@@ -3,10 +3,19 @@ import { readFile } from 'node:fs/promises';
 import test, { after } from 'node:test';
 import { gunzipSync } from 'node:zlib';
 
-import { Constraints, createFontStack, glyph, ParagraphLayout, TextStyle, txt } from '@pmndrs/glyph';
+import {
+  Constraints,
+  createFontStack,
+  glyph,
+  ParagraphLayout,
+  TextStyle,
+  txt,
+  bitmap,
+  msdf,
+  slug,
+} from '@pmndrs/glyph';
 import { createFontLibrary, loadFont } from '../../dist/loader.js';
 import { GlyphHandleState } from '../../dist/internal/handle-state.js';
-import { bitmap, msdf, slug } from '@pmndrs/glyph/raster';
 import {
   defineThreeConfig,
   defineTextMaterial,

@@ -1,4 +1,4 @@
-/** A name has exactly one home: `.` for the application vocabulary, `./config` for renderer-neutral integration helpers, `./three` for the Three.js integration. An integration re-exports a root name only when it appears in its own signatures. */
+/** A name has exactly one home: `.` for the application vocabulary, `./extend` for renderer-neutral integration helpers, `./three` for the Three.js integration. An integration re-exports a root name only when it appears in its own signatures. */
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -22,7 +22,7 @@ function published(source) {
   return names;
 }
 
-test('application types stay at root while integration construction lives on config', async () => {
+test('application values and types stay at root while integration construction lives on extend', async () => {
   const root = published(await declaration('index.d.ts'));
   const manifest = JSON.parse(await declaration('../package.json'));
   assert.equal(manifest.exports['./core'], undefined, 'handle/planner internals must not have a public subpath');
@@ -42,9 +42,9 @@ test('application types stay at root while integration construction lives on con
     null,
     'renderer-specific Codec packing must remain package-private',
   );
-  assert.ok(manifest.exports['./config'], 'renderer-neutral integration construction must be public');
+  assert.ok(manifest.exports['./extend'], 'renderer-neutral integration construction must be public');
 
-  for (const name of ['GlyphConfig', 'Codec', 'TechniqueSchema', 'RasterFormat']) {
+  for (const name of ['GlyphConfig', 'Codec', 'TechniqueSchema', 'RasterFormat', 'bitmap', 'msdf', 'slug']) {
     assert.equal(root.has(name), true, `applications must be able to name ${name} from the root`);
   }
   for (const retiredRootName of [
@@ -71,13 +71,17 @@ test('application types stay at root while integration construction lives on con
     'config/raster-format.d.ts': ['defineRasterFormat', 'defineRasterResourceId'],
     'config/resources.d.ts': ['assertPortableResource', 'definePortableVertexSemantic'],
     'config/schema.d.ts': ['defineCodecBuffers', 'defineTechniqueSchema'],
+    'raster/bitmap.d.ts': ['bitmapSchema', 'bitmapCodec', 'selectBitmapStrikePpem'],
+    'raster/msdf.d.ts': ['msdfSchema', 'msdfCodec'],
+    'raster/slug.d.ts': ['slugSchema', 'slugCodec'],
   };
-  const config = await import('@pmndrs/glyph/config');
+  const config = await import('@pmndrs/glyph/extend');
   for (const [path, names] of Object.entries(leaves)) {
     const leaf = published(await declaration(path));
+    const implementation = await import(`../../dist/${path.replace(/\.d\.ts$/, '.js')}`);
     for (const name of names) {
       assert.equal(leaf.has(name), true, `${path} must publish ${name}`);
-      assert.equal(typeof config[name], name === 'id' || name === 'f32' || name === 'u32' ? 'object' : 'function');
+      assert.equal(config[name], implementation[name], `extend must expose ${name} from its implementation`);
       assert.equal(root.has(name), false, `runtime integration helper ${name} must not leak through the root`);
     }
   }

@@ -30,7 +30,7 @@ sources:
     title: TypeGPU shader realization
 generated:
   by: openai-codex/gpt-5.6
-  at: '2026-09-16T12:35:09Z'
+  at: '2026-09-16T13:00:04Z'
 ---
 
 # Integrate a renderer with Glyph
@@ -38,7 +38,7 @@ generated:
 This guide builds a renderer adapter with `GlyphConfig`, then follows one publication through the repository's real
 TypeGPU 0.12 example. The finished adapter:
 
-- uses only public application types from `@pmndrs/glyph`, renderer-neutral helpers from `/config`, and explicit
+- uses only public application types from `@pmndrs/glyph`, renderer-neutral helpers from `/extend`, and explicit
   raster-format and `/typegpu` subpaths;
 - creates one inferred handle with an anonymous root and idempotent named roots;
 - retains Text state and publishes it through `shape()`;
@@ -71,7 +71,7 @@ flowchart LR
   R3F[R3F integration] -. immutable selected root .-> Three
 ```
 
-The root package exposes every application-visible integration type. The `/config` entry exposes construction
+The root package exposes every application-visible integration type. The `/extend` entry exposes construction
 helpers such as `defineGlyphConfig`, `defineGlyphSchema`, and Codec assembly. A portable raster package contributes its
 schema and Codec program, while its explicit `/typegpu` subpath contributes shaders. Your integration owns host objects
 and physical GPU resources. Rust/Wasm readers, numeric identities, command projection, and publication plumbing remain
@@ -186,7 +186,7 @@ import {
   type GlyphSchema,
   type CodecProgram,
 } from '@pmndrs/glyph';
-import { defineGlyphSchema } from '@pmndrs/glyph/config';
+import { defineGlyphSchema } from '@pmndrs/glyph/extend';
 
 export interface ExampleResolvedResource {
   readonly name: string;
@@ -291,9 +291,9 @@ emit packed buffers, programs, ordering, and capabilities:
 
 ```ts
 import type { CodecCapabilitySet, CodecDescriptor, CodecIdFactory } from '@pmndrs/glyph';
-import { id } from '@pmndrs/glyph/config';
-import { createRasterCodecProgram } from '@pmndrs/glyph/config';
-import { defineCodecBuffers } from '@pmndrs/glyph/config';
+import { id } from '@pmndrs/glyph/extend';
+import { createRasterCodecProgram } from '@pmndrs/glyph/extend';
+import { defineCodecBuffers } from '@pmndrs/glyph/extend';
 import { glyphExampleCodec } from '@pmndrs/glyph-example-raster';
 
 const stableGlyphId = id.buffer('glyph-example-renderer/stable-glyph');
@@ -341,7 +341,7 @@ Changing batching, record layout, capabilities, or ordering is Codec work; it is
 names, the resource kind, portable payload, singleton companions, previous accepted value, and an abort signal.
 
 ```ts
-import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/config';
+import { defineGlyphConfig, resourceLease } from '@pmndrs/glyph/extend';
 
 resolve: ({ format, resourceName, payload }) => {
   if (format !== formatId) {
@@ -858,7 +858,7 @@ abandoned FontFace declarations, never the correctness mechanism.
 ## Verify a new integration
 
 1. **Package boundary:** application types come from `@pmndrs/glyph`; construction helpers come from public
-   `/config` entry; raster-format and shader code uses its explicit subpaths.
+   `/extend` entry; raster-format and shader code uses its explicit subpaths.
 2. **Type inference:** `glyph.handle('name', config)` infers the concrete handle without casts or explicit Glyph generics.
 3. **Codec:** real text produces expected lanes, variants, capabilities, batching, and order.
 4. **Hierarchy:** `DisplayList.children` reaches the renderer in authoritative order with no numeric IDs.

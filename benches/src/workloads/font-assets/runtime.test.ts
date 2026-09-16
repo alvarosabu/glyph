@@ -1,12 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { bitmap } from '@pmndrs/glyph';
 
 const library = vi.hoisted(() => ({
   loadFont: vi.fn<(...args: readonly unknown[]) => Promise<{ readonly dispose: () => void }>>(),
 }));
 
 vi.mock('./library', () => ({ benchmarkFontLibrary: library }));
-
-import { bitmap } from '@pmndrs/glyph/raster';
 import { disposeBakedFontPreloads, preloadBakedFont } from './runtime';
 
 describe('baked benchmark font preloads', () => {
