@@ -6,7 +6,7 @@
   "scripts": {
     "build": "vite build",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm build && pnpm live:check",
-    "dev": "vite",
+    "dev": "vite --port ${PORT:-5173}",
     "format:check": "oxfmt --check .",
     "lint": "oxlint --deny-warnings .",
     "live:check": "node ./scripts/live-check.mts",
