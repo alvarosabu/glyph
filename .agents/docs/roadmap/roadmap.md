@@ -560,7 +560,7 @@ The five-line, 120-glyph text above is now named the diagnostic conformance spec
 - [x] Stable constructor `args`, keyed remounts, and a single `set()` per changed snapshot are covered by lifecycle tests under a happy-dom TresCanvas host.
 - [x] Types infer the raster format from the font selection in TS and Vue TSX; entry-boundary, ESM-only, and package-size gates pass with `./vue` present.
 - [x] The TresJS playground renders all three raster formats under a Vitexec browser probe with committed draw and record counts (25 records; 3 draws for Bitmap and MSDF, 2 for Slug).
-- [ ] The maintainer accepts the `/vue` entry name, the reactive loading model, and the optional peer ranges recorded in D-365.
+- [ ] The maintainer accepts the `/vue` entry name, the reactive loading model, and the optional peer ranges recorded in D-369.
 
 ### 6.4 closure checklist
 
