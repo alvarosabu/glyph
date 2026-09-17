@@ -4,6 +4,7 @@ import { defineTextMaterial, type Text } from '@pmndrs/glyph/three';
 import * as TSL from 'three/tsl';
 import * as THREE from 'three/webgpu';
 import { msdfShader as typeGpuMsdfShader } from '../../packages/glyph/src/three/typegpu/internal/msdf-shader.js';
+import { comparePixelReadbacks } from './renderer/pixel-readback-comparison.ts';
 
 const msdfShader =
   new URLSearchParams(location.search).get('shaders') === 'typegpu' ? typeGpuMsdfShader : stableMsdfShader;
@@ -87,8 +88,10 @@ async function proveDistanceSamples(renderer: THREE.WebGPURenderer): Promise<num
 }
 
 export interface MsdfDistanceProof {
+  readonly distanceCoverageChangedChannels: number;
   readonly distanceSamples: number;
   readonly distanceCoverageMatches: boolean;
+  readonly distanceCoverageMaxDelta: number;
   readonly glowPixelsOutsideCoverage: number;
 }
 
@@ -114,8 +117,17 @@ export async function proveMsdfDistanceMaterial(
     await renderer.renderAsync(scene, camera);
     if (text.error !== undefined) throw text.error;
     const reconstructed = await renderer.readRenderTargetPixelsAsync(target, 0, 0, 256, 128);
-    const distanceCoverageMatches = reconstructed.every((value, index) => value === baseline[index]);
-    if (!distanceCoverageMatches) throw new Error('MSDF distance reconstruction changed canonical fill pixels');
+    // Both paths produce an 8-bit render-target readback from separately compiled material graphs.
+    // WebGPU implementations may quantize an edge to an adjacent byte or choose the neighboring
+    // sample at a triangle edge. The independent constant-atlas samples above prove the distance
+    // fields numerically; this integration comparison permits no more than one RGB edge pixel per
+    // glyph while still rejecting a distributed material mismatch.
+    const coverage = comparePixelReadbacks(baseline, reconstructed, 1, text.measure().glyphCount * 3);
+    if (!coverage.matches) {
+      throw new Error(
+        `MSDF distance reconstruction changed canonical fill pixels: ${String(coverage.changedChannels)} channels, max delta ${String(coverage.maxChannelDelta)}`,
+      );
+    }
 
     text.material = defineTextMaterial((context) => {
       const material = context.createDefaultMaterial();
@@ -136,7 +148,13 @@ export async function proveMsdfDistanceMaterial(
       }
     }
     if (glowPixelsOutsideCoverage === 0) throw new Error('MSDF glow did not extend beyond canonical coverage');
-    return { distanceSamples, distanceCoverageMatches, glowPixelsOutsideCoverage };
+    return {
+      distanceCoverageChangedChannels: coverage.changedChannels,
+      distanceSamples,
+      distanceCoverageMatches: coverage.matches,
+      distanceCoverageMaxDelta: coverage.maxChannelDelta,
+      glowPixelsOutsideCoverage,
+    };
   } finally {
     text.material = previousMaterial;
   }
