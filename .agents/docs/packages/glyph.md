@@ -5,7 +5,7 @@ description: Implements portable font loading, retained Rust shaping and layout,
 resource: ../../../packages/glyph
 workspace_package: '@pmndrs/glyph'
 documentation_type: reference
-source_digest: 'sha256:f779f89a5e85b8d8f30482d4ddec0719032e2466dc4454c99852a292c916c18b'
+source_digest: 'sha256:dd6cca93533a066a58fc96f784bb3b8c2acda43ee153815054e035103d8514b7'
 tags: [package, public-api, rust, wasm, threejs, typography]
 sources:
   - id: manifest
@@ -129,15 +129,15 @@ Status: foundation merged; canary publishing configured while publishing-feature
 
 The package owns six runtime layers:
 
-| Layer                    | Owner                                                                           | Responsibility                                                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Root runtime and config  | TypeScript core                                                                 | Initialize one Glyph engine, construct named adapter handles, and coordinate projection/decode/commit transactions.                   |
-| Font and raster loading  | TypeScript core                                                                 | Read portable GLB envelopes, register shaping payloads, decode selected raster resources, and retain font identity.                   |
-| Shaping and layout       | Rust/Wasm                                                                       | Unicode analysis, bidi, font fallback, shaping, line composition, positioning, ellipsis, and semantic query state.                    |
-| Codec and command buffer | Rust/Wasm                                                                       | Interpret a validated Codec, pack canonical raster-format records, coalesce dirty ranges, and emit a compact command buffer.          |
-| Three.js integration     | `@pmndrs/glyph/three`                                                           | Compile Codec programs, resolve font/material resources, apply command-buffer deltas, upload dirty ranges, and maintain draw proxies. |
-| TypeGPU Three experiment | `@pmndrs/glyph/three/typegpu`                                                   | Experimental Three config and shader adapters backed by `/shaders/typegpu`; shares scene and lifecycle classes with `/three`.         |
-| `@pmndrs/glyph/react`    | Reconcile React values into the same imperative `Text` and `TextGroup` objects. |
+| Layer                    | Owner                                                                                        | Responsibility                                                                                                                        |
+| ------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Root runtime and config  | TypeScript core                                                                              | Initialize one Glyph engine, construct named adapter handles, and coordinate projection/decode/commit transactions.                   |
+| Font and raster loading  | TypeScript core                                                                              | Read portable GLB envelopes, register shaping payloads, decode selected raster resources, and retain font identity.                   |
+| Shaping and layout       | Rust/Wasm                                                                                    | Unicode analysis, bidi, font fallback, shaping, line composition, positioning, ellipsis, and semantic query state.                    |
+| Codec and command buffer | Rust/Wasm                                                                                    | Interpret a validated Codec, pack canonical raster-format records, coalesce dirty ranges, and emit a compact command buffer.          |
+| Three.js integration     | `@pmndrs/glyph/three`                                                                        | Compile Codec programs, resolve font/material resources, apply command-buffer deltas, upload dirty ranges, and maintain draw proxies. |
+| TypeGPU Three experiment | `@pmndrs/glyph/three/typegpu`                                                                | Experimental Three config and shader adapters backed by `/shaders/typegpu`; shares scene and lifecycle classes with `/three`.         |
+| `@pmndrs/glyph/react`    | Reconcile React values into the same imperative `Text` and `TextGroup` objects.              |
 | `@pmndrs/glyph/vue`      | Reconcile Vue values into the same imperative `Text` and `TextGroup` objects through TresJS. |
 
 Runtime Rust and all shared Rust code remain `no_std + alloc` compatible with the package allocator contract. The optional
@@ -196,24 +196,24 @@ config helpers.
 
 ## Public package surfaces
 
-| Subpath | Purpose |
-| --- | --- |
-| `@pmndrs/glyph` | Root runtime, built-in format selection, font/raster types, fallback stacks, text authoring, and layout results. |
-| `@pmndrs/glyph/core` | Renderer-neutral construction helpers, built-in schemas/codecs, and format interpretation helpers. |
-| `@pmndrs/glyph/three` | Three configuration, retained text objects, materials, and renderer registration using native TSL shaders. |
-| `@pmndrs/glyph/react` | React provider, text components, and font-loading hooks. |
-| `@pmndrs/glyph/vue` | Vue provider, text components, and reactive font-loading composables for TresJS. |
-| `@pmndrs/glyph/vue/*` | Typed Bitmap, MSDF, and Slug Vue composables. |
-| `@pmndrs/glyph/typegpu` | Direct TypeGPU configuration, retained text, and drawing into caller-owned passes. |
-| `@pmndrs/glyph/three/typegpu` | Experimental Three integration using TypeGPU-backed shader adapters. |
-| `@pmndrs/glyph/shaders/tsl` | Standalone native TSL raster shaders. |
-| `@pmndrs/glyph/shaders/typegpu` | Standalone TypeGPU stages, schemas, slots, accessors, and composition helpers. |
-| `@pmndrs/glyph/bake` | Node file/project baking, inspection, and freshness operations used by the CLI. |
-| `@pmndrs/glyph/baker` | Portable raster-baker definition and bake-plan construction. |
-| `@pmndrs/glyph/runtime-bake` | Explicit browser Worker host for runtime font baking. |
-| `@pmndrs/glyph/bakers/bitmap` | Portable Bitmap baker and Wasm construction. |
-| `@pmndrs/glyph/bakers/msdf` | Portable MSDF baker and Wasm construction. |
-| `@pmndrs/glyph/bakers/slug` | Portable Slug baker and Wasm construction. |
+| Subpath                         | Purpose                                                                                                          |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `@pmndrs/glyph`                 | Root runtime, built-in format selection, font/raster types, fallback stacks, text authoring, and layout results. |
+| `@pmndrs/glyph/core`            | Renderer-neutral construction helpers, built-in schemas/codecs, and format interpretation helpers.               |
+| `@pmndrs/glyph/three`           | Three configuration, retained text objects, materials, and renderer registration using native TSL shaders.       |
+| `@pmndrs/glyph/react`           | React provider, text components, and font-loading hooks.                                                         |
+| `@pmndrs/glyph/vue`             | Vue provider, text components, and reactive font-loading composables for TresJS.                                 |
+| `@pmndrs/glyph/vue/*`           | Typed Bitmap, MSDF, and Slug Vue composables.                                                                    |
+| `@pmndrs/glyph/typegpu`         | Direct TypeGPU configuration, retained text, and drawing into caller-owned passes.                               |
+| `@pmndrs/glyph/three/typegpu`   | Experimental Three integration using TypeGPU-backed shader adapters.                                             |
+| `@pmndrs/glyph/shaders/tsl`     | Standalone native TSL raster shaders.                                                                            |
+| `@pmndrs/glyph/shaders/typegpu` | Standalone TypeGPU stages, schemas, slots, accessors, and composition helpers.                                   |
+| `@pmndrs/glyph/bake`            | Node file/project baking, inspection, and freshness operations used by the CLI.                                  |
+| `@pmndrs/glyph/baker`           | Portable raster-baker definition and bake-plan construction.                                                     |
+| `@pmndrs/glyph/runtime-bake`    | Explicit browser Worker host for runtime font baking.                                                            |
+| `@pmndrs/glyph/bakers/bitmap`   | Portable Bitmap baker and Wasm construction.                                                                     |
+| `@pmndrs/glyph/bakers/msdf`     | Portable MSDF baker and Wasm construction.                                                                       |
+| `@pmndrs/glyph/bakers/slug`     | Portable Slug baker and Wasm construction.                                                                       |
 
 The three renderer-neutral raster implementations retain portable Codec-registration side effects when selected from the root. Built-in
 Three configs select a private typed shader set carried by each handle's renderer resources, with no module-global switch. `/three` and `/shaders/tsl` preserve the native TSL implementation from `main`; `/three/typegpu` selects the migrated adapters over `/shaders/typegpu`. Both handle variants can coexist. Applications import portable formats from the root and shader builders from the shared backend entry, `/shaders/tsl` or `/shaders/typegpu`.
@@ -1083,9 +1083,9 @@ the decision register and append-only log retain its design and benchmark histor
 
 The checked package-size record after public-export simplification reports:
 
-| Graph | Raw | gzip | Brotli |
-| --- | ---: | ---: | ---: |
-| Core JavaScript plus shaper Wasm | 1,637,744 B | 591,387 B | 464,596 B |
+| Graph                                   |         Raw |      gzip |    Brotli |
+| --------------------------------------- | ----------: | --------: | --------: |
+| Core JavaScript plus shaper Wasm        | 1,637,744 B | 591,387 B | 464,596 B |
 | Three adapter plus core and shaper Wasm | 1,831,432 B | 639,269 B | 503,332 B |
 
 Optional peers are excluded. Raw counts use readable JavaScript plus optimized Wasm; compressed counts use minified
@@ -1102,10 +1102,10 @@ three cache lines. It now indexes a two-stage code-point trie — an 8,704-entry
 
 Both implementations compiled into one binary and run over identical inputs, best of nine:
 
-| corpus | binary search | trie | |
-| --- | --- | --- | --- |
-| latin | 6.59 ns | 1.18 ns | 5.6x |
-| cjk | 6.78 ns | 1.17 ns | 5.8x |
+| corpus       | binary search | trie    |      |
+| ------------ | ------------- | ------- | ---- |
+| latin        | 6.59 ns       | 1.18 ns | 5.6x |
+| cjk          | 6.78 ns       | 1.17 ns | 5.8x |
 | mixed script | 7.32 ns       | 1.22 ns | 6.0x |
 
 Artifact effect, same-session A/B on `main` with identical source, flags, and `wasm-opt` pipeline:
