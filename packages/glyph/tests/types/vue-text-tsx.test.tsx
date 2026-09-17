@@ -1,9 +1,7 @@
 /* @jsxImportSource vue */
-import type { Font } from '@pmndrs/glyph';
+import { bitmap, msdf, type Font } from '@pmndrs/glyph';
 import { Text, TextGroup, useFont } from '@pmndrs/glyph/vue';
 import { useBitmap } from '@pmndrs/glyph/vue/bitmap';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
 import type { Text as ThreeText } from '@pmndrs/glyph/three';
 
 declare const bitmapFont: Font<typeof bitmap>;

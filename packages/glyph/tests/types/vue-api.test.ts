@@ -1,15 +1,12 @@
 import { h, type ShallowRef } from 'vue';
 
-import { glyph, type Font, type FontStack, type GlyphFontError } from '@pmndrs/glyph';
+import { bitmap, glyph, msdf, slug, type Font, type FontStack, type GlyphFontError } from '@pmndrs/glyph';
 import * as VueApi from '@pmndrs/glyph/vue';
 import { GlyphProvider, Text, TextGroup, clearFont, preloadFont, useFont } from '@pmndrs/glyph/vue';
 import type { UseFontResult, VueTextProps } from '@pmndrs/glyph/vue';
 import { clearBitmap, preloadBitmap, useBitmap } from '@pmndrs/glyph/vue/bitmap';
 import { clearMsdf, preloadMsdf, useMsdf } from '@pmndrs/glyph/vue/msdf';
 import { clearSlug, preloadSlug, useSlug } from '@pmndrs/glyph/vue/slug';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { slug } from '@pmndrs/glyph/raster/slug';
 import { ThreeConfig, type Text as ThreeText, type ThreeHandle, type ThreeTextMaterial } from '@pmndrs/glyph/three';
 
 declare const bitmapFont: Font<typeof bitmap>;

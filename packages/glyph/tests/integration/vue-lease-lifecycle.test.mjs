@@ -6,9 +6,7 @@ import { readFile } from 'node:fs/promises';
 import test, { after } from 'node:test';
 import { h, shallowRef } from 'vue';
 
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
-import { glyph } from '@pmndrs/glyph';
+import { bitmap, glyph, msdf } from '@pmndrs/glyph';
 import { ThreeConfig, defineTextMaterial } from '@pmndrs/glyph/three';
 
 import { GlyphProvider, Text, TextGroup, clearFont, preloadFont, useFont } from '@pmndrs/glyph/vue';

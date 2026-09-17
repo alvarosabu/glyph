@@ -51,9 +51,8 @@ canvas, so callers do not need to request an extra frame after changing componen
 
 ```vue
 <script setup lang="ts">
-import { glyph } from '@pmndrs/glyph';
+import { glyph, msdf } from '@pmndrs/glyph';
 import { Text } from '@pmndrs/glyph/vue';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
 
 const inter = glyph.fontFace('/fonts/Inter.font.glb', { format: msdf });
 </script>
@@ -77,7 +76,7 @@ without an explicit generic:[^vue-format-composables]
 import { Text, useFont } from '@pmndrs/glyph/vue';
 import { useBitmap } from '@pmndrs/glyph/vue/bitmap';
 import { useMsdf } from '@pmndrs/glyph/vue/msdf';
-import { msdf } from '@pmndrs/glyph/raster/msdf';
+import { msdf } from '@pmndrs/glyph';
 
 const custom = useFont('/fonts/Custom.font.glb', { format: msdf });
 const label = useBitmap('/fonts/Inter.font.glb', { strikes: [16] });

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { glyph } from '@pmndrs/glyph';
-import { bitmap } from '@pmndrs/glyph/raster/bitmap';
+import { bitmap, glyph } from '@pmndrs/glyph';
 import { defineTextMaterial } from '@pmndrs/glyph/three';
 
 const fontUrl = new URL('../../../../benches/fixtures/rendering/inter-bitmap-16.font.glb', import.meta.url);
