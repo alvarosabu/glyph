@@ -34,6 +34,14 @@
   enabling those checks without scanline reaches 20 but exposes severe sign failures elsewhere. The package concept records
   the evidence and unresolved cause. Production rendering and accepted baselines remain unchanged.
 
+- **Exposed MSDF signed distances to custom materials** — D-365 publishes `fillDistance`, `trueDistance`, and
+  `pixelRange` through both Three shader paths and raw TypeGPU detailed output. WebGPU and WebGL2 verify channel/sign
+  semantics, scale and rotation, exact fill reconstruction, and a glow outside coverage. A substituted coverage field
+  fails the numeric oracle. The shared TypeGPU reconstruction retains the existing coverage API.
+  Refreshed the three affected JavaScript renderer size entries; their gzip deltas are +68 bytes for direct TypeGPU,
+  +22 bytes for Three, and +68 bytes for Three plus TypeGPU. Unrelated Wasm evidence remains pinned to `main`, and all
+  existing size ceilings remain unchanged.
+
 - **Update** — Moved the benchmark workspace to root-level `benches/`, updated consumers and workspace validation, and migrated repository fixtures and assets to Git LFS with historical coverage and LFS-aware CI checkout. Re-pinned size evidence after reproducing the JavaScript differences with the old benchmark root and proving that all five Wasm binaries are byte-identical before and after relocation; three previously stale Wasm hashes now reflect the pinned build. Size ceilings are unchanged.
 
 ## 2026-09-13

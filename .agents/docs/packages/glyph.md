@@ -5,7 +5,7 @@ description: Implements portable font loading, retained Rust shaping and layout,
 resource: ../../../packages/glyph
 workspace_package: '@pmndrs/glyph'
 documentation_type: reference
-source_digest: 'sha256:1c08d6a0addf5664c8d91d94cc02e8ac12c71de8f7c7acd6ce6917604d9b3b98'
+source_digest: 'sha256:7b2c60e133ea4f98fdbf90029e49869001a9cd0e68756026f80e879178d933f7'
 tags: [package, public-api, rust, wasm, threejs, typography]
 sources:
   - id: manifest
@@ -56,6 +56,9 @@ sources:
   - id: tsl-shaders
     resource: ../../../packages/glyph/src/shaders/tsl/index.ts
     title: Raster-format shader library layer
+  - id: msdf-distance
+    resource: ../../../packages/glyph/src/shaders/typegpu/msdf/distance.ts
+    title: Shared TypeGPU signed-distance reconstruction
   - id: slug-shader-core
     resource: ../../../packages/glyph/src/shaders/typegpu/slug/core
     title: Host-agnostic TypeGPU Slug shader core
@@ -662,6 +665,12 @@ root policy states draw order.
 
 `materialId` is explicit through the frame ABI and command buffer. Three maps it to a `defineTextMaterial()` factory. Material
 identity may split draws without forcing a second copy of the canonical glyph buffers.
+
+MSDF material shaders publish `fillDistance`, `trueDistance`, and `pixelRange` alongside their coverage outputs (D-365).
+Both Three configurations use the same `TslMsdfShaderOutput` type; raw TypeGPU `msdfFragment()` and
+`msdfRenderDetailed()` return the corresponding numeric fields. The private TypeGPU reconstruction supplies one set of
+distances to coverage and custom effects. `msdfCoverage()` retains its coverage-vector return contract. The
+[material reference](../planning/three-api.md#msdf-distance-fields) defines units, sign, and effect limits.
 
 Bitmap atlas pages within one strike are renderer layers, not independent draw resources. The font binding exposes one
 strike resource, the Rust Codec program writes the selected page as one u32 instance lane, and Three uploads the strike as one

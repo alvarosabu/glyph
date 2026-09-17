@@ -5,7 +5,7 @@ description: Provides the shared interactive and automated benchmark product sur
 resource: ../../../benches
 workspace_package: '@pmndrs/glyph-benchmarks'
 documentation_type: reference
-source_digest: 'sha256:fc8891df2b549e140913d7a370c98b89032ea01be4d520eaf85a8dab6149903f'
+source_digest: 'sha256:9e12998c5ce39ed4095cbdc41eb3909c111e16425997e9891ebbcc5efd1f6e41'
 tags: [package, benchmarks, react, vite, product-e2e]
 sources:
   - id: manifest
@@ -77,6 +77,9 @@ sources:
   - id: v1-mtsdf-proof
     resource: ../../../benches/src/v1-mtsdf-proof.ts
     title: Target-v1 retained MTSDF browser proof
+  - id: msdf-distance-proof
+    resource: ../../../benches/src/v1-msdf-distance-proof.ts
+    title: MSDF distance-field numeric and custom-material browser proof
   - id: v1-slug-proof
     resource: ../../../benches/src/v1-slug-proof.ts
     title: Target-v1 retained Slug browser proof
@@ -238,6 +241,12 @@ than treating first pixels as sufficient evidence. Each raster proof also report
 when a visibly populated draw claims no GPU residency, so the accessor is proven against live engine resources rather than
 a unit fixture. The Worker proof distinguishes call-time snapshots, later desired state, supersession, abort, progress,
 and one reusable module Worker.
+
+The MTSDF proof also reads signed distances and screen-space range from a two-layer constant atlas at two scales,
+including a rotated quad. Independent numeric expectations distinguish RGB median from alpha and reject clamped
+coverage or a constant atlas range. The real Inter material reconstructs the canonical fill with exact pixel equality,
+then uses true distance for a glow that lights pixels beyond the original coverage. These cases run through
+`benchmark:v1-bitmap` on WebGPU and WebGL2, with `--typegpu` selecting the experimental shader bridge.
 
 The public paragraph-contract target now passes its complete exact matrix through the retained Rust path: two bidi
 layouts, nine line-policy layouts, twelve CJK layouts, and one UIKit-shaped measurement/layout seam. The UIKit fixture
